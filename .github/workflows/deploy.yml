@@ -29,6 +29,36 @@ jobs:
             | xargs -0 -n1 php -l > /dev/null
           echo "Syntax in Ordnung."
 
+      - name: Zugangsdaten prüfen
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+          KEY: ${{ secrets.SG_SSH_KEY }}
+        run: |
+          missing=""
+          [ -z "$HOST" ]   && missing="$missing SG_HOST"
+          [ -z "$USER" ]   && missing="$missing SG_USER"
+          [ -z "$TARGET" ] && missing="$missing SG_PATH"
+          [ -z "$KEY" ]    && missing="$missing SG_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Es fehlen noch Secrets:$missing"
+            echo ""
+            echo "Anzulegen unter: Settings → Secrets and variables → Actions"
+            echo ""
+            echo "  SG_HOST     SSH-Host aus den Site Tools, z. B. ssh.meinkonto.sg-host.com"
+            echo "  SG_PORT     SSH-Port, meist 18765 (ohne Angabe wird 18765 verwendet)"
+            echo "  SG_USER     SSH-Benutzer, z. B. u1234-abcdefgh"
+            echo "  SG_PATH     Zielverzeichnis, z. B. /home/customer/www/meine-domain.de"
+            echo "  SG_SSH_KEY  der PRIVATE Schlüssel zu dem in SiteGround hinterlegten"
+            echo "              öffentlichen Schlüssel (vollständiger Inhalt inkl. der"
+            echo "              BEGIN- und END-Zeilen)"
+            echo ""
+            echo "Danach diesen Lauf über \"Re-run all jobs\" wiederholen."
+            exit 1
+          fi
+          echo "Alle Zugangsdaten vorhanden."
+
       - name: SSH einrichten
         env:
           KEY: ${{ secrets.SG_SSH_KEY }}
