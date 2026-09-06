@@ -1,13 +1,18 @@
-node_modules/
-dist/
-build/
+# Konfiguration mit Zugangsdaten – nie im Repository
+app/config.local.php
 .env
-.env.local
+
+# Laufzeitdaten
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
+storage/sessions/*
+!storage/sessions/.gitkeep
+
+# Abhaengigkeiten (falls Composer genutzt wird)
+vendor/
+
 *.log
-data/*.db
-data/*.db-shm
-data/*.db-wal
-uploads/
 .DS_Store
-.vite/
-*.tsbuildinfo
+Thumbs.db

@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────
+#  Capital Lead Suite – Apache-Regeln (SiteGround)
+# ─────────────────────────────────────────────────────────────────────────
+
+# Verzeichnisse nicht auflisten
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Vorhandene Dateien (CSS, JS, Bilder) direkt ausliefern …
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # … alles andere geht an den Front-Controller.
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    # Mikrofon wird für Sprachnotizen gebraucht, alles andere bleibt zu.
+    Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(self)"
+</IfModule>
+
+# Statisches lange cachen – die Dateinamen tragen einen Versionsparameter.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css               "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType image/svg+xml          "access plus 30 days"
+</IfModule>
+
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+# Punktdateien nie ausliefern
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

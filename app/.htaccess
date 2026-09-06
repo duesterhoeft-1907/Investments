@@ -1,0 +1,3 @@
+# Diese Verzeichnisse gehören oberhalb des DocumentRoot. Liegen sie doch
+# einmal darin, verhindert diese Datei den Zugriff über den Browser.
+Require all denied
