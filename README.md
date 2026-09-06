@@ -124,6 +124,42 @@ tun ist. Mailversand einzeln testen:
 php bin/test-mail.php deine@adresse.de
 ```
 
+### Automatisch deployen (empfohlen)
+
+Statt jedes Mal von Hand hochzuladen: `.github/workflows/deploy.yml` überträgt
+bei jedem Push auf den Branch. Der GitHub-Runner hat Netzzugang zu SiteGround.
+
+Einmalig in GitHub → Repository → **Settings → Secrets and variables →
+Actions** anlegen:
+
+| Secret | Wert | Beispiel |
+| --- | --- | --- |
+| `SG_HOST` | SSH-Host aus den Site Tools | `ssh.meinkonto.sg-host.com` |
+| `SG_PORT` | SSH-Port | `18765` |
+| `SG_USER` | SSH-Benutzer | `u1234-abcdefgh` |
+| `SG_PATH` | Zielverzeichnis auf dem Server | `/home/customer/www/meine-domain.de` |
+| `SG_SSH_KEY` | **privater** Schlüssel zum in SiteGround hinterlegten öffentlichen | Inhalt von `~/.ssh/id_ed25519` |
+
+Danach läuft bei jedem Push: PHP-Syntaxprüfung → Übertragung per rsync →
+Rechte setzen → `bin/doctor.php` auf dem Server. Das Ergebnis steht im
+Actions-Protokoll.
+
+Beim allerersten Lauf zusätzlich Actions → *Deploy zu SiteGround* →
+**Run workflow** mit gesetztem Häkchen *Schema und Demo-Daten einspielen*.
+
+Übertragen wird niemals `app/config.local.php` und niemals der Inhalt von
+`storage/` – Konfiguration, hochgeladene Dateien, Sitzungen und Protokolle
+bleiben auf dem Server unangetastet.
+
+Von Hand geht dasselbe von jedem Rechner mit SSH-Zugang:
+
+```bash
+SG_HOST=ssh.meinkonto.sg-host.com \
+SG_USER=u1234-abcdefgh \
+SG_PATH=/home/customer/www/meine-domain.de \
+bin/deploy.sh
+```
+
 ### 7. Aufrufen
 
 | Adresse | Was |

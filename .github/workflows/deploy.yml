@@ -1,0 +1,91 @@
+name: Deploy zu SiteGround
+
+# Läuft auf einem GitHub-Runner – der hat Netzzugang zu SiteGround.
+# Ausgelöst per Push auf den Branch oder von Hand über "Run workflow".
+on:
+  push:
+    branches: [claude/lead-management-crm-5kniyn, main]
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: 'Schema und Demo-Daten einspielen (nur beim ersten Mal)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-siteground
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP-Syntax aller Dateien prüfen
+        run: |
+          set -e
+          find app bin db public_html -name '*.php' -print0 \
+            | xargs -0 -n1 php -l > /dev/null
+          echo "Syntax in Ordnung."
+
+      - name: SSH einrichten
+        env:
+          KEY: ${{ secrets.SG_SSH_KEY }}
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${PORT:-18765}" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Dateien übertragen
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+        run: |
+          # --delete räumt Entferntes weg, aber niemals die Konfiguration
+          # und niemals hochgeladene Dateien, Sitzungen oder Protokolle.
+          rsync -az --delete \
+            -e "ssh -p ${PORT:-18765} -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes" \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude 'app/config.local.php' \
+            --exclude 'storage/uploads/***' \
+            --exclude 'storage/sessions/***' \
+            --exclude 'storage/logs/***' \
+            ./ "$USER@$HOST:$TARGET/"
+
+      - name: Verzeichnisse und Rechte sicherstellen
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+        run: |
+          ssh -p "${PORT:-18765}" -i ~/.ssh/id_ed25519 "$USER@$HOST" \
+            "mkdir -p '$TARGET'/storage/{uploads,logs,sessions} && chmod -R 775 '$TARGET'/storage"
+
+      - name: Schema und Demo-Daten einspielen
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.seed }}
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+        run: |
+          ssh -p "${PORT:-18765}" -i ~/.ssh/id_ed25519 "$USER@$HOST" \
+            "cd '$TARGET' && php db/seed.php"
+
+      - name: Selbsttest auf dem Server
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+        run: |
+          ssh -p "${PORT:-18765}" -i ~/.ssh/id_ed25519 "$USER@$HOST" \
+            "cd '$TARGET' && php bin/doctor.php"
