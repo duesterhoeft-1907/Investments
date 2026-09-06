@@ -124,6 +124,45 @@ tun ist. Mailversand einzeln testen:
 php bin/test-mail.php deine@adresse.de
 ```
 
+### Variante: Der Server holt sich den Stand selbst
+
+Oft der einfachere Weg — es braucht keinen SSH-Zugang von aussen und keine
+Secrets in GitHub, nur Netz vom Server zu GitHub.
+
+**Einmalig einrichten** (per SSH auf dem Server):
+
+```bash
+cd ~/www/deine-domain.de
+git clone -b claude/lead-management-crm-5kniyn \
+  https://github.com/duesterhoeft-1907/Investments.git .
+cp app/config.local.example.php app/config.local.php
+nano app/config.local.php          # Datenbank und base_url eintragen
+php db/seed.php                    # Schema und Demo-Daten
+php bin/doctor.php                 # Selbsttest
+```
+
+Bei einem **privaten** Repository statt HTTPS über SSH klonen und vorher einen
+Deploy-Key hinterlegen: auf dem Server `ssh-keygen -t ed25519` ausführen und
+den Inhalt von `~/.ssh/id_ed25519.pub` in GitHub unter
+Settings → Deploy keys eintragen (Schreibrechte sind nicht nötig).
+
+**Jede weitere Aktualisierung** ist dann ein Befehl:
+
+```bash
+cd ~/www/deine-domain.de && bin/pull-deploy.sh
+```
+
+Das Skript spult nur vor (`--ff-only`), setzt die Rechte und lässt den
+Selbsttest laufen. `app/config.local.php` und der Inhalt von `storage/` stehen
+in `.gitignore` und werden nie angefasst.
+
+Wer das automatisch mag, hängt es in den Cron (Site Tools → Devs → Cron Jobs),
+z. B. stündlich:
+
+```
+cd /home/customer/www/deine-domain.de && bin/pull-deploy.sh >/dev/null 2>&1
+```
+
 ### Automatisch deployen (empfohlen)
 
 Statt jedes Mal von Hand hochzuladen: `.github/workflows/deploy.yml` überträgt
