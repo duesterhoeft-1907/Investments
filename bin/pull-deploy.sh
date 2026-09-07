@@ -18,6 +18,32 @@ set -euo pipefail
 
 BRANCH="${DEPLOY_BRANCH:-claude/lead-management-crm-5kniyn}"
 QUIET=0
+
+# Der Cron startet mit einem viel kleineren Suchpfad als eine SSH-Sitzung.
+# Ohne das findet er weder php noch git – und der Lauf schlaegt jedes Mal
+# fehl, an einer Stelle, die von Hand aufgerufen tadellos funktioniert.
+PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+
+find_bin() {
+  # Erst der Suchpfad, dann die Orte, an denen SiteGround es ablegt.
+  command -v "$1" 2>/dev/null && return 0
+  for candidate in "${@:2}"; do
+    [ -x "$candidate" ] && { echo "$candidate"; return 0; }
+  done
+  return 1
+}
+
+PHP="${PHP_BIN:-$(find_bin php /usr/local/bin/php /usr/local/php82/bin/php-cli /usr/bin/php || true)}"
+GIT="${GIT_BIN:-$(find_bin git /usr/bin/git /usr/local/bin/git || true)}"
+
+if [ -z "$GIT" ]; then
+  echo "Fehler: git nicht gefunden. Pfad in GIT_BIN setzen." >&2
+  exit 1
+fi
+if [ -z "$PHP" ]; then
+  echo "Fehler: php nicht gefunden. Pfad in PHP_BIN setzen." >&2
+  exit 1
+fi
 [ "${1:-}" = "--quiet" ] && QUIET=1
 
 cd "$(dirname "$0")/.."
@@ -40,21 +66,21 @@ if [ ! -d .git ]; then
   exit 1
 fi
 
-BEFORE="$(git -C "$ROOT" rev-parse HEAD)"
-say "→ Aktueller Stand: $(git -C "$ROOT" rev-parse --short HEAD)"
+BEFORE="$("$GIT" -C "$ROOT" rev-parse HEAD)"
+say "→ Aktueller Stand: $("$GIT" -C "$ROOT" rev-parse --short HEAD)"
 
 say "→ Hole von GitHub ($BRANCH)"
-git -C "$ROOT" fetch --quiet origin "$BRANCH"
+"$GIT" -C "$ROOT" fetch --quiet origin "$BRANCH"
 
 # Nichts Neues? Dann ist im Cron auch nichts zu tun.
-if [ "$BEFORE" = "$(git -C "$ROOT" rev-parse "origin/$BRANCH")" ]; then
+if [ "$BEFORE" = "$("$GIT" -C "$ROOT" rev-parse "origin/$BRANCH")" ]; then
   say "→ Schon aktuell."
   [ "$QUIET" -eq 1 ] && exit 0
 fi
 
 # --ff-only: nur vorspulen, niemals lokale Aenderungen wegmergen.
 # Wurde auf dem Server etwas von Hand geaendert, bricht es hier bewusst ab.
-if ! run git -C "$ROOT" merge --ff-only "origin/$BRANCH"; then
+if ! run "$GIT" -C "$ROOT" merge --ff-only "origin/$BRANCH"; then
   echo
   echo "Abbruch: Auf dem Server liegen eigene Aenderungen, die nicht"
   echo "einfach vorgespult werden koennen. Erst pruefen:"
@@ -63,7 +89,7 @@ if ! run git -C "$ROOT" merge --ff-only "origin/$BRANCH"; then
   exit 1
 fi
 
-say "→ Neuer Stand: $(git -C "$ROOT" rev-parse --short HEAD)"
+say "→ Neuer Stand: $("$GIT" -C "$ROOT" rev-parse --short HEAD)"
 
 say "→ Verzeichnisse und Rechte"
 mkdir -p storage/uploads storage/logs storage/sessions
@@ -81,14 +107,14 @@ fi
 # legt ausschliesslich an, was noch gar nicht existiert.
 if [ -f app/config.local.php ]; then
   say "→ Datenbank nachziehen"
-  run php db/migrate.php
+  run "$PHP" db/migrate.php
 fi
 
 say "→ Selbsttest"
-run php bin/doctor.php
+run "$PHP" bin/doctor.php
 
 # Im Cron zaehlt nur, dass es geklappt hat – mit der Fassung, die man
 # spaeter im Postfach noch versteht.
 if [ "$QUIET" -eq 1 ]; then
-  echo "Ausgerollt: $(git -C "$ROOT" rev-parse --short HEAD) – $(git -C "$ROOT" log -1 --format=%s)"
+  echo "Ausgerollt: $("$GIT" -C "$ROOT" rev-parse --short HEAD) – $("$GIT" -C "$ROOT" log -1 --format=%s)"
 fi
