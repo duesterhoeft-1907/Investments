@@ -226,6 +226,206 @@ final class AdminController
         Http::json(['staff' => self::one($userId)]);
     }
 
+    // ── Zuordnung Mitarbeiter ↔ Fachgruppe (n:n) ───────────────────────
+
+    /**
+     * Ein Mitarbeiter kann in mehreren Gruppen sein – Zuordnen heisst
+     * hinzufuegen, nicht verschieben. Wer aus einer Gruppe heraus soll,
+     * wird ausdruecklich entfernt.
+     */
+    public static function addMember(string $teamId, string $userId): void
+    {
+        Auth::requireRole('admin', 'manager');
+        [$team, $user] = self::pair($teamId, $userId);
+
+        Db::run(
+            "INSERT IGNORE INTO team_members (team_id, user_id, team_role) VALUES (:t, :u, 'member')",
+            ['t' => $team, 'u' => $user]
+        );
+        Events::toCompany('directory:changed', ['teamId' => $team]);
+        Http::json(['ok' => true]);
+    }
+
+    public static function removeMember(string $teamId, string $userId): void
+    {
+        Auth::requireRole('admin', 'manager');
+        [$team, $user] = self::pair($teamId, $userId);
+
+        // Die letzte Person aus einer Gruppe zu nehmen hiesse, Anfragen ins
+        // Leere zu routen – die Gruppe haette niemanden mehr zu alarmieren.
+        $remaining = (int) Db::value(
+            'SELECT COUNT(*) FROM team_members tm JOIN users u ON u.id = tm.user_id
+              WHERE tm.team_id = :t AND u.is_active = 1 AND tm.user_id <> :u',
+            ['t' => $team, 'u' => $user]
+        );
+        if ($remaining === 0) {
+            Http::error('Das ist die letzte Person in dieser Fachgruppe. Erst jemanden zuordnen.', 422);
+        }
+
+        Db::run('DELETE FROM team_members WHERE team_id = :t AND user_id = :u', ['t' => $team, 'u' => $user]);
+        Events::toCompany('directory:changed', ['teamId' => $team]);
+        Http::json(['ok' => true]);
+    }
+
+    /** @return array{0:int,1:int} */
+    private static function pair(string $teamId, string $userId): array
+    {
+        $team = (int) $teamId;
+        $user = (int) $userId;
+
+        if (Db::value('SELECT 1 FROM teams WHERE id = :id', ['id' => $team]) === null) {
+            Http::error('Fachgruppe nicht gefunden.', 404);
+        }
+        if (Db::value('SELECT 1 FROM users WHERE id = :id', ['id' => $user]) === null) {
+            Http::error('Konto nicht gefunden.', 404);
+        }
+        return [$team, $user];
+    }
+
+    // ── Fachgebiete ────────────────────────────────────────────────────
+
+    public static function createAssetClass(): void
+    {
+        Auth::requireRole('admin', 'manager');
+        $body = Http::body();
+
+        $name = trim((string) ($body['name'] ?? ''));
+        if ($name === '') {
+            Http::error('Bitte einen Namen angeben.', 422);
+        }
+
+        $slug = self::slug($body['slug'] ?? $name);
+        if ($slug === '') {
+            Http::error('Aus dem Namen liess sich kein Kürzel bilden. Bitte eines angeben.', 422);
+        }
+        if (Db::value('SELECT 1 FROM asset_classes WHERE slug = :s', ['s' => $slug]) !== null) {
+            Http::error('Dieses Kürzel ist schon vergeben.', 409);
+        }
+
+        $teamId = ($body['teamId'] ?? null) === null || $body['teamId'] === '' ? null : (int) $body['teamId'];
+        if ($teamId !== null && Db::value('SELECT 1 FROM teams WHERE id = :id', ['id' => $teamId]) === null) {
+            Http::error('Fachgruppe nicht gefunden.', 404);
+        }
+
+        $next = (int) Db::value('SELECT COALESCE(MAX(sort_order), 0) + 10 FROM asset_classes');
+
+        $id = Db::insert(
+            'INSERT INTO asset_classes (slug, name, tagline, description, icon, team_id, sort_order, is_active)
+             VALUES (:slug, :name, :tagline, :description, :icon, :team, :sort, 1)',
+            [
+                'slug'        => $slug,
+                'name'        => mb_substr($name, 0, 120),
+                'tagline'     => mb_substr(trim((string) ($body['tagline'] ?? '')), 0, 190),
+                'description' => mb_substr(trim((string) ($body['description'] ?? '')), 0, 500),
+                'icon'        => mb_substr(trim((string) ($body['icon'] ?? 'coins')), 0, 40),
+                'team'        => $teamId,
+                'sort'        => $next,
+            ]
+        );
+
+        Events::toCompany('directory:changed', ['assetClassId' => $id]);
+        Http::json(['assetClass' => self::assetClass($id)], 201);
+    }
+
+    public static function updateAssetClass(string $id): void
+    {
+        Auth::requireRole('admin', 'manager');
+        $assetId = (int) $id;
+
+        if (Db::value('SELECT 1 FROM asset_classes WHERE id = :id', ['id' => $assetId]) === null) {
+            Http::error('Fachgebiet nicht gefunden.', 404);
+        }
+
+        $body   = Http::body();
+        $sets   = [];
+        $params = ['id' => $assetId];
+
+        foreach (['name' => 120, 'tagline' => 190, 'description' => 500, 'icon' => 40] as $field => $limit) {
+            if (isset($body[$field])) {
+                $sets[] = "$field = :$field";
+                $params[$field] = mb_substr(trim((string) $body[$field]), 0, $limit);
+            }
+        }
+        if (array_key_exists('teamId', $body)) {
+            $teamId = $body['teamId'] === null || $body['teamId'] === '' ? null : (int) $body['teamId'];
+            if ($teamId !== null && Db::value('SELECT 1 FROM teams WHERE id = :id', ['id' => $teamId]) === null) {
+                Http::error('Fachgruppe nicht gefunden.', 404);
+            }
+            $sets[] = 'team_id = :team';
+            $params['team'] = $teamId;
+        }
+        if (isset($body['sortOrder'])) {
+            $sets[] = 'sort_order = :sort';
+            $params['sort'] = max(0, min(32000, (int) $body['sortOrder']));
+        }
+        if (isset($body['isActive'])) {
+            $sets[] = 'is_active = :active';
+            $params['active'] = $body['isActive'] ? 1 : 0;
+        }
+
+        if ($sets !== []) {
+            Db::run('UPDATE asset_classes SET ' . implode(', ', $sets) . ' WHERE id = :id', $params);
+        }
+
+        Events::toCompany('directory:changed', ['assetClassId' => $assetId]);
+        Http::json(['assetClass' => self::assetClass($assetId)]);
+    }
+
+    /**
+     * Fachgebiete werden nie geloescht, nur stillgelegt: an ihnen haengen
+     * Leads, und ein Verlauf mit leerer Stelle ist kein Verlauf mehr.
+     */
+    public static function retireAssetClass(string $id): void
+    {
+        Auth::requireRole('admin', 'manager');
+        $assetId = (int) $id;
+
+        if (Db::value('SELECT 1 FROM asset_classes WHERE id = :id', ['id' => $assetId]) === null) {
+            Http::error('Fachgebiet nicht gefunden.', 404);
+        }
+
+        $leads = (int) Db::value('SELECT COUNT(*) FROM leads WHERE asset_class_id = :id', ['id' => $assetId]);
+        Db::run('UPDATE asset_classes SET is_active = 0 WHERE id = :id', ['id' => $assetId]);
+
+        Events::toCompany('directory:changed', ['assetClassId' => $assetId]);
+        Http::json(['ok' => true, 'leads' => $leads]);
+    }
+
+    private static function assetClass(int $id): array
+    {
+        $row = Db::one(
+            'SELECT ac.*, t.name AS team_name, t.color AS team_color
+               FROM asset_classes ac LEFT JOIN teams t ON t.id = ac.team_id
+              WHERE ac.id = :id',
+            ['id' => $id]
+        );
+        if ($row === null) {
+            return [];
+        }
+        return [
+            'id'          => (int) $row['id'],
+            'slug'        => $row['slug'],
+            'name'        => $row['name'],
+            'tagline'     => $row['tagline'],
+            'description' => $row['description'],
+            'icon'        => $row['icon'],
+            'teamId'      => $row['team_id'] === null ? null : (int) $row['team_id'],
+            'teamName'    => $row['team_name'],
+            'teamColor'   => $row['team_color'],
+            'sortOrder'   => (int) $row['sort_order'],
+            'isActive'    => (bool) $row['is_active'],
+        ];
+    }
+
+    /** Aus dem Namen ein Kuerzel bilden, das in eine URL passt. */
+    private static function slug(mixed $value): string
+    {
+        $slug = mb_strtolower(trim((string) $value));
+        $slug = strtr($slug, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss']);
+        $slug = preg_replace('/[^a-z0-9]+/', '-', $slug) ?? '';
+        return mb_substr(trim($slug, '-'), 0, 60);
+    }
+
     // ── Hilfen ─────────────────────────────────────────────────────────
 
     private static function one(int $id): array

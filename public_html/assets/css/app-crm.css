@@ -442,3 +442,58 @@ table.data tbody tr:hover { background: rgba(255,255,255,0.04); }
   .staff-row { flex-wrap: wrap; }
   .staff-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* ───────────────────── Zuordnung per Ziehen ───────────────────── */
+
+.dnd-board {
+  display: grid; gap: 12px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  align-items: start;
+}
+.dnd-col {
+  border: 1px solid var(--hairline); border-radius: 14px;
+  background: rgba(11,15,20,0.4);
+  transition: border-color 0.15s, background 0.15s;
+}
+.dnd-col-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 14px; border-bottom: 1px solid var(--hairline);
+  font-size: 13px;
+}
+.dnd-col-head .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.dnd-col-body { padding: 10px; display: flex; flex-direction: column; gap: 6px; min-height: 92px; }
+
+/* Die Fläche, über der der Zeiger gerade steht */
+.dnd-col.drop-over { border-color: var(--gold-400); background: rgba(200,162,74,0.07); }
+.dnd-col.drop-over .dnd-empty { color: var(--gold-300); }
+
+.dnd-empty {
+  margin: auto; font-size: 11.5px; text-align: center;
+  border: 1px dashed rgba(255,255,255,0.1); border-radius: 10px;
+  padding: 12px 8px; width: 100%;
+}
+
+.dnd-card {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 9px; border-radius: 10px;
+  border: 1px solid var(--hairline); background: rgba(16,22,29,0.75);
+  cursor: grab; user-select: none;
+  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+}
+.dnd-card:hover { border-color: rgba(255,255,255,0.16); background: rgba(22,29,38,0.9); }
+.dnd-card:active { cursor: grabbing; }
+.dnd-card.is-away { opacity: 0.55; }
+.dnd-card.is-dragging { opacity: 0.3; }
+.dnd-stripe { width: 3px; height: 26px; border-radius: 999px; flex-shrink: 0; }
+
+/* Der Geist, der dem Finger folgt */
+.drag-ghost {
+  cursor: grabbing; opacity: 0.95;
+  border-color: var(--gold-400);
+  box-shadow: 0 18px 40px -10px rgba(0,0,0,0.7);
+  transform-origin: top left;
+}
+
+@media (max-width: 720px) {
+  .dnd-board { grid-template-columns: 1fr; }
+}

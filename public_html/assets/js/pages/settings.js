@@ -9,6 +9,7 @@ import { h, mount } from '../core/dom.js';
 import { icon } from '../core/icons.js';
 import { api } from '../core/api.js';
 import { avatar, empty, spinner, toast } from '../core/ui.js';
+import { dragSource, dropZone } from '../core/dnd.js';
 
 const DAYS = [
   ['mon', 'Montag'], ['tue', 'Dienstag'], ['wed', 'Mittwoch'], ['thu', 'Donnerstag'],
@@ -17,20 +18,32 @@ const DAYS = [
 
 const ROLE_LABEL = { admin: 'Verwaltung', manager: 'Leitung', agent: 'Beratung' };
 
+const TABS = [
+  ['hours', 'Ruhezeiten', 'clock'],
+  ['assign', 'Zuordnung', 'route'],
+  ['assets', 'Fachgebiete', 'grid'],
+  ['staff', 'Mitarbeiter', 'users'],
+];
+
 const ZONES = [
   'Europe/Berlin', 'Europe/Vienna', 'Europe/Zurich', 'Europe/London',
   'Europe/Madrid', 'Europe/Warsaw', 'UTC',
 ];
 
 export function render(view, { session }) {
-  const state = { hours: null, staff: [], teams: [], loading: true, tab: 'hours', busy: null };
+  const state = { hours: null, staff: [], teams: [], assets: [], loading: true, tab: 'hours', busy: null };
   const isAdmin = session.user.role === 'admin';
 
   const load = async () => {
-    const [hours, staff] = await Promise.all([api.get('/admin/hours'), api.get('/admin/staff')]);
+    const [hours, staff, assets] = await Promise.all([
+      api.get('/admin/hours'),
+      api.get('/admin/staff'),
+      api.get('/directory/asset-classes'),
+    ]);
     state.hours = hours.hours;
     state.staff = staff.staff;
     state.teams = staff.teams;
+    state.assets = assets.assetClasses;
     state.loading = false;
     paint();
   };
@@ -357,6 +370,187 @@ export function render(view, { session }) {
         : h('div.stack', { style: { gap: '2px', marginTop: '10px' } }, state.staff.map(staffRow)));
   }
 
+  // ── Zuordnung: Fachgebiete und Mitarbeiter auf die Gruppen ───────────
+
+  async function act(call, message) {
+    try {
+      await call();
+      await load();
+      if (message) toast(message);
+    } catch (error) { toast(error.message, 'error'); }
+  }
+
+  const assign   = (teamId, userId) => act(() => api.post(`/admin/teams/${teamId}/members/${userId}`), 'Zugeordnet.');
+  const unassign = (teamId, userId) => act(() => api.del(`/admin/teams/${teamId}/members/${userId}`), 'Aus der Gruppe genommen.');
+  const route    = (assetId, teamId) => act(() => api.patch(`/admin/asset-classes/${assetId}`, { teamId }), 'Routing angepasst.');
+
+  /** Eine Karte, die sich ziehen lässt. */
+  function card(inner, payload, extra = {}) {
+    const el = h('div.dnd-card' + (extra.className ?? ''), inner);
+    return dragSource(el, { payload });
+  }
+
+  function personCard(person, teamId = null) {
+    return card(
+      [
+        avatar(person.name, person.accent, 28),
+        h('div', { style: { minWidth: 0 } },
+          h('p.truncate', { style: { fontSize: '13px' } }, person.name),
+          h('p.truncate.faint', { style: { fontSize: '10.5px' } },
+            person.isAway ? 'abwesend' : (person.title || ROLE_LABEL[person.role]))),
+        teamId
+          ? h('button.icon-btn', {
+              style: { padding: '4px', marginLeft: 'auto' },
+              title: 'Aus dieser Gruppe nehmen',
+              onclick: () => unassign(teamId, person.id),
+            }, icon('x', 13))
+          : null,
+      ],
+      { kind: 'person', id: person.id, fromTeam: teamId },
+      { className: person.isAway ? '.is-away' : '' },
+    );
+  }
+
+  function assetCard(asset) {
+    return card(
+      [
+        h('span.dnd-stripe', { style: { background: asset.teamColor || 'rgba(255,255,255,0.15)' } }),
+        h('div', { style: { minWidth: 0 } },
+          h('p.truncate', { style: { fontSize: '13px' } }, asset.name),
+          h('p.truncate.faint', { style: { fontSize: '10.5px' } }, asset.tagline || '—')),
+      ],
+      { kind: 'asset', id: asset.id, fromTeam: asset.teamId },
+    );
+  }
+
+  /** Eine Spalte, auf der abgelegt werden darf. */
+  function column(title, subtitle, accent, children, drop) {
+    const el = h('div.dnd-col',
+      h('div.dnd-col-head',
+        accent ? h('span.dot', { style: { background: accent } }) : null,
+        h('div', h('strong', title), subtitle ? h('div.faint', { style: { fontSize: '11px' } }, subtitle) : null)),
+      h('div.dnd-col-body', children.length ? children : h('p.faint.dnd-empty', 'hierher ziehen')));
+    return drop ? dropZone(el, drop) : el;
+  }
+
+  function assignmentBoard() {
+    const active = state.staff.filter((p) => p.isActive);
+
+    return h('div.stack', { style: { gap: '22px' } },
+      // ── Fachgebiete → Gruppen (jedes Gebiet gehört zu genau einer) ──
+      h('div.glass.card-pad',
+        h('div.section-title',
+          h('span', 'Fachgebiete den Gruppen zuordnen'),
+          h('span.faint', { style: { fontSize: '12px' } }, 'ziehen — ein Gebiet gehört zu einer Gruppe')),
+        h('div.dnd-board',
+          column('Ohne Gruppe', 'landen beim Standard', null,
+            state.assets.filter((a) => a.isActive && !a.teamId).map(assetCard),
+            { accepts: (p) => p.kind === 'asset', onDrop: (p) => route(p.id, null) }),
+          state.teams.map((team) =>
+            column(team.name, null, team.color,
+              state.assets.filter((a) => a.isActive && a.teamId === team.id).map(assetCard),
+              { accepts: (p) => p.kind === 'asset' && p.fromTeam !== team.id, onDrop: (p) => route(p.id, team.id) })))),
+
+      // ── Mitarbeiter → Gruppen (n:n) ──
+      h('div.glass.card-pad',
+        h('div.section-title',
+          h('span', 'Mitarbeiter den Gruppen zuordnen'),
+          h('span.faint', { style: { fontSize: '12px' } }, 'ziehen — jemand darf in mehreren Gruppen sein')),
+        h('p.faint', { style: { fontSize: '12.5px', marginTop: '2px' } },
+          'Aus der linken Spalte in eine Gruppe ziehen fügt hinzu, es nimmt niemanden woanders weg. ',
+          'Zum Entfernen das × auf der Karte in der Gruppe.'),
+        h('div.dnd-board', { style: { marginTop: '14px' } },
+          column('Alle im Haus', active.length + ' aktiv', null,
+            active.map((p) => personCard(p)), null),
+          state.teams.map((team) => {
+            const members = active.filter((p) => p.teamIds.includes(team.id));
+            return column(team.name, members.length + (members.length === 1 ? ' Person' : ' Personen'), team.color,
+              members.map((p) => personCard(p, team.id)),
+              {
+                accepts: (p) => p.kind === 'person' && !members.some((m) => m.id === p.id),
+                onDrop: (p) => assign(team.id, p.id),
+              });
+          }))));
+  }
+
+  // ── Fachgebiete anlegen und pflegen ──────────────────────────────────
+
+  function assetDialog(asset = null) {
+    const box = dialog(asset ? asset.name + ' bearbeiten' : 'Fachgebiet anlegen',
+      h('div.stack', { style: { gap: '12px' } },
+        h('label.field', h('span', 'Name'),
+          h('input.input#a-name', { type: 'text', value: asset?.name ?? '', placeholder: 'Gold' })),
+        h('label.field', h('span', 'Kurzzeile im Wizard'),
+          h('input.input#a-tagline', { type: 'text', value: asset?.tagline ?? '', placeholder: 'Physisch, verwahrt oder besichert' })),
+        h('label.field', h('span', 'Beschreibung'),
+          h('textarea.input#a-desc', { rows: 3, placeholder: 'Erscheint im Wizard unter dem Namen.' }, asset?.description ?? '')),
+        h('label.field', h('span', 'Fachgruppe'),
+          h('select.input#a-team',
+            h('option', { value: '' }, 'ohne — landet beim Standard'),
+            state.teams.map((t) => h('option', { value: String(t.id), selected: asset?.teamId === t.id }, t.name)))),
+        h('button.btn.btn-primary.btn-block', {
+          onclick: async () => {
+            const value = (id) => box.querySelector('#' + id).value.trim();
+            const payload = {
+              name: value('a-name'), tagline: value('a-tagline'),
+              description: value('a-desc'), teamId: value('a-team') || null,
+            };
+            if (!payload.name) { toast('Bitte einen Namen angeben.'); return; }
+            try {
+              if (asset) await api.patch(`/admin/asset-classes/${asset.id}`, payload);
+              else await api.post('/admin/asset-classes', payload);
+              box.remove();
+              await load();
+              toast(asset ? 'Gespeichert.' : 'Fachgebiet angelegt.');
+            } catch (error) { toast(error.message, 'error'); }
+          },
+        }, icon('check', 14), asset ? 'Speichern' : 'Anlegen')));
+  }
+
+  async function retire(asset) {
+    try {
+      const result = await api.del(`/admin/asset-classes/${asset.id}`);
+      await load();
+      toast(result.leads > 0
+        ? `Stillgelegt. ${result.leads} bestehende Anfragen bleiben erhalten.`
+        : 'Stillgelegt.');
+    } catch (error) { toast(error.message, 'error'); }
+  }
+
+  function assetRow(asset) {
+    const team = state.teams.find((t) => t.id === asset.teamId);
+    return h('div.staff-row' + (asset.isActive ? '' : '.is-off'),
+      h('span.dnd-stripe', { style: { background: team?.color || 'rgba(255,255,255,0.15)', height: '32px' } }),
+      h('div', { style: { minWidth: 0, flex: '1' } },
+        h('div.row', { style: { gap: '8px', alignItems: 'baseline' } },
+          h('strong', asset.name),
+          !asset.isActive ? h('span.pill', 'stillgelegt') : null),
+        h('div.faint', { style: { fontSize: '12.5px' } }, asset.tagline || '—'),
+        h('div.faint', { style: { fontSize: '11.5px', marginTop: '4px' } },
+          team ? 'läuft in ' + team.name : 'ohne Gruppe — landet beim Standard')),
+      h('div.staff-actions',
+        h('button.btn.btn-ghost.btn-sm', { title: 'Bearbeiten', onclick: () => assetDialog(asset) }, icon('file', 13)),
+        asset.isActive
+          ? h('button.btn.btn-ghost.btn-sm', { title: 'Stilllegen', onclick: () => retire(asset) }, icon('lock', 13))
+          : h('button.btn.btn-ghost.btn-sm', {
+              title: 'Wieder aufnehmen',
+              onclick: () => act(() => api.patch(`/admin/asset-classes/${asset.id}`, { isActive: true }), 'Wieder aktiv.'),
+            }, icon('check', 13))));
+  }
+
+  function assetsCard() {
+    return h('div.glass.card-pad',
+      h('div.section-title',
+        h('span', 'Fachgebiete'),
+        h('button.btn.btn-ghost.btn-sm', { onclick: () => assetDialog() }, icon('plus', 13), 'neu')),
+      h('p.faint', { style: { fontSize: '12.5px', marginTop: '2px' } },
+        'Das ist die Auswahl im öffentlichen Wizard. Stillgelegte verschwinden dort, ',
+        'bestehende Anfragen behalten sie — sonst hätte der Verlauf eine leere Stelle.'),
+      state.assets.length === 0
+        ? empty('Noch keine Fachgebiete.', '')
+        : h('div.stack', { style: { gap: '2px', marginTop: '12px' } }, state.assets.map(assetRow)));
+  }
+
   // ── Gesamtbild ───────────────────────────────────────────────────────
 
   function paint() {
@@ -367,12 +561,13 @@ export function render(view, { session }) {
         h('h1', 'Verwaltung'),
         h('p', 'Ruhezeiten bestimmen, wann die Reaktionsuhr läuft. Darunter die Zugänge des Hauses.'))),
 
-      h('div.tab-row',
-        h('button.tab' + (state.tab === 'hours' ? '.on' : ''), { onclick: () => { state.tab = 'hours'; paint(); } },
-          icon('clock', 14), 'Ruhezeiten'),
-        h('button.tab' + (state.tab === 'staff' ? '.on' : ''), { onclick: () => { state.tab = 'staff'; paint(); } },
-          icon('users', 14), 'Mitarbeiter')),
+      h('div.tab-row', TABS.map(([key, label, ico]) =>
+        h('button.tab' + (state.tab === key ? '.on' : ''),
+          { onclick: () => { state.tab = key; paint(); } }, icon(ico, 14), label))),
 
-      state.tab === 'hours' ? hoursCard() : staffCard()));
+      state.tab === 'hours' ? hoursCard()
+        : state.tab === 'staff' ? staffCard()
+        : state.tab === 'assign' ? assignmentBoard()
+        : assetsCard()));
   }
 }

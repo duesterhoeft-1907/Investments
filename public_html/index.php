@@ -131,6 +131,13 @@ try {
     $router->patch('/api/admin/staff/{id}', [C\AdminController::class, 'updateStaff']);
     $router->patch('/api/staff/{id}/away', [C\AdminController::class, 'setAway']);
 
+    // Zuordnung Mitarbeiter ↔ Fachgruppe (n:n) und die Fachgebiete selbst
+    $router->post('/api/admin/teams/{teamId}/members/{userId}', [C\AdminController::class, 'addMember']);
+    $router->delete('/api/admin/teams/{teamId}/members/{userId}', [C\AdminController::class, 'removeMember']);
+    $router->post('/api/admin/asset-classes', [C\AdminController::class, 'createAssetClass']);
+    $router->patch('/api/admin/asset-classes/{id}', [C\AdminController::class, 'updateAssetClass']);
+    $router->delete('/api/admin/asset-classes/{id}', [C\AdminController::class, 'retireAssetClass']);
+
     // ── Kundenportal ──
     $router->get('/api/portal/preview/{token}', [C\PortalController::class, 'preview']);
     $router->post('/api/portal/login', [C\PortalController::class, 'login']);

@@ -290,8 +290,32 @@ Portal-Zugangsdaten.
   (Monatsenden werden korrekt gekappt).
 - **Team & Routing** – Fachgebiet-zu-Gruppe-Matrix und SLA pro Gruppe direkt
   editierbar, Präsenzanzeige, Direktnachricht per Klick.
-- **Verwaltung** – Ruhezeiten und Mitarbeiter. Sichtbar für Leitung und
-  Verwaltung; Rollen, Zugänge und Passwörter setzt allein die Verwaltung.
+- **Verwaltung** – vier Registerkarten: Ruhezeiten, Zuordnung, Fachgebiete,
+  Mitarbeiter. Sichtbar für Leitung und Verwaltung; Rollen, Zugänge und
+  Passwörter setzt allein die Verwaltung.
+
+#### Zuordnung per Ziehen
+Zwei Bretter. Oben die Fachgebiete auf die Gruppen – ein Gebiet gehört zu
+genau einer Gruppe, Ziehen verschiebt es. Unten die Mitarbeiter, und das ist
+eine n:n-Beziehung (`team_members`): jemand darf in mehreren Gruppen sein.
+Deshalb *fügt* Ziehen dort hinzu, statt zu verschieben – aus der Gruppe nimmt
+man jemanden über das × auf seiner Karte.
+
+Gezogen wird über Zeigereignisse, nicht über die HTML5-Schnittstelle: die gibt
+es auf Touchgeräten nicht, das Brett wäre am iPad tot. Maus, Stift und Finger
+laufen über denselben Code (`assets/js/core/dnd.js`), beides ist im Browser
+nachgemessen.
+
+Die letzte Person einer Gruppe lässt sich nicht herausnehmen – sonst liefen
+Anfragen dieser Gruppe ins Leere.
+
+#### Fachgebiete
+Anlegen, umbenennen, Kurzzeile und Beschreibung für den Wizard, Gruppe
+zuweisen. Das Kürzel entsteht aus dem Namen (Umlaute werden aufgelöst).
+
+Gelöscht wird nie, nur stillgelegt: an einem Fachgebiet hängen Leads, und ein
+Verlauf mit leerer Stelle ist kein Verlauf mehr. Stillgelegte verschwinden aus
+dem Wizard, bestehende Anfragen behalten sie.
 
 #### Ruhezeiten
 Die Reaktionsuhr läuft nur während der eingetragenen Geschäftszeiten. Ohne das
