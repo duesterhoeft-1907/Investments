@@ -264,6 +264,20 @@ und wird dort nicht gebraucht.
 
 ## Was drin ist
 
+### Startseite (öffentlich)
+`/` ist die Startseite mit den Inhalten des bisherigen Auftritts: Hero,
+*Das Problem – Enteignung & Nullzinsfalle*, der Weckruf, *Die Lösung* mit den
+drei Punkten des Erstgesprächs, dann der Weg in die Anfrage. Dazu
+`/impressum` mit den Pflichtangaben und dem Risikohinweis, der auch im Fuß
+jeder Seite steht – dort, wo die Renditeversprechen stehen, nicht zwei Klicks
+entfernt.
+
+Serverseitig gerendert, nicht per JavaScript aufgebaut: eine Startseite muss
+auch dann stehen, wenn ein Skript hakt, und Suchmaschinen lesen den Text so
+ohne Umweg. Das Skript blendet nur ein, was ins Bild scrollt (`zoom-in`,
+400 ms – die Bewegung der bisherigen Seite), und respektiert
+`prefers-reduced-motion`.
+
 ### Lead-Wizard (öffentlich)
 Fünf animierte Schritte, Auswahl per Karte mit sofortigem Weitersprung,
 schrittweise Validierung mit deutschen Fehlermeldungen, Honigtopf gegen Bots,

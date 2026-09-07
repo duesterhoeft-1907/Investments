@@ -26,15 +26,18 @@ $method = Http::method();
 
 if (!str_starts_with($path, '/api')) {
     $view = match (true) {
-        $path === '/' || $path === ''      => 'wizard',
-        str_starts_with($path, '/app')     => 'app',
-        str_starts_with($path, '/portal')  => 'portal',
-        default                            => null,
+        $path === '/' || $path === ''        => 'site',
+        $path === '/anfrage'                 => 'wizard',
+        $path === '/impressum'               => 'legal',
+        $path === '/datenschutz'             => 'legal',
+        str_starts_with($path, '/app')       => 'app',
+        str_starts_with($path, '/portal')    => 'portal',
+        default                              => null,
     };
 
     if ($view === null) {
         http_response_code(404);
-        $view = 'wizard';
+        $view = 'site';
     }
 
     Auth::startSession();

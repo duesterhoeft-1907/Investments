@@ -15,9 +15,11 @@ $version = '1.0.0';
 <meta name="color-scheme" content="dark light">
 <meta name="description" content="<?= htmlspecialchars($description ?? 'Anfrage stellen, Fachberatung erhalten – Investments in Edelmetalle, Sachwerte und Beteiligungen.', ENT_QUOTES) ?>">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?></title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<?php /* Die Schriften liegen unter assets/fonts/ und werden selbst
+         ausgeliefert – kein Aufruf zu Google, damit auch kein Abfluss der
+         Besucher-IP dorthin. Vorgeladen wird nur, was sofort sichtbar ist. */ ?>
+<link rel="preload" href="/assets/fonts/archivo-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-tight-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/assets/css/app.css?v=<?= $version ?>">
 <?php if (!empty($extraCss)): ?>

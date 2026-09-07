@@ -131,7 +131,7 @@ function renderLogin() {
             h('p.faint', { style: { marginTop: '8px', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase' } }, 'Lead & CRM Suite')),
           form,
           h('p', { style: { marginTop: '22px', textAlign: 'center', fontSize: '12px' } },
-            h('a.faint', { href: '/' }, '← Zur öffentlichen Anfrage-Strecke')),
+            h('a.faint', { href: '/' }, '← Zur öffentlichen Seite')),
         ),
       ),
     );
@@ -155,7 +155,7 @@ function headerBar() {
     h('a.crm-brand', { href: '/app', title: '21 Capital Invest' }, logo(30)),
     h('nav.crm-nav', NAV.filter(visibleTo(session.user)).map(navLink)),
     h('div.crm-actions',
-      h('a.icon-btn', { href: '/', target: '_blank', title: 'Öffentlichen Wizard ansehen' }, icon('external', 17)),
+      h('a.icon-btn', { href: '/', target: '_blank', title: 'Öffentliche Seite ansehen' }, icon('external', 17)),
       bellButton(),
       h('div.crm-user',
         avatar(session.user.name, session.user.accent, 30),

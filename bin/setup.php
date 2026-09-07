@@ -335,7 +335,8 @@ say(str_repeat('─', 58));
 if ($code === 0) {
     say("\033[32mFertig.\033[0m Erreichbar unter:");
     say();
-    say("  $baseUrl          – öffentlicher Lead-Wizard");
+    say("  $baseUrl              – öffentliche Startseite");
+    say("  $baseUrl/anfrage      – Anfrage-Strecke");
     say("  $baseUrl/app      – internes CRM");
     say("  $baseUrl/portal   – Kundenbereich");
     say();

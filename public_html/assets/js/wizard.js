@@ -166,7 +166,7 @@ function render() {
 function renderHead() {
   return h(
     'header.wizard-head',
-    h('a.wizard-brand', { href: '/', title: window.__COMPANY__?.name || '21 Capital Invest' }, logo(36)),
+    h('a.wizard-brand', { href: '/', title: 'Zurück zur Startseite' }, logo(36)),
     h('a.wizard-staff-link', { href: '/app' }, 'Mitarbeiter-Login'),
   );
 }

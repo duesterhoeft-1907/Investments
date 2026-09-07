@@ -1,0 +1,181 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Startseite – die öffentliche Strecke vor dem Wizard.
+
+   Farben, Schriften und Rundungen kommen aus app.css; hier steht nur, was
+   diese Seite eigenmächtig braucht. Die Einblendung folgt der bisherigen
+   Seite: zoom-in, 400 ms, ease.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.page-site { background: var(--ink-950); }
+
+.s-wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Kopfzeile ── */
+.s-top {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 14px 24px;
+  background: rgba(6, 19, 20, 0.82);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--hairline);
+}
+.s-logo img { height: 34px; width: auto; display: block; }
+.s-nav { display: flex; align-items: center; gap: 8px; }
+.s-nav > a:not(.s-btn) {
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 14px; color: var(--text-dim);
+  transition: color 0.15s, background 0.15s;
+}
+.s-nav > a:not(.s-btn):hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+/* ── Schaltflächen ── */
+.s-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 26px; border-radius: var(--radius-sm);
+  background: var(--accent-400); color: var(--ink-950);
+  font-size: 15px; font-weight: 600; white-space: nowrap;
+  transition: background 0.2s, transform 0.2s var(--ease);
+}
+.s-btn:hover { background: var(--accent-300); transform: translateY(-1px); }
+.s-btn-sm { padding: 9px 18px; font-size: 14px; }
+.s-btn-lg { padding: 16px 34px; font-size: 16px; }
+.s-btn-ghost {
+  background: transparent; color: var(--accent-300);
+  border: 1px solid rgba(33, 180, 166, 0.45);
+}
+.s-btn-ghost:hover { background: rgba(33, 180, 166, 0.1); color: var(--accent-200); }
+
+/* ── Hero ── */
+.s-hero { position: relative; overflow: hidden; padding: 96px 0 88px; text-align: center; }
+.s-hero-glow {
+  position: absolute; left: 50%; top: -220px; transform: translateX(-50%);
+  width: 900px; height: 620px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(33,180,166,0.22), transparent 70%);
+  filter: blur(20px);
+}
+.s-hero .s-wrap { position: relative; }
+.s-kicker {
+  display: inline-block; margin: 0 0 22px;
+  padding: 7px 16px; border-radius: 999px;
+  border: 1px solid rgba(33, 180, 166, 0.35); background: rgba(33, 180, 166, 0.09);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent-300);
+}
+.s-hero h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(38px, 6vw, 60px); line-height: 1.14; letter-spacing: -0.02em;
+}
+.s-accent { color: var(--accent-400); }
+.s-lead {
+  max-width: 640px; margin: 22px auto 0;
+  font-size: 18px; line-height: 1.65; color: var(--text-dim);
+}
+.s-cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 34px; }
+.s-promise { margin-top: 22px; font-size: 13px; color: var(--text-faint); }
+
+/* ── Abschnitte ── */
+.s-section { padding: 84px 0; border-top: 1px solid var(--hairline); }
+.s-split { display: grid; gap: 44px; grid-template-columns: 1fr 1fr; align-items: center; }
+.s-eyebrow {
+  margin: 0 0 10px; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-400);
+}
+.s-section h2, .s-band h2, .s-final h2 {
+  margin: 0; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(28px, 3.6vw, 40px); line-height: 1.25; letter-spacing: -0.015em;
+}
+.s-claim { margin: 18px 0 0; font-size: 19px; font-weight: 500; line-height: 1.5; color: var(--text); }
+.s-section p { color: var(--text-dim); line-height: 1.7; }
+.s-list { margin: 20px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.s-list li {
+  position: relative; padding-left: 26px;
+  color: var(--text-dim); line-height: 1.65;
+}
+.s-list li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent-400);
+}
+.s-result {
+  margin-top: 24px; padding: 16px 18px; border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-400); background: rgba(33, 180, 166, 0.07);
+}
+.s-result strong { color: var(--text); }
+.s-figure img {
+  width: 100%; height: auto; display: block;
+  border-radius: var(--radius); border: 1px solid var(--hairline);
+}
+
+/* ── Weckruf ── */
+.s-band {
+  padding: 74px 0; text-align: center;
+  background: linear-gradient(180deg, var(--ink-850), var(--ink-900));
+  border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+}
+.s-band p { max-width: 720px; margin: 20px auto 30px; font-size: 17px; line-height: 1.7; color: var(--text-dim); }
+
+/* ── Lösung ── */
+.s-head { max-width: 760px; }
+.s-lead-2 { margin-top: 16px; font-size: 16px; line-height: 1.7; }
+.s-sub { margin: 40px 0 20px; font-size: 15px; color: var(--text); }
+.s-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.s-card {
+  padding: 26px 22px; border-radius: var(--radius);
+  border: 1px solid var(--hairline); background: rgba(17, 26, 40, 0.55);
+  transition: border-color 0.2s, transform 0.2s var(--ease);
+}
+.s-card:hover { border-color: rgba(33, 180, 166, 0.4); transform: translateY(-3px); }
+.s-num {
+  display: block; margin-bottom: 14px;
+  font-family: var(--font-display); font-size: 26px; font-weight: 600;
+  color: var(--accent-400);
+}
+.s-card p { margin: 0; color: var(--text-dim); line-height: 1.65; font-size: 15px; }
+
+/* ── Abschluss ── */
+.s-final { padding: 88px 0; text-align: center; border-top: 1px solid var(--hairline); }
+.s-final p { max-width: 620px; margin: 18px auto 30px; color: var(--text-dim); line-height: 1.7; }
+.s-fineprint { margin-top: 26px !important; font-size: 12.5px; color: var(--text-faint); }
+
+/* ── Fuß ── */
+.s-foot { padding: 46px 0 34px; border-top: 1px solid var(--hairline); background: var(--ink-900); }
+.s-foot-top {
+  display: flex; flex-wrap: wrap; gap: 20px;
+  align-items: center; justify-content: space-between;
+  padding-bottom: 24px; border-bottom: 1px solid var(--hairline);
+}
+.s-foot-top img { height: 30px; width: auto; }
+.s-foot-nav { display: flex; flex-wrap: wrap; gap: 18px; }
+.s-foot-nav a { font-size: 13.5px; color: var(--text-dim); transition: color 0.15s; }
+.s-foot-nav a:hover { color: var(--accent-300); }
+.s-risk { margin: 22px 0 0; font-size: 11.5px; line-height: 1.7; color: var(--text-faint); }
+.s-copy { margin: 18px 0 0; font-size: 12px; color: var(--text-faint); }
+
+/* ── Impressum ── */
+.s-legal { padding: 64px 0 80px; }
+.s-legal h1 { font-family: var(--font-display); font-size: 38px; font-weight: 600; margin: 0 0 32px; }
+.s-legal-grid { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.s-legal-grid h2, .s-legal-h {
+  font-family: var(--font-display); font-size: 15px; font-weight: 600;
+  letter-spacing: 0.04em; color: var(--accent-300); margin: 0 0 8px;
+}
+.s-legal-h { margin-top: 44px; font-size: 22px; }
+.s-legal p { color: var(--text-dim); line-height: 1.75; margin: 0 0 12px; }
+
+/* ── Einblenden beim Scrollen ──
+   Dieselbe Bewegung wie bisher (AOS zoom-in, 400 ms, ease). Wer
+   Bewegung abbestellt hat, bekommt den Inhalt sofort und ohne. */
+.reveal { opacity: 0; transform: scale(0.96); transition: opacity 400ms ease, transform 400ms ease; }
+.reveal.is-in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .s-btn:hover, .s-card:hover { transform: none; }
+}
+
+@media (max-width: 860px) {
+  .s-split { grid-template-columns: 1fr; }
+  .s-figure { order: -1; }
+  .s-hero { padding: 66px 0 60px; }
+  .s-section, .s-final { padding: 60px 0; }
+  .s-nav > a:not(.s-btn) { display: none; }
+}
