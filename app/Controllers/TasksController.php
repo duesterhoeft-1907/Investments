@@ -267,7 +267,7 @@ final class TasksController
             'assignee'        => ($t['assigned_to'] ?? null) === null ? null : [
                 'id'     => (int) $t['assigned_to'],
                 'name'   => $t['assignee_name'] ?? '',
-                'accent' => $t['assignee_accent'] ?? '#C8A24A',
+                'accent' => $t['assignee_accent'] ?? '#21b4a6',
             ],
             'leadName'        => $t['lead_name'] ?? null,
             'createdAt'       => Leads::iso($t['created_at']),

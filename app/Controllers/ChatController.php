@@ -253,7 +253,7 @@ final class ChatController
             'author'    => ($m['user_id'] ?? null) === null ? null : [
                 'id'     => (int) $m['user_id'],
                 'name'   => $m['author_name'] ?? '',
-                'accent' => $m['author_accent'] ?? '#C8A24A',
+                'accent' => $m['author_accent'] ?? '#21b4a6',
                 'title'  => $m['author_title'] ?? '',
             ],
             'createdAt' => Leads::iso($m['created_at']),

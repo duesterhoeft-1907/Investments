@@ -404,6 +404,35 @@ Dateien: `app/Domain/Events.php` und `public_html/assets/js/core/pulse.js`.
 
 ### Gestaltung
 
+Farben, Schriften, Rundungen und Bewegung stammen aus dem Auftritt von
+21capitalinvest.com und stehen in einem `:root`-Block in
+`assets/css/app.css` – kein Bauteil fasst eine Rohfarbe an.
+
+| | |
+|---|---|
+| Akzent | `#21B4A6` · `#0FAF9F` · `#21DDD3` (Astra-Palette der Seite) |
+| Flächen | `#061314` · `#111A28` · `#1C2A3C` |
+| Text | `#EDF6F3` · `#E7EAF4` · `#D5DDEA` · `#B0BACC` |
+| Überschriften | Archivo 600 |
+| Fließtext | Inter Tight 400 |
+| Radius | 6px, Karten 10px |
+| Einblendung | `zoom-in`, 400 ms, `ease` (wie AOS auf der Seite) |
+
+Die Schriften liegen als `woff2` unter `assets/fonts/` und werden selbst
+ausgeliefert: keine fremde Domain im Ladepfad, und die Anwendung bleibt
+ohne Netz nach draußen vollständig. Die Dateien stammen unverändert aus der
+Auslieferung der Unternehmensseite. Inter Tight gibt es dort nur im
+regulären Schnitt – wir machen es genauso.
+
+Das Logo (`assets/brand/logo.png`) ist hell auf durchsichtigem Grund. Im
+dunklen Wizard und CRM steht es frei; im hellen Kundenbereich auf einer
+dunklen Auflage, damit dort dasselbe Zeichen erscheint statt eines
+Ersatz-Schriftzugs.
+
+Die Akzentfarben von Fachgruppen und Personen stehen als Daten in der
+Datenbank, nicht im CSS. `db/migrate.php` stellt sie in einer bestehenden
+Installation mit um – sonst bliebe die Umstellung halb sichtbar.
+
 Alle Markenfarben stehen im `:root`-Block am Anfang von
 `public_html/assets/css/app.css`. Kein Bauteil fasst eine Rohfarbe an – der
 Austausch ist eine Änderung an dieser einen Stelle.

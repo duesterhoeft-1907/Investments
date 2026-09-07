@@ -32,7 +32,7 @@ export function statusBadge(status, label) {
   return h('span.badge.badge-' + status, h('span.dot'), label);
 }
 
-export function avatar(name, accent = '#C8A24A', size = 36, online) {
+export function avatar(name, accent = '#21b4a6', size = 36, online) {
   const el = h(
     'span.avatar',
     {
@@ -65,7 +65,7 @@ export function empty(title, hint) {
   return h('div.empty', h('p.title', title), hint ? h('p.hint', hint) : null);
 }
 
-export function progress(value, tone = 'gold') {
+export function progress(value, tone = 'accent') {
   return h('div.progress.' + tone, h('i', { style: { width: Math.max(0, Math.min(100, value)) + '%' } }));
 }
 
@@ -129,7 +129,7 @@ export function toast(message, tone = 'ok') {
 }
 
 /** Kleines Balkendiagramm als reines SVG – keine Diagrammbibliothek nötig. */
-export function barChart(rows, { height = 200, color = 'var(--gold-500)' } = {}) {
+export function barChart(rows, { height = 200, color = 'var(--accent-500)' } = {}) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   const barHeight = 22;
   const gap = 8;
@@ -186,14 +186,14 @@ export function areaChart(points, { height = 220, width = 700 } = {}) {
       svg(
         'linearGradient',
         { id: 'areaFill', x1: '0', y1: '0', x2: '0', y2: '1' },
-        svg('stop', { offset: '0%', 'stop-color': '#C8A24A', 'stop-opacity': '0.42' }),
-        svg('stop', { offset: '100%', 'stop-color': '#C8A24A', 'stop-opacity': '0' }),
+        svg('stop', { offset: '0%', 'stop-color': '#21b4a6', 'stop-opacity': '0.42' }),
+        svg('stop', { offset: '100%', 'stop-color': '#21b4a6', 'stop-opacity': '0' }),
       ),
     ),
     gridLines,
     svg('path', { d: area, fill: 'url(#areaFill)' }),
-    svg('path', { d: line('value'), fill: 'none', stroke: '#C8A24A', 'stroke-width': '2' }),
-    points.some((p) => p.second) ? svg('path', { d: line('second'), fill: 'none', stroke: '#4ea87b', 'stroke-width': '2' }) : null,
+    svg('path', { d: line('value'), fill: 'none', stroke: '#21b4a6', 'stroke-width': '2' }),
+    points.some((p) => p.second) ? svg('path', { d: line('second'), fill: 'none', stroke: '#3fae86', 'stroke-width': '2' }) : null,
     points.map((p, i) =>
       i % Math.ceil(points.length / 6) === 0
         ? svg('text', { x: x(i), y: height - 6, 'text-anchor': 'middle', fill: 'rgba(232,237,243,0.3)', 'font-size': '10' }, p.label)
@@ -204,3 +204,22 @@ export function areaChart(points, { height = 220, width = 700 } = {}) {
 }
 
 export { icon };
+
+
+/**
+ * Das Wortbild der Marke.
+ *
+ * Die Datei stammt unverändert aus dem Auftritt des Unternehmens; sie ist
+ * hell auf durchsichtigem Grund und steht deshalb nur auf dunklen Flächen.
+ * `alt` bleibt leer, wo direkt daneben der Name im Text steht – sonst liest
+ * ein Screenreader ihn zweimal.
+ */
+export function logo(height = 30, { alt = '21 Capital Invest' } = {}) {
+  return h('img.brand-logo', {
+    src: '/assets/brand/logo.png',
+    alt,
+    width: String(Math.round(height * 3)),
+    height: String(height),
+    style: { height: height + 'px', width: 'auto', display: 'block' },
+  });
+}

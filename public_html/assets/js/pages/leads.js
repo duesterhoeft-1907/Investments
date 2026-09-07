@@ -8,7 +8,7 @@ import { avatar, empty, slaClock, spinner, statusBadge } from '../core/ui.js';
 
 const STAGES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'];
 const STAGE_LABEL = { new: 'Neu', contacted: 'Kontaktiert', qualified: 'Qualifiziert', proposal: 'Angebot', won: 'Gewonnen', lost: 'Verloren' };
-const STAGE_DOT = { new: 'var(--gold-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)', proposal: '#9db6ff', won: '#7fd3a6', lost: 'rgba(255,255,255,0.35)' };
+const STAGE_DOT = { new: 'var(--accent-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)', proposal: '#9db6ff', won: '#7fd3a6', lost: 'rgba(255,255,255,0.35)' };
 
 const SCOPES = [
   ['all', 'Alle'], ['mine', 'Meine'], ['my-teams', 'Meine Gruppen'],
@@ -75,7 +75,7 @@ export function render(view, { session }) {
         h('div',
           h('h1', 'Leads'),
           h('p', `${state.leads.length} Vorgänge`,
-            awaiting > 0 ? h('span', ' · ', h('span', { style: { color: 'var(--gold-300)' } }, `${awaiting} ohne Erstkontakt`)) : null)),
+            awaiting > 0 ? h('span', ' · ', h('span', { style: { color: 'var(--accent-300)' } }, `${awaiting} ohne Erstkontakt`)) : null)),
         h('div.row', { style: { gap: '8px', flexWrap: 'wrap' } }, searchBox(), viewToggle()),
       ),
       filterBar(),
@@ -178,7 +178,7 @@ export function render(view, { session }) {
         h('div.grow',
           h('p.name.truncate', lead.name),
           h('p.meta.truncate', (lead.assetClass ?? '') + (lead.company ? ' · ' + lead.company : ''))),
-        h('span.score', { title: `Score ${lead.score}/100`, style: { background: (lead.teamColor || '#C8A24A') + '1a', color: lead.teamColor || '#C8A24A' } }, String(lead.score))),
+        h('span.score', { title: `Score ${lead.score}/100`, style: { background: (lead.teamColor || '#21b4a6') + '1a', color: lead.teamColor || '#21b4a6' } }, String(lead.score))),
       h('p.volume', lead.volumeLabel || '–'),
       h('div.foot',
         lead.owner ? avatar(lead.owner.name, lead.owner.accent, 22) : h('span.faint', { style: { fontSize: '10px' } }, 'nicht zugewiesen'),

@@ -72,7 +72,7 @@ final class Mailer
 
     // ───────────────────────── Vorlagen ─────────────────────────
 
-    private const GOLD = '#C8A24A';
+    private const ACCENT = '#21b4a6';   // Leitton der Marke
     private const INK = '#0B0F14';
     private const PAPER = '#F6F3EC';
 
@@ -86,7 +86,7 @@ final class Mailer
         $company = self::esc((string) Config::get('company.name', ''));
         $phone = self::esc((string) Config::get('company.phone', ''));
         $email = self::esc((string) Config::get('company.email', ''));
-        $gold = self::GOLD;
+        $accent = self::ACCENT;
         $ink = self::INK;
         $paper = self::PAPER;
 
@@ -94,8 +94,8 @@ final class Mailer
         <!doctype html><html lang="de"><body style="margin:0;background:{$ink};padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:{$paper};border-radius:16px;overflow:hidden;">
-            <tr><td style="background:{$ink};padding:24px 32px;border-bottom:2px solid {$gold};">
-              <span style="color:{$gold};font-size:20px;letter-spacing:3px;font-weight:700;">{$company}</span>
+            <tr><td style="background:{$ink};padding:24px 32px;border-bottom:2px solid {$accent};">
+              <span style="color:{$accent};font-size:20px;letter-spacing:3px;font-weight:700;">{$company}</span>
             </td></tr>
             <tr><td style="padding:32px;color:#1a1a1a;font-size:15px;line-height:1.65;">
               <h1 style="margin:0 0 20px;font-size:22px;color:{$ink};">{$title}</h1>
@@ -111,9 +111,9 @@ final class Mailer
 
     private static function button(string $href, string $label): string
     {
-        $gold = self::GOLD;
+        $accent = self::ACCENT;
         $ink = self::INK;
-        return '<p style="margin:28px 0;"><a href="' . self::esc($href) . '" style="background:' . $gold
+        return '<p style="margin:28px 0;"><a href="' . self::esc($href) . '" style="background:' . $accent
             . ';color:' . $ink . ';text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:700;display:inline-block;">'
             . self::esc($label) . '</a></p>';
     }
@@ -142,7 +142,7 @@ final class Mailer
         }
 
         $note = $facts['message'] !== ''
-            ? '<p style="background:#fff;border-left:3px solid ' . self::GOLD . ';padding:12px 16px;margin:16px 0;"><em>'
+            ? '<p style="background:#fff;border-left:3px solid ' . self::ACCENT . ';padding:12px 16px;margin:16px 0;"><em>'
                 . self::esc((string) $facts['message']) . '</em></p>'
             : '';
 

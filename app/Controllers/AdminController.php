@@ -472,7 +472,7 @@ final class AdminController
     private static function accent(mixed $accent): string
     {
         $accent = (string) $accent;
-        return preg_match('/^#[0-9a-fA-F]{6}$/', $accent) === 1 ? $accent : '#C8A24A';
+        return preg_match('/^#[0-9a-fA-F]{6}$/', $accent) === 1 ? $accent : '#21b4a6';
     }
 
     /** Waere das der letzte aktive Zugang mit Verwaltungsrechten? */

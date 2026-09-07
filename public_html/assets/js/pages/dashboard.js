@@ -7,7 +7,7 @@ import { formatCompact, formatDate, formatRelative } from '../core/format.js';
 import { areaChart, avatar, barChart, empty, progress, slaClock, spinner, statusBadge } from '../core/ui.js';
 
 const STATUS_COLOR = {
-  new: 'var(--gold-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)',
+  new: 'var(--accent-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)',
   proposal: '#9db6ff', won: '#7fd3a6', lost: 'rgba(255,255,255,0.35)',
 };
 
@@ -49,7 +49,7 @@ export function render(view, { session, navigate }) {
           h('div',
             h('h1', `Guten Tag, ${session.user.name.split(' ')[0]}.`),
             h('p', t.awaiting > 0
-              ? h('span', h('strong', { style: { color: 'var(--gold-300)' } }, `${t.awaiting} Anfragen`), ' warten auf den Erstkontakt.')
+              ? h('span', h('strong', { style: { color: 'var(--accent-300)' } }, `${t.awaiting} Anfragen`), ' warten auf den Erstkontakt.')
               : 'Alle Anfragen sind kontaktiert. Sauber.'),
           ),
           h('div.row', { style: { gap: '4px', padding: '4px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.6)', borderRadius: '12px' } },
@@ -60,11 +60,11 @@ export function render(view, { session, navigate }) {
 
         h('div.metric-grid',
           metric('timer', 'Ø Reaktionszeit', t.avgResponseLabel ?? '–',
-            t.medianResponseLabel ? `Median ${t.medianResponseLabel}` : 'noch keine Messung', 'gold'),
+            t.medianResponseLabel ? `Median ${t.medianResponseLabel}` : 'noch keine Messung', 'accent'),
           metric('gauge', 'SLA-Quote', t.slaComplianceRate === null ? '–' : `${t.slaComplianceRate} %`,
             `${t.breached} Überschreitungen bei ${t.answered} Kontakten`,
             t.slaComplianceRate !== null && t.slaComplianceRate < 80 ? 'danger' : 'success', t.slaComplianceRate),
-          metric('wallet', 'Pipeline', formatCompact(t.pipelineValue), `${formatCompact(t.wonValue)} gewonnen`, 'gold'),
+          metric('wallet', 'Pipeline', formatCompact(t.pipelineValue), `${formatCompact(t.wonValue)} gewonnen`, 'accent'),
           metric('trending', 'Abschlussquote', `${t.conversionRate} %`, `${t.won} von ${t.leads} Anfragen`, 'success', t.conversionRate),
         ),
 
@@ -78,7 +78,7 @@ export function render(view, { session, navigate }) {
               second: p.won,
             }))),
             h('div.row', { style: { gap: '16px', marginTop: '10px', fontSize: '11px', color: 'var(--text-faint)' } },
-              legend('#C8A24A', 'Anfragen'), legend('#4ea87b', 'Gewonnen')),
+              legend('#21b4a6', 'Anfragen'), legend('#3fae86', 'Gewonnen')),
           ),
         ),
 
@@ -90,7 +90,7 @@ export function render(view, { session, navigate }) {
               h('div.section-title', h('h2', 'Nachfrage nach Fachgebiet')),
               stats.byAsset.filter((a) => a.leads > 0).length
                 ? barChart(stats.byAsset.filter((a) => a.leads > 0).map((a, i) => ({
-                    label: a.name, value: a.leads, color: ['#C8A24A', '#7FA8B8', '#A88BC4'][i % 3],
+                    label: a.name, value: a.leads, color: ['#21b4a6', '#7f9fb8', '#9b8bc4'][i % 3],
                   })), { height: 40 })
                 : empty('Noch keine Anfragen im Zeitraum.'),
             ),
@@ -116,7 +116,7 @@ export function render(view, { session, navigate }) {
           h('div.v', value),
           h('div.s.truncate', sub)),
         h('span.sym.' + tone, icon(name, 17))),
-      bar !== undefined && bar !== null ? h('div', { style: { marginTop: '14px' } }, progress(bar, tone === 'danger' ? 'danger' : tone === 'success' ? 'success' : 'gold')) : null,
+      bar !== undefined && bar !== null ? h('div', { style: { marginTop: '14px' } }, progress(bar, tone === 'danger' ? 'danger' : tone === 'success' ? 'success' : 'accent')) : null,
     );
   }
 
@@ -130,7 +130,7 @@ export function render(view, { session, navigate }) {
           ? empty('Nichts offen.', 'Jede eingegangene Anfrage wurde bereits kontaktiert.')
           : stats.urgent.map((lead) =>
               h('a.list-row', { href: `/app/leads/${lead.id}` },
-                h('span.accent', { style: { background: lead.teamColor || '#C8A24A' } }),
+                h('span.accent', { style: { background: lead.teamColor || '#21b4a6' } }),
                 h('div.grow',
                   h('p.truncate', { style: { fontSize: '14px', fontWeight: '500' } }, lead.name),
                   h('p.truncate.faint', { style: { fontSize: '12px' } }, `${lead.assetClass ?? ''} · ${lead.volumeLabel}`)),
@@ -150,9 +150,9 @@ export function render(view, { session, navigate }) {
           `${team.leads} Leads · `,
           h('span', { style: { color: ratio > 100 ? '#f0a5a2' : '#7fd3a6' } }, team.avgResponseLabel ?? 'keine Messung'),
           ` / Ziel ${team.slaMinutes} Min.`)),
-      progress(ratio, ratio > 100 ? 'danger' : ratio > 70 ? 'gold' : 'success'),
+      progress(ratio, ratio > 100 ? 'danger' : ratio > 70 ? 'accent' : 'success'),
       team.awaiting > 0
-        ? h('p.row', { style: { gap: '4px', marginTop: '4px', fontSize: '11px', color: 'rgba(224,194,116,0.8)' } }, icon('alert', 11), `${team.awaiting} offen`)
+        ? h('p.row', { style: { gap: '4px', marginTop: '4px', fontSize: '11px', color: 'rgba(33, 221, 211,0.8)' } }, icon('alert', 11), `${team.awaiting} offen`)
         : null,
     );
   }
@@ -167,12 +167,12 @@ export function render(view, { session, navigate }) {
         : h('ol.stack', { style: { gap: '10px', listStyle: 'none', padding: '0', margin: '0' } },
             stats.leaderboard.slice(0, 8).map((agent, i) =>
               h('li.row', { style: { gap: '12px' } },
-                h('span', { style: { width: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? 'var(--gold-300)' : 'rgba(255,255,255,0.25)' } }, String(i + 1)),
+                h('span', { style: { width: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? 'var(--accent-300)' : 'rgba(255,255,255,0.25)' } }, String(i + 1)),
                 avatar(agent.name, agent.accent, 30, stats.onlineUserIds.includes(agent.id)),
                 h('div.grow',
                   h('p.truncate', { style: { fontSize: '14px' } }, agent.name),
                   h('p.faint', { style: { fontSize: '11px' } }, `${agent.leads} Leads · ${agent.won} gewonnen`)),
-                h('span.mono', { style: { fontSize: '12px', color: agent.breached > 0 ? 'var(--gold-300)' : '#7fd3a6' } }, agent.avgResponseLabel ?? '–')))),
+                h('span.mono', { style: { fontSize: '12px', color: agent.breached > 0 ? 'var(--accent-300)' : '#7fd3a6' } }, agent.avgResponseLabel ?? '–')))),
     );
   }
 

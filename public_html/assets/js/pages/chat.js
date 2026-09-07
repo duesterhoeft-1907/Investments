@@ -128,7 +128,7 @@ export function render(view, { params, session, navigate }) {
       h('span.grow',
         h('span.name.truncate', { style: { display: 'block', color: on ? 'var(--text)' : 'var(--text-dim)' } }, channel.name),
         channel.lastBody ? h('span.last.truncate', { style: { display: 'block' } }, channel.lastBody) : null),
-      channel.unread > 0 ? h('span.count', { style: { background: 'var(--gold-500)', color: 'var(--ink-950)', borderRadius: '999px', padding: '0 6px', fontSize: '10px', fontWeight: '700' } }, String(channel.unread)) : null,
+      channel.unread > 0 ? h('span.count', { style: { background: 'var(--accent-500)', color: 'var(--ink-950)', borderRadius: '999px', padding: '0 6px', fontSize: '10px', fontWeight: '700' } }, String(channel.unread)) : null,
     );
   }
 
@@ -170,8 +170,8 @@ export function render(view, { params, session, navigate }) {
       return h('a.lead-alert-msg', { href: message.leadId ? `/app/leads/${message.leadId}` : '#' },
         icon('sparkles', 16, 'faint'),
         h('span.grow',
-          h('span', { style: { display: 'block', fontSize: '14px', color: 'var(--gold-100)' } }, message.body),
-          message.leadRef ? h('span.mono', { style: { display: 'block', fontSize: '10px', color: 'rgba(224,194,116,0.6)' } }, message.leadRef) : null),
+          h('span', { style: { display: 'block', fontSize: '14px', color: 'var(--accent-100)' } }, message.body),
+          message.leadRef ? h('span.mono', { style: { display: 'block', fontSize: '10px', color: 'rgba(33, 221, 211,0.6)' } }, message.leadRef) : null),
         h('span.faint', { style: { fontSize: '11px' } }, formatTime(message.createdAt)));
     }
 

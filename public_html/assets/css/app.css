@@ -1,57 +1,109 @@
 /* ═══════════════════════════════════════════════════════════════════════
    Capital Lead Suite – Gestaltung
 
-   MARKENFARBEN stehen ausschließlich im :root-Block. Sobald die finalen
-   Werte der Unternehmensseite vorliegen, ist der Austausch eine Änderung
-   an dieser einen Stelle – kein Bauteil fasst eine Rohfarbe an.
+   Die Farben, Schriften und Rundungen stammen aus dem Auftritt von
+   21capitalinvest.com und stehen ausschließlich in diesem :root-Block –
+   kein Bauteil fasst eine Rohfarbe an.
+
+   Übernommen aus der Astra-Palette der Unternehmensseite:
+     Akzent  #21B4A6 · #0FAF9F · #21DDD3
+     Flächen #061314 · #111A28 · #1C2A3C
+     Text    #EDF6F3 · #E7EAF4 · #D5DDEA · #B0BACC
+     Schrift Archivo (Überschriften, 600) · Inter Tight (Fließtext)
+     Radius  6px
 
    Kein Build-Schritt: reines CSS, das der Browser direkt lädt.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* Die Schriften der Unternehmensseite, selbst ausgeliefert: keine fremde
+   Domain im Ladepfad, und die Anwendung bleibt ohne Netz nach draußen
+   vollständig. Die Dateien stammen unverändert aus deren Auslieferung. */
+@font-face {
+  font-family: "Archivo";
+  src: url("../fonts/archivo-600-latin.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("../fonts/archivo-600-latin-ext.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("../fonts/archivo-400-latin.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212;
+}
+@font-face {
+  font-family: "Archivo";
+  src: url("../fonts/archivo-400-latin-ext.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* Inter Tight liefert die Seite nur im regulären Schnitt aus – wir machen
+   es genauso und überlassen Halbfettes dem Browser. */
+@font-face {
+  font-family: "Inter Tight";
+  src: url("../fonts/inter-tight-400-latin.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212;
+}
+@font-face {
+  font-family: "Inter Tight";
+  src: url("../fonts/inter-tight-400-latin-ext.woff2") format("woff2");
+  font-weight: 400 700; font-style: normal; font-display: swap;
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 :root {
-  /* Grundfläche: tiefes Obsidian mit warmem Unterton */
-  --ink-950: #06090d;
-  --ink-900: #0b0f14;
-  --ink-850: #10161d;
-  --ink-800: #151d26;
-  --ink-700: #1e2833;
-  --ink-600: #2b3743;
-  --ink-500: #3d4b59;
+  /* Grundflächen – die drei Dunkeltöne der Unternehmensseite, nach unten
+     und oben um je einen Schritt ergänzt, damit sich Karten voneinander
+     abheben können. */
+  --ink-950: #061314;   /* ast-global-color-7 */
+  --ink-900: #0a1620;
+  --ink-850: #111a28;   /* ast-global-color-5 */
+  --ink-800: #16212f;
+  --ink-700: #1c2a3c;   /* ast-global-color-4 */
+  --ink-600: #26374b;
+  --ink-500: #35485e;
 
-  /* Akzent: Feingold */
-  --gold-100: #f7edd3;
-  --gold-200: #eeda9f;
-  --gold-300: #e0c274;
-  --gold-400: #d3ac55;
-  --gold-500: #c8a24a;
-  --gold-600: #a8843a;
+  /* Akzent: das Türkis der Marke */
+  --accent-100: #d7f7f3;
+  --accent-200: #8fe8e0;
+  --accent-300: #21ddd3;   /* Hellton der Seite */
+  --accent-400: #21b4a6;   /* ast-global-color-0 – der Leitton */
+  --accent-500: #0faf9f;   /* ast-global-color-1 – Hover */
+  --accent-600: #0b8479;
 
-  /* Sekundärakzente der Fachgruppen */
-  --steel-400: #7fa8b8;
-  --orchid-400: #a88bc4;
+  /* Sekundärakzente der Fachgruppen – aus dem kühlen Umfeld abgeleitet */
+  --steel-400: #7f9fb8;
+  --orchid-400: #9b8bc4;
 
   /* Signalfarben */
-  --success: #4ea87b;
+  --success: #3fae86;
   --warning: #e0a33c;
   --danger: #d9534f;
 
-  /* Helle Fläche für das Kundenportal */
-  --paper-50: #faf8f4;
-  --paper-100: #f2ede3;
-  --paper-200: #e5dccb;
+  /* Helle Fläche für das Kundenportal – das Mint der Seite */
+  --paper-50: #f7fbfa;
+  --paper-100: #edf6f3;   /* ast-global-color-3 */
+  --paper-200: #d5ddea;
 
-  /* Text */
-  --text: #e8edf3;
-  --text-dim: rgba(232, 237, 243, 0.58);
-  --text-faint: rgba(232, 237, 243, 0.34);
-  --hairline: rgba(255, 255, 255, 0.08);
+  /* Text – die kühle Grauleiter der Seite */
+  --text: #edf6f3;
+  --text-dim: rgba(231, 234, 244, 0.62);
+  --text-faint: rgba(213, 221, 234, 0.38);
+  --hairline: rgba(255, 255, 255, 0.09);
 
-  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
 
-  --radius: 16px;
-  --radius-sm: 10px;
+  /* Die Seite rundet mit 6px – für Karten etwas großzügiger. */
+  --radius: 10px;
+  --radius-sm: 6px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: dark;
@@ -82,7 +134,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 input, textarea, select { font: inherit; }
 
-::selection { background: var(--gold-500); color: var(--ink-950); }
+::selection { background: var(--accent-500); color: var(--ink-950); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -94,7 +146,7 @@ input, textarea, select { font: inherit; }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--ink-500); background-clip: padding-box; }
 
-:focus-visible { outline: 2px solid var(--gold-400); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--accent-400); outline-offset: 2px; border-radius: 6px; }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -104,6 +156,10 @@ input, textarea, select { font: inherit; }
 /* ───────────────────────────── Bewegung ───────────────────────────── */
 
 @keyframes rise      { from { opacity: 0; transform: translate3d(0, 14px, 0); } to { opacity: 1; transform: none; } }
+/* Die Unternehmensseite blendet ihre Abschnitte mit zoom-in ein (AOS,
+   400ms, ease). Dieselbe Bewegung, damit der Übergang von dort hierher
+   nicht als Bruch auffällt. */
+@keyframes zoom-in   { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: none; } }
 @keyframes slide-in  { from { opacity: 0; transform: translate3d(38px, 0, 0); } to { opacity: 1; transform: none; } }
 @keyframes slide-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(-38px, 0, 0); } }
 @keyframes pop       { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: scale(1); } }
@@ -138,7 +194,7 @@ input, textarea, select { font: inherit; }
 }
 .aurora span:nth-child(1) {
   left: -10%; top: -20%; width: 55vw; height: 55vw;
-  background: radial-gradient(circle, rgba(200,162,74,0.16), transparent 68%);
+  background: radial-gradient(circle, rgba(33, 180, 166,0.16), transparent 68%);
 }
 .aurora span:nth-child(2) {
   right: -15%; top: 10%; width: 48vw; height: 48vw; animation-duration: 12s; animation-direction: reverse;
@@ -180,8 +236,10 @@ input, textarea, select { font: inherit; }
   z-index: 40;
 }
 
-.gold-text {
-  background: linear-gradient(101deg, var(--gold-200), var(--gold-500) 45%, var(--gold-300));
+.brand-logo { max-height: 100%; object-fit: contain; }
+
+.brand-text {
+  background: linear-gradient(101deg, var(--accent-200), var(--accent-500) 45%, var(--accent-300));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -204,14 +262,14 @@ input, textarea, select { font: inherit; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--gold-300), var(--gold-600));
+  background: linear-gradient(135deg, var(--accent-300), var(--accent-600));
   color: var(--ink-950); font-weight: 600;
-  box-shadow: 0 8px 28px -10px rgba(200, 162, 74, 0.75);
+  box-shadow: 0 8px 28px -10px rgba(33, 180, 166, 0.75);
 }
-.btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--gold-200), var(--gold-500)); }
+.btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-200), var(--accent-500)); }
 
-.btn-outline { border-color: rgba(200,162,74,0.45); color: var(--gold-200); background: transparent; }
-.btn-outline:hover:not(:disabled) { background: rgba(200,162,74,0.1); }
+.btn-outline { border-color: rgba(33, 180, 166,0.45); color: var(--accent-200); background: transparent; }
+.btn-outline:hover:not(:disabled) { background: rgba(33, 180, 166,0.1); }
 
 .btn-subtle { background: rgba(255,255,255,0.06); color: rgba(232,237,243,0.85); }
 .btn-subtle:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
@@ -236,7 +294,7 @@ input, textarea, select { font: inherit; }
   transition: border-color 0.15s, background 0.15s;
 }
 .input::placeholder { color: rgba(232,237,243,0.25); }
-.input:focus { outline: none; border-color: rgba(200,162,74,0.6); background: var(--ink-900); }
+.input:focus { outline: none; border-color: rgba(33, 180, 166,0.6); background: var(--ink-900); }
 textarea.input { resize: vertical; min-height: 80px; }
 select.input { cursor: pointer; }
 
@@ -247,7 +305,7 @@ select.input { cursor: pointer; }
   font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--text-dim);
 }
-.field .required { color: var(--gold-400); }
+.field .required { color: var(--accent-400); }
 .field .hint { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 10px; color: var(--text-faint); }
 .field .error { display: block; margin-top: 6px; font-size: 12px; color: #f0a5a2; }
 .input.invalid { border-color: rgba(217,83,79,0.6); }
@@ -259,7 +317,7 @@ select.input { cursor: pointer; }
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-.badge-new       { background: rgba(200,162,74,0.12); color: var(--gold-300); }
+.badge-new       { background: rgba(33, 180, 166,0.12); color: var(--accent-300); }
 .badge-contacted { background: rgba(127,168,184,0.12); color: var(--steel-400); }
 .badge-qualified { background: rgba(168,139,196,0.12); color: var(--orchid-400); }
 .badge-proposal  { background: rgba(120,160,255,0.12); color: #9db6ff; }
@@ -274,19 +332,19 @@ select.input { cursor: pointer; }
   position: absolute; right: -1px; bottom: -1px;
   border-radius: 50%; border: 2px solid var(--ink-900);
 }
-.avatar .presence.on { background: #4ea87b; }
+.avatar .presence.on { background: #3fae86; }
 .avatar .presence.off { background: rgba(255,255,255,0.25); }
 
 .spinner {
   display: inline-block; border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.15);
-  border-top-color: var(--gold-400);
+  border-top-color: var(--accent-400);
   animation: spin 0.7s linear infinite;
 }
 
 .progress { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
 .progress > i { display: block; height: 100%; border-radius: 999px; transition: width 0.7s var(--ease); }
-.progress.gold > i    { background: linear-gradient(90deg, var(--gold-400), var(--gold-600)); }
+.progress.accent > i    { background: linear-gradient(90deg, var(--accent-400), var(--accent-600)); }
 .progress.danger > i  { background: linear-gradient(90deg, #e8807c, var(--danger)); }
 .progress.success > i { background: linear-gradient(90deg, #7fd3a6, var(--success)); }
 
@@ -315,7 +373,7 @@ select.input { cursor: pointer; }
 .sla .dot { width: 6px; height: 6px; border-radius: 50%; }
 .sla.ok       { color: #7fd3a6; } .sla.ok .dot       { background: var(--success); }
 .sla.running  { color: var(--text-dim); } .sla.running .dot  { background: rgba(255,255,255,0.4); }
-.sla.urgent   { color: var(--gold-300); } .sla.urgent .dot   { background: var(--gold-400); }
+.sla.urgent   { color: var(--accent-300); } .sla.urgent .dot   { background: var(--accent-400); }
 .sla.overdue  { color: #f0a5a2; animation: blink 1.6s infinite; } .sla.overdue .dot { background: var(--danger); }
 .sla.lg { font-size: 30px; font-family: var(--font-display); font-weight: 600; }
 .sla.sm { font-size: 12px; }

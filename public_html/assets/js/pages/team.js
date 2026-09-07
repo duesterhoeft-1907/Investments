@@ -106,7 +106,7 @@ export function render(view, { session, navigate }) {
         h('div.row', { style: { gap: '16px', marginTop: '16px', fontSize: '12px', flexWrap: 'wrap' } },
           h('span.row.muted', { style: { gap: '6px' } }, icon('users', 13), String(team.members.length)),
           h('span.muted', `${team.leadCount} Leads`),
-          team.awaiting > 0 ? h('span', { style: { color: 'var(--gold-300)' } }, `${team.awaiting} offen`) : null,
+          team.awaiting > 0 ? h('span', { style: { color: 'var(--accent-300)' } }, `${team.awaiting} offen`) : null,
           h('span.row', { style: { marginLeft: 'auto', gap: '6px' } },
             icon('timer', 13, 'faint'),
             canEdit

@@ -68,6 +68,33 @@ $steps = [
             'CREATE INDEX idx_leads_sla_warn ON leads (sla_warn_at)',
         ],
     ],
+    [
+        'name'  => 'Farben auf das Erscheinungsbild der Marke umstellen',
+        // Die Akzentfarben stehen als Daten in der Datenbank, nicht im CSS:
+        // Gruppen und Personen tragen ihre eigene. Ohne diesen Schritt bliebe
+        // eine bestehende Installation golden, während alles ringsum türkis
+        // ist – die Umstellung wäre halb sichtbar und sähe nach Fehler aus.
+        'check' => static fn (): bool => (int) Db::value(
+            "SELECT (SELECT COUNT(*) FROM teams WHERE color IN ('#C8A24A','#E0B86A','#D8A657','#C99A3F','#7FA8B8','#6E97A8','#A88BC4','#9478B4'))
+                  + (SELECT COUNT(*) FROM users WHERE accent IN ('#C8A24A','#E0B86A','#D8A657','#C99A3F','#7FA8B8','#6E97A8','#A88BC4','#9478B4'))"
+        ) > 0,
+        'sql'   => [
+            "UPDATE teams SET color = CASE color
+                 WHEN '#C8A24A' THEN '#21B4A6' WHEN '#E0B86A' THEN '#21DDD3'
+                 WHEN '#D8A657' THEN '#0FAF9F' WHEN '#C99A3F' THEN '#0B8479'
+                 WHEN '#7FA8B8' THEN '#7F9FB8' WHEN '#6E97A8' THEN '#5F86A3'
+                 WHEN '#A88BC4' THEN '#9B8BC4' WHEN '#9478B4' THEN '#8271AF'
+                 ELSE color END",
+            "UPDATE users SET accent = CASE accent
+                 WHEN '#C8A24A' THEN '#21B4A6' WHEN '#E0B86A' THEN '#21DDD3'
+                 WHEN '#D8A657' THEN '#0FAF9F' WHEN '#C99A3F' THEN '#0B8479'
+                 WHEN '#7FA8B8' THEN '#7F9FB8' WHEN '#6E97A8' THEN '#5F86A3'
+                 WHEN '#A88BC4' THEN '#9B8BC4' WHEN '#9478B4' THEN '#8271AF'
+                 ELSE accent END",
+            "ALTER TABLE teams ALTER COLUMN color SET DEFAULT '#21B4A6'",
+            "ALTER TABLE users ALTER COLUMN accent SET DEFAULT '#21B4A6'",
+        ],
+    ],
 ];
 
 $done = 0;

@@ -9,7 +9,7 @@ import { api, ApiError, setCsrf } from './core/api.js';
 import { pulse } from './core/pulse.js';
 import { playAlert } from './core/sound.js';
 import { formatRelative } from './core/format.js';
-import { aurora, avatar, button, field, spinner, toast } from './core/ui.js';
+import { aurora, avatar, button, field, logo, spinner, toast } from './core/ui.js';
 
 export const session = {
   user: null,
@@ -106,7 +106,7 @@ function renderLogin() {
         },
       },
       h('div.row', { style: { gap: '12px' } },
-        h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,162,74,0.3)', background: 'rgba(200,162,74,0.1)', color: 'var(--gold-300)' } }, icon('lock', 19)),
+        h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(33, 180, 166,0.3)', background: 'rgba(33, 180, 166,0.1)', color: 'var(--accent-300)' } }, icon('lock', 19)),
         h('div', h('h1', { style: { fontSize: '18px', fontFamily: 'var(--font-display)' } }, 'Anmelden'),
           h('p.faint', { style: { fontSize: '12px' } }, 'Interner Zugang für Berater')),
       ),
@@ -127,8 +127,7 @@ function renderLogin() {
       h('div.row', { style: { minHeight: '100vh', justifyContent: 'center', padding: '20px' } },
         h('div', { style: { width: '100%', maxWidth: '420px' }, class: 'rise' },
           h('div', { style: { textAlign: 'center', marginBottom: '28px' } },
-            h('a.gold-text', { href: '/', style: { fontFamily: 'var(--font-display)', fontSize: '20px', fontWeight: '600', letterSpacing: '0.24em' } },
-              (window.__COMPANY__?.name || '21 Capital Invest').toUpperCase()),
+            h('a', { href: '/', style: { display: 'inline-block' } }, logo(38)),
             h('p.faint', { style: { marginTop: '8px', fontSize: '11px', letterSpacing: '0.16em', textTransform: 'uppercase' } }, 'Lead & CRM Suite')),
           form,
           h('p', { style: { marginTop: '22px', textAlign: 'center', fontSize: '12px' } },
@@ -153,7 +152,7 @@ function startShell() {
 function headerBar() {
   return h(
     'div.bar',
-    h('a.crm-brand.gold-text', { href: '/app' }, '21 CAPITAL'),
+    h('a.crm-brand', { href: '/app', title: '21 Capital Invest' }, logo(30)),
     h('nav.crm-nav', NAV.filter(visibleTo(session.user)).map(navLink)),
     h('div.crm-actions',
       h('a.icon-btn', { href: '/', target: '_blank', title: 'Öffentlichen Wizard ansehen' }, icon('external', 17)),
@@ -217,7 +216,7 @@ function toggleBell() {
   const panel = h('div.glass.bell-panel',
     h('div.head', h('h3', 'Benachrichtigungen'),
       session.unread > 0
-        ? h('button', { style: { background: 'none', border: 'none', fontSize: '12px', color: 'var(--gold-300)' },
+        ? h('button', { style: { background: 'none', border: 'none', fontSize: '12px', color: 'var(--accent-300)' },
             onclick: async () => { await api.post('/notifications/read-all').catch(() => {}); await refreshNotifications(); toggleBell(); toggleBell(); } },
             'Alle als gelesen')
         : null),

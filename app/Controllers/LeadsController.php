@@ -350,7 +350,7 @@ final class LeadsController
             'user'       => ($a['user_id'] ?? null) === null ? null : [
                 'id'     => (int) $a['user_id'],
                 'name'   => $a['user_name'] ?? '',
-                'accent' => $a['user_accent'] ?? '#C8A24A',
+                'accent' => $a['user_accent'] ?? '#21b4a6',
             ],
             'occurredAt' => Leads::iso($a['occurred_at']),
             'createdAt'  => Leads::iso($a['created_at']),

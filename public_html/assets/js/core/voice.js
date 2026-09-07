@@ -128,7 +128,7 @@ export function voiceRecorder(leadId, onUploaded) {
     if (state.mode === 'idle') {
       mount(wrap,
         h('button.row', { style: { gap: '12px', width: '100%', background: 'none', border: 'none', textAlign: 'left', padding: '0' }, onclick: start },
-          h('span', { style: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(200,162,74,0.3)', background: 'rgba(200,162,74,0.1)', color: 'var(--gold-300)' } }, icon('mic', 17)),
+          h('span', { style: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(33, 180, 166,0.3)', background: 'rgba(33, 180, 166,0.1)', color: 'var(--accent-300)' } }, icon('mic', 17)),
           h('span',
             h('span', { style: { display: 'block', fontSize: '14px', fontWeight: '500' } }, 'Sprachnotiz aufnehmen'),
             h('span.faint', { style: { display: 'block', fontSize: '12px' } }, 'Gesprächsnotiz diktieren statt tippen'))),

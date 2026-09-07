@@ -68,9 +68,9 @@ if ((int) Db::value('SELECT COUNT(*) FROM users') > 0) {
 // ─────────────────────────── Stammdaten ───────────────────────────
 
 $teams = [
-    ['edelmetalle', 'Edelmetalle', 'Gold, Silber, Platin und Palladium – physisch, verwahrt oder besichert.', '#C8A24A', 10],
-    ['sachwerte', 'Sachwerte & Immobilien', 'Immobilien, Diamanten, Sammler- und Kunstwerte.', '#7FA8B8', 20],
-    ['kapitalmarkt', 'Kapitalmarkt & Beteiligungen', 'Private Equity, Fonds, Anleihen und digitale Assets.', '#A88BC4', 15],
+    ['edelmetalle', 'Edelmetalle', 'Gold, Silber, Platin und Palladium – physisch, verwahrt oder besichert.', '#21B4A6', 10],
+    ['sachwerte', 'Sachwerte & Immobilien', 'Immobilien, Diamanten, Sammler- und Kunstwerte.', '#7F9FB8', 20],
+    ['kapitalmarkt', 'Kapitalmarkt & Beteiligungen', 'Private Equity, Fonds, Anleihen und digitale Assets.', '#9B8BC4', 15],
 ];
 
 $teamIds = [];
@@ -109,14 +109,14 @@ foreach ($assetClasses as $i => [$slug, $name, $team, $icon, $tagline, $descript
 }
 
 $users = [
-    ['admin@21capitalinvest.de', 'Marlene Voss', 'Geschäftsführung', 'admin', '+49 40 555 0100', '#C8A24A', ['edelmetalle', 'sachwerte', 'kapitalmarkt']],
-    ['leitung@21capitalinvest.de', 'Robert Kienzle', 'Vertriebsleitung', 'manager', '+49 40 555 0101', '#E0B86A', ['edelmetalle', 'sachwerte', 'kapitalmarkt']],
-    ['j.ahrens@21capitalinvest.de', 'Jonas Ahrens', 'Senior Berater Edelmetalle', 'agent', '+49 40 555 0110', '#D8A657', ['edelmetalle']],
-    ['s.baumann@21capitalinvest.de', 'Sina Baumann', 'Beraterin Edelmetalle', 'agent', '+49 40 555 0111', '#C99A3F', ['edelmetalle']],
-    ['p.hoffmann@21capitalinvest.de', 'Pit Hoffmann', 'Berater Sachwerte', 'agent', '+49 40 555 0120', '#7FA8B8', ['sachwerte']],
-    ['n.weber@21capitalinvest.de', 'Nadja Weber', 'Beraterin Immobilien', 'agent', '+49 40 555 0121', '#6E97A8', ['sachwerte']],
-    ['l.dorn@21capitalinvest.de', 'Lukas Dorn', 'Berater Kapitalmarkt', 'agent', '+49 40 555 0130', '#A88BC4', ['kapitalmarkt']],
-    ['e.faber@21capitalinvest.de', 'Elif Faber', 'Beraterin Beteiligungen', 'agent', '+49 40 555 0131', '#9478B4', ['kapitalmarkt']],
+    ['admin@21capitalinvest.de', 'Marlene Voss', 'Geschäftsführung', 'admin', '+49 40 555 0100', '#21B4A6', ['edelmetalle', 'sachwerte', 'kapitalmarkt']],
+    ['leitung@21capitalinvest.de', 'Robert Kienzle', 'Vertriebsleitung', 'manager', '+49 40 555 0101', '#21DDD3', ['edelmetalle', 'sachwerte', 'kapitalmarkt']],
+    ['j.ahrens@21capitalinvest.de', 'Jonas Ahrens', 'Senior Berater Edelmetalle', 'agent', '+49 40 555 0110', '#0FAF9F', ['edelmetalle']],
+    ['s.baumann@21capitalinvest.de', 'Sina Baumann', 'Beraterin Edelmetalle', 'agent', '+49 40 555 0111', '#0B8479', ['edelmetalle']],
+    ['p.hoffmann@21capitalinvest.de', 'Pit Hoffmann', 'Berater Sachwerte', 'agent', '+49 40 555 0120', '#7F9FB8', ['sachwerte']],
+    ['n.weber@21capitalinvest.de', 'Nadja Weber', 'Beraterin Immobilien', 'agent', '+49 40 555 0121', '#5F86A3', ['sachwerte']],
+    ['l.dorn@21capitalinvest.de', 'Lukas Dorn', 'Berater Kapitalmarkt', 'agent', '+49 40 555 0130', '#9B8BC4', ['kapitalmarkt']],
+    ['e.faber@21capitalinvest.de', 'Elif Faber', 'Beraterin Beteiligungen', 'agent', '+49 40 555 0131', '#8271AF', ['kapitalmarkt']],
 ];
 
 $hash = Auth::hash(DEMO_PASSWORD);

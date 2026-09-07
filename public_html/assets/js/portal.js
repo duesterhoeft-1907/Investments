@@ -7,7 +7,7 @@ import { h, mount, $ } from './core/dom.js';
 import { icon } from './core/icons.js';
 import { api, ApiError, setCsrf } from './core/api.js';
 import { formatCurrency, formatDate, formatDateTime, initials, renderMarkdown } from './core/format.js';
-import { spinner, toast } from './core/ui.js';
+import { logo, spinner, toast } from './core/ui.js';
 
 const root = $('#app');
 const token = (/^\/portal\/([a-f0-9]{8,})/.exec(location.pathname) || [])[1] || '';
@@ -40,13 +40,18 @@ function renderLogin(error = '') {
     mount(root, h('div.p-login',
       h('div.inner',
         h('div.brand',
-          h('p.name', company.toUpperCase()),
+          // Das Logo ist hell auf durchsichtigem Grund – auf der hellen
+          // Fläche des Kundenbereichs wäre es unsichtbar. Deshalb steht es
+          // hier auf einer dunklen Auflage, statt durch Text ersetzt zu
+          // werden: der Kunde soll dasselbe Zeichen sehen wie auf der
+          // Unternehmensseite.
+          h('span.brand-plate', logo(30)),
           h('p.sub', 'Persönlicher Kundenbereich')),
         state.preview
           ? h('div.greet',
               h('p', { style: { fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600' } }, `Willkommen, ${state.preview.firstName}.`),
               h('p', { style: { marginTop: '6px', fontSize: '14px', color: '#4a545f' } },
-                'Ihre Anfrage ', h('span', { style: { fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--gold-600)' } }, state.preview.ref),
+                'Ihre Anfrage ', h('span', { style: { fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--accent-600)' } }, state.preview.ref),
                 state.preview.assetClass ? ` zu ${state.preview.assetClass}` : '', ' wird bearbeitet',
                 state.preview.advisor ? ` von ${state.preview.advisor}` : '', '.'))
           : null,
@@ -69,7 +74,7 @@ function renderLogin(error = '') {
           },
         },
           h('div.row', { style: { gap: '12px' } },
-            h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(200,162,74,0.12)', color: 'var(--gold-600)' } }, icon('lock', 19)),
+            h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(33, 180, 166,0.12)', color: 'var(--accent-600)' } }, icon('lock', 19)),
             h('div',
               h('h1', { style: { fontFamily: 'var(--font-display)', fontSize: '16px' } }, 'Anmelden'),
               h('p', { style: { fontSize: '12px', color: '#6b7683' } }, 'Zugangsdaten aus Ihrer Bestätigungs-E-Mail'))),
@@ -95,7 +100,7 @@ function renderPortal() {
 
   mount(root,
     h('header.p-header', h('div.bar',
-      h('p.p-brand', (company?.name || '').toUpperCase()),
+      h('span.p-brand', h('span.brand-plate.is-small', logo(22))),
       h('button.p-logout', { onclick: async () => { await api.post('/portal/logout').catch(() => {}); location.reload(); } }, 'Abmelden'))),
     h('main.p-main',
       heroSection(lead),

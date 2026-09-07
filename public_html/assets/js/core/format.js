@@ -73,7 +73,7 @@ export function initials(name) {
 }
 
 export const ACTIVITY_META = {
-  lead_created:   { label: 'Anfrage',         color: 'var(--gold-300)' },
+  lead_created:   { label: 'Anfrage',         color: 'var(--accent-300)' },
   assignment:     { label: 'Zuweisung',       color: 'var(--steel-400)' },
   first_contact:  { label: 'Erstkontakt',     color: '#7fd3a6' },
   call:           { label: 'Anruf',           color: 'var(--steel-400)' },
@@ -81,10 +81,10 @@ export const ACTIVITY_META = {
   whatsapp:       { label: 'WhatsApp',        color: '#7fd3a6' },
   meeting:        { label: 'Termin',          color: '#9db6ff' },
   note:           { label: 'Notiz',           color: 'rgba(232,237,243,0.7)' },
-  voice_note:     { label: 'Sprachnotiz',     color: 'var(--gold-300)' },
+  voice_note:     { label: 'Sprachnotiz',     color: 'var(--accent-300)' },
   status_change:  { label: 'Status',          color: 'rgba(232,237,243,0.7)' },
   portal_login:   { label: 'Portal',          color: 'var(--steel-400)' },
-  client_message: { label: 'Kundennachricht', color: 'var(--gold-300)' },
+  client_message: { label: 'Kundennachricht', color: 'var(--accent-300)' },
   offer_sent:     { label: 'Angebot',         color: '#7fd3a6' },
   system:         { label: 'System',          color: 'rgba(232,237,243,0.5)' },
 };

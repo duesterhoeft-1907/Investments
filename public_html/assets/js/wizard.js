@@ -8,7 +8,7 @@
 import { h, mount, $ } from './core/dom.js';
 import { icon } from './core/icons.js';
 import { api, ApiError } from './core/api.js';
-import { aurora, button, field, spinner, toast } from './core/ui.js';
+import { aurora, button, field, logo, spinner, toast } from './core/ui.js';
 
 const STEPS = ['Fachgebiet', 'Volumen', 'Profil', 'Kontakt', 'Bestätigung'];
 
@@ -166,7 +166,7 @@ function render() {
 function renderHead() {
   return h(
     'header.wizard-head',
-    h('a.wizard-brand.gold-text', { href: '/' }, (window.__COMPANY__?.name || '21 Capital Invest').toUpperCase()),
+    h('a.wizard-brand', { href: '/', title: window.__COMPANY__?.name || '21 Capital Invest' }, logo(36)),
     h('a.wizard-staff-link', { href: '/app' }, 'Mitarbeiter-Login'),
   );
 }
@@ -176,7 +176,7 @@ function renderHero() {
   return h(
     'section.hero.rise',
     h('span.promise', icon('timer', 14), 'Rückmeldung ' + slaPromise()),
-    h('h1', 'Ihr Vermögen verdient', h('br'), h('span.gold-text', 'eine schnelle Antwort.')),
+    h('h1', 'Ihr Vermögen verdient', h('br'), h('span.brand-text', 'eine schnelle Antwort.')),
     h('p.lead', `Beantworten Sie vier kurze Fragen. Ihre Anfrage geht direkt an das zuständige Fachteam von ${company} – nicht in ein anonymes Postfach.`),
     h(
       'div.trust',
@@ -221,7 +221,7 @@ function stepAsset() {
     h(
       'div.asset-grid',
       state.config.assetClasses.map((asset, i) => {
-        const accent = asset.teamColor || '#C8A24A';
+        const accent = asset.teamColor || '#21b4a6';
         const selected = state.form.assetClassSlug === asset.slug;
         return h(
           'button.asset-card' + (selected ? '.selected' : ''),
@@ -413,7 +413,7 @@ function stepDone() {
     h('p.sub',
       r.team ? h('span', 'Das Team ', h('strong', r.team), ' wurde soeben benachrichtigt. ') : 'Unser Fachteam wurde soeben benachrichtigt. ',
       'Sie hören ',
-      h('strong', { style: { color: 'var(--gold-300)' } },
+      h('strong', { style: { color: 'var(--accent-300)' } },
         slaPromise({ open: r.open, nextOpening: r.nextOpening })),
       ' von uns.'),
     h('div.done-grid',
@@ -427,7 +427,7 @@ function stepDone() {
               h('a.row', { href: 'mailto:' + r.contact.email, style: { gap: '8px', color: 'var(--text-dim)' } }, icon('mail', 13), r.contact.email),
             ))
         : null,
-      h('div.glass.done-card', { style: { borderColor: 'rgba(200,162,74,0.25)' } },
+      h('div.glass.done-card', { style: { borderColor: 'rgba(33, 180, 166,0.25)' } },
         h('p.kicker', 'Ihr Kundenbereich'),
         h('p.faint', { style: { fontSize: '12px', lineHeight: '1.6', marginTop: '10px' } },
           'Dort sehen Sie den Stand Ihrer Anfrage, die nächsten Schritte und Ihr Angebot. Die Zugangsdaten stehen auch in Ihrer Bestätigungs-E-Mail.'),

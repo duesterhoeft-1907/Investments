@@ -44,7 +44,7 @@ export function render(view, { params, session, navigate }) {
 
     mount(view, h('div.stack', { style: { gap: '18px' } },
       h('a.row.faint', { href: '/app/leads', style: { gap: '6px', fontSize: '14px', width: 'fit-content' } }, icon('arrowLeft', 15), 'Alle Leads'),
-      h('div.glass', { style: { overflow: 'hidden', borderColor: awaiting ? 'rgba(200,162,74,0.35)' : undefined } },
+      h('div.glass', { style: { overflow: 'hidden', borderColor: awaiting ? 'rgba(33, 180, 166,0.35)' : undefined } },
         headBlock(lead, awaiting), stageBar(lead)),
       h('div.grid-3.rev',
         h('div.stack', { style: { gap: '18px' } }, tabsBar(), tabContent()),
@@ -259,7 +259,7 @@ export function render(view, { params, session, navigate }) {
           activity.durationS > 0 ? h('span.row.faint', { style: { gap: '4px', fontSize: '10px' } }, icon('timer', 11), formatDuration(activity.durationS)) : null,
           h('span.row', { style: { marginLeft: 'auto', gap: '10px' } },
             h('button', {
-              style: { background: 'none', border: 'none', padding: '0', color: activity.isPinned ? 'var(--gold-400)' : 'rgba(255,255,255,0.15)' },
+              style: { background: 'none', border: 'none', padding: '0', color: activity.isPinned ? 'var(--accent-400)' : 'rgba(255,255,255,0.15)' },
               'aria-label': 'Anheften',
               onclick: async () => { await api.patch(`/activities/${activity.id}/pin`).catch(() => {}); await load(); },
             }, icon('pin', 14)),
@@ -317,7 +317,7 @@ export function render(view, { params, session, navigate }) {
               await load();
             } catch (error) { toast(error.message, 'error'); draft.busy = false; drawDraft(); }
           } }, draft.busy ? spinner(14) : icon('sparkles', 14), draft.busy ? 'Wird erstellt …' : 'Entwurf erzeugen'),
-          draft.note ? h('span', { style: { fontSize: '12px', color: 'rgba(224,194,116,0.8)' } }, draft.note) : null),
+          draft.note ? h('span', { style: { fontSize: '12px', color: 'rgba(33, 221, 211,0.8)' } }, draft.note) : null),
       );
       mount(box, panel, ...(state.data.offers.length
         ? state.data.offers.map(offerCard)
@@ -426,7 +426,7 @@ export function render(view, { params, session, navigate }) {
             h('option', { value: '' }, 'mir zuweisen'),
             state.users.map((u) => h('option', { value: String(u.id) }, u.name))),
           h('label.row', { style: { gap: '8px', fontSize: '12px', color: 'var(--text-dim)', cursor: 'pointer' } },
-            h('input', { type: 'checkbox', onchange: (e) => { form.visibleToClient = e.target.checked; }, style: { accentColor: 'var(--gold-500)' } }),
+            h('input', { type: 'checkbox', onchange: (e) => { form.visibleToClient = e.target.checked; }, style: { accentColor: 'var(--accent-500)' } }),
             'Als „nächster Schritt" im Kundenportal anzeigen'),
           h('button.btn.btn-primary.btn-sm.btn-block', { onclick: async () => {
             if (form.title.trim().length < 2) return toast('Bitte einen Titel angeben.', 'error');
@@ -494,7 +494,7 @@ export function render(view, { params, session, navigate }) {
         h('p.muted', { style: { marginTop: '4px', fontSize: '14px' } }, lead.goal)) : null,
       lead.message ? h('div',
         h('p.faint', { style: { fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase' } }, 'Nachricht'),
-        h('p.muted', { style: { marginTop: '4px', paddingLeft: '12px', borderLeft: '2px solid rgba(200,162,74,0.4)', fontSize: '14px', lineHeight: '1.6', fontStyle: 'italic' } }, lead.message)) : null,
+        h('p.muted', { style: { marginTop: '4px', paddingLeft: '12px', borderLeft: '2px solid rgba(33, 180, 166,0.4)', fontSize: '14px', lineHeight: '1.6', fontStyle: 'italic' } }, lead.message)) : null,
     );
   }
 
