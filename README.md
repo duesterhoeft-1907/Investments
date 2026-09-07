@@ -75,25 +75,40 @@ Liegt am Ende alles **innerhalb** von `public_html/`, ist das auch in Ordnung �
 `app/`, `db/`, `bin/` und `storage/` bringen je eine `.htaccess` mit, die den
 Zugriff über den Browser sperrt. Sauberer ist die Trennung oben.
 
-### 3. Konfiguration eintragen
+### 3. Einrichten – ein Befehl
+
+```bash
+php bin/setup.php
+```
+
+Das Skript fragt der Reihe nach ab, was es braucht: Datenbank, `base_url`,
+optional SMTP (Site Tools → **E-Mail-Konten**) und die Firmendaten. Das
+Passwort wird verdeckt eingegeben. Bevor irgendetwas geschrieben wird, prüft
+es die PHP-Version, die Erweiterungen und die Datenbankverbindung – ein
+Tippfehler kostet also nur einen zweiten Anlauf, keine halbfertige
+Installation.
+
+Danach schreibt es `app/config.local.php` mit Rechten `600`, legt die
+Verzeichnisse unter `storage/` an, spielt Schema und Demo-Daten ein und lässt
+den Selbsttest laufen. Eine vorhandene Konfiguration wird nur nach Rückfrage
+überschrieben; die Datei steht in `.gitignore` und landet nie im Repository.
+
+<details>
+<summary>Lieber von Hand</summary>
 
 ```bash
 cp app/config.local.example.php app/config.local.php
-nano app/config.local.php
+nano app/config.local.php          # Datenbank, base_url, SMTP
+php db/seed.php                    # Schema und Demo-Daten
+php bin/doctor.php                 # Selbsttest
 ```
 
-Einzutragen sind Datenbank, `base_url` und – falls Mails rausgehen sollen –
-die SMTP-Daten eines Postfachs aus Site Tools → **E-Mail-Konten**.
-Die Datei steht in `.gitignore` und landet nie im Repository.
+</details>
 
-### 4. Schema und Demo-Daten einspielen
+### 4. Was der Seed anlegt
 
-```bash
-php db/seed.php
-```
-
-Legt Tabellen, drei Fachgruppen, acht Berater, neun Fachgebiete, die
-Chat-Kanäle und eine Woche Beispiel-Historie an.
+Tabellen, drei Fachgruppen, acht Berater, neun Fachgebiete, die Chat-Kanäle
+und eine Woche Beispiel-Historie.
 `php db/seed.php --reset` baut alles neu auf.
 
 **Vor dem Livegang:** Demo-Konten löschen oder die Passwörter ändern.
@@ -135,10 +150,7 @@ Secrets in GitHub, nur Netz vom Server zu GitHub.
 cd ~/www/deine-domain.de
 git clone -b claude/lead-management-crm-5kniyn \
   https://github.com/duesterhoeft-1907/Investments.git .
-cp app/config.local.example.php app/config.local.php
-nano app/config.local.php          # Datenbank und base_url eintragen
-php db/seed.php                    # Schema und Demo-Daten
-php bin/doctor.php                 # Selbsttest
+php bin/setup.php                  # fragt alles ab, prüft, spielt ein
 ```
 
 Bei einem **privaten** Repository statt HTTPS über SSH klonen und vorher einen
@@ -308,7 +320,7 @@ public_html/
 ├── .htaccess     Rewrite, Sicherheits-Header, Kompression
 └── assets/       CSS und ES-Module – genau das, was der Browser lädt
 db/               schema.sql und seed.php
-bin/              cron-sla.php, doctor.php, test-mail.php, dev-router.php
+bin/              setup.php, cron-sla.php, doctor.php, test-mail.php, dev-router.php
 storage/          Uploads, Sitzungen, Protokolle (nicht öffentlich)
 ```
 

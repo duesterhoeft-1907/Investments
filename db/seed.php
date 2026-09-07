@@ -24,10 +24,27 @@ if ($schema === false) {
     fwrite(STDERR, "schema.sql nicht lesbar.\n");
     exit(1);
 }
-foreach (array_filter(array_map('trim', explode(';', $schema))) as $statement) {
-    if ($statement !== '' && !str_starts_with($statement, '--')) {
-        Db::pdo()->exec($statement);
+// Kommentarzeilen zuerst entfernen: sonst beginnt die per Semikolon
+// getrennte Anweisung mit "--" und wuerde als reiner Kommentar verworfen –
+// die CREATE TABLE dahinter ginge lautlos verloren.
+$statements = [];
+$buffer = '';
+foreach (preg_split('/\R/', $schema) ?: [] as $line) {
+    $trimmed = trim($line);
+    if ($trimmed === '' || str_starts_with($trimmed, '--')) {
+        continue;
     }
+    $buffer .= $line . "\n";
+    if (str_ends_with($trimmed, ';')) {
+        $statements[] = trim($buffer);
+        $buffer = '';
+    }
+}
+if (trim($buffer) !== '') {
+    $statements[] = trim($buffer);
+}
+foreach ($statements as $statement) {
+    Db::pdo()->exec(rtrim($statement, "; \n\r\t"));
 }
 
 if ($reset) {
