@@ -175,5 +175,17 @@ try {
             'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 8),
         ], 500);
     }
+
+    // Eine fehlende Spalte heisst fast immer: der Code ist neuer als die
+    // Datenbank. "Interner Serverfehler" laesst denjenigen ratlos zurueck,
+    // der die Lösung mit einem Befehl in der Hand hat.
+    if ($e instanceof PDOException && str_contains($e->getMessage(), 'Unknown column')) {
+        Http::error(
+            'Die Datenbank ist noch nicht auf dem Stand der Anwendung. '
+            . 'Einmal auf dem Server ausführen: php db/migrate.php',
+            503,
+        );
+    }
+
     Http::error('Interner Serverfehler.', 500);
 }
