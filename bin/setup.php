@@ -14,6 +14,18 @@
  */
 declare(strict_types=1);
 
+// Ein interaktives Werkzeug darf nie stumm aussteigen: Meldungen gehoeren auf
+// den Schirm, nicht in ein Log, das man erst suchen muss. Manche Hoster
+// stellen die CLI auf display_errors=Off – deshalb hier ausdruecklich an.
+error_reporting(E_ALL);
+ini_set('display_errors', 'stderr');
+
+set_exception_handler(static function (Throwable $e): void {
+    fwrite(STDERR, PHP_EOL . "  \033[31m✗\033[0m Abbruch: " . $e->getMessage() . PHP_EOL);
+    fwrite(STDERR, '    ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL . PHP_EOL);
+    exit(1);
+});
+
 $root = dirname(__DIR__);
 
 function say(string $text = ''): void { echo $text . PHP_EOL; }
@@ -41,10 +53,16 @@ function ask(string $label, string $default = '', bool $required = true): string
 /** Verdeckte Eingabe – das Passwort erscheint nicht auf dem Bildschirm. */
 function askSecret(string $label): string
 {
+    $canHide = function_exists('shell_exec')
+        && !in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true);
+    if (!$canHide) {
+        warn('Die Eingabe bleibt auf diesem Server sichtbar.');
+    } else {
+        @shell_exec('stty -echo 2>/dev/null');
+    }
     echo '  ' . $label . ': ';
-    $hidden = @shell_exec('stty -echo 2>/dev/null');
     $value = trim((string) fgets(STDIN));
-    if ($hidden !== null) {
+    if ($canHide) {
         @shell_exec('stty echo 2>/dev/null');
     }
     echo PHP_EOL;
@@ -236,22 +254,55 @@ ok('Verzeichnisse unter storage/ angelegt');
 head('Datenbank füllen');
 
 /**
- * Ruft ein Skript auf und gibt zurück, ob es sauber durchgelaufen ist.
- * Wichtig: in der Produktivumgebung sind Fehlermeldungen abgeschaltet, ein
- * Absturz wäre sonst nur an der leeren Ausgabe zu erkennen.
+ * Ruft ein Skript auf und gibt zurueck, ob es sauber durchgelaufen ist –
+ * oder null, wenn der Hoster das Starten von Prozessen unterbindet.
+ *
+ * Shared Hosting sperrt passthru() und Verwandte gern per disable_functions.
+ * Das ergibt nur eine Warnung und NULL, keinen Abbruch: ohne diese Pruefung
+ * saehe es aus, als waere das Skript wortlos durchgelaufen.
  */
-$runScript = static function (string $script) use ($root): bool {
-    passthru(PHP_BINARY . ' ' . escapeshellarg($root . '/' . $script), $status);
+$runScript = static function (string $script) use ($root): ?bool {
+    $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/' . $script);
+    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+
+    $status = null;
+    foreach (['passthru', 'system'] as $runner) {
+        if (function_exists($runner) && !in_array($runner, $disabled, true)) {
+            $runner($command, $status);
+            break;
+        }
+    }
+    if ($status === null) {
+        return null;   // kein Weg, einen Unterprozess zu starten
+    }
     if ($status !== 0) {
         bad("$script ist mit Fehler $status abgebrochen.");
-        say('  Die Meldung dazu steht in storage/logs/php-error.log:');
+        say('  Die Meldung dazu steht im Log:');
         say('    tail -n 20 storage/logs/php-error.log');
         return false;
     }
     return true;
 };
 
-$tables = (int) $pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()')->fetchColumn();
+/** Sagt, was von Hand nachzuholen ist, wenn wir keine Prozesse starten duerfen. */
+$manualHint = static function () use ($root): void {
+    warn('Dieser Server erlaubt dem Skript nicht, weitere Programme zu starten.');
+    say('  Die beiden letzten Schritte deshalb bitte selbst aufrufen:');
+    say();
+    say('    cd ' . $root);
+    say('    php db/seed.php');
+    say('    php bin/doctor.php');
+    say();
+    say('  Die Konfiguration steht – ab hier ist es nur noch Tippen.');
+};
+
+try {
+    $tables = (int) $pdo->query('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()')->fetchColumn();
+} catch (PDOException $e) {
+    warn('Tabellen konnten nicht gezählt werden: ' . $e->getMessage());
+    $tables = 0;
+}
+
 $seeded = true;
 if ($tables > 0) {
     warn("Die Datenbank enthält bereits $tables Tabellen.");
@@ -261,13 +312,18 @@ if ($tables > 0) {
 } else {
     $seeded = $runScript('db/seed.php');
 }
-if (!$seeded) {
+if ($seeded === null) {
+    say();
+    $manualHint();
+    exit(0);
+}
+if ($seeded === false) {
     exit(1);
 }
 
 // ── Prüfen ──
 head('Selbsttest');
-passthru(PHP_BINARY . ' ' . escapeshellarg($root . '/bin/doctor.php'), $code);
+$code = $runScript('bin/doctor.php') === null ? 1 : 0;
 
 say();
 say(str_repeat('─', 58));
