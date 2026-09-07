@@ -66,6 +66,23 @@ try {
         ok("$count Tabellen vorhanden");
         $users = (int) Db::value('SELECT COUNT(*) FROM users');
         $users > 0 ? ok("$users Benutzerkonten") : warn('Keine Benutzer – php db/seed.php legt die Demo-Daten an.');
+
+        // Spalten, die spaeter dazugekommen sind. Fehlen sie, laeuft die
+        // Anwendung in Fehler, die wie Zufall aussehen – also hier nennen.
+        $missing = [];
+        foreach ([['users', 'away_until'], ['leads', 'sla_warn_at']] as [$table, $column]) {
+            $exists = (int) Db::value(
+                'SELECT COUNT(*) FROM information_schema.columns
+                  WHERE table_schema = DATABASE() AND table_name = :t AND column_name = :c',
+                ['t' => $table, 'c' => $column]
+            );
+            if ($exists === 0) {
+                $missing[] = "$table.$column";
+            }
+        }
+        $missing === []
+            ? ok('Datenbankstand aktuell')
+            : warn('Es fehlen Spalten (' . implode(', ', $missing) . '). Einmal nachziehen: php db/migrate.php');
     }
 
     // JSON-Spalten brauchen MySQL 5.7+ / MariaDB 10.2+

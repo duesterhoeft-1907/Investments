@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS users (
   role           ENUM('admin','manager','agent') NOT NULL DEFAULT 'agent',
   accent         VARCHAR(9)   NOT NULL DEFAULT '#C8A24A',
   is_active      TINYINT(1)   NOT NULL DEFAULT 1,
+  away_until     DATETIME     NULL,
+  away_note      VARCHAR(160) NOT NULL DEFAULT '',
   last_seen_at   DATETIME     NULL,
   created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -107,6 +109,7 @@ CREATE TABLE IF NOT EXISTS leads (
   consent_marketing TINYINT(1)   NOT NULL DEFAULT 0,
 
   sla_due_at        DATETIME     NULL,
+  sla_warn_at       DATETIME     NULL,
   first_contact_at  DATETIME     NULL,
   first_contact_by  INT UNSIGNED NULL,
   response_seconds  INT UNSIGNED NULL,
@@ -131,6 +134,7 @@ CREATE TABLE IF NOT EXISTS leads (
   KEY idx_leads_email (email),
   -- Trägt die Abfrage "wartet noch auf Erstkontakt, sortiert nach Frist".
   KEY idx_leads_open_sla (first_contact_at, sla_due_at),
+  KEY idx_leads_sla_warn (sla_warn_at),
   CONSTRAINT fk_lead_asset FOREIGN KEY (asset_class_id) REFERENCES asset_classes(id) ON DELETE SET NULL,
   CONSTRAINT fk_lead_team  FOREIGN KEY (team_id)  REFERENCES teams(id) ON DELETE SET NULL,
   CONSTRAINT fk_lead_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,

@@ -7,6 +7,7 @@ use App\Core\Config;
 use App\Core\Db;
 use App\Core\Http;
 use App\Core\Validator;
+use App\Domain\Hours;
 use App\Domain\Intake;
 use App\Domain\Leads;
 
@@ -42,6 +43,11 @@ final class PublicController
             'contactPrefs'     => self::options(Leads::CONTACT_PREFS),
             'contactWindows'   => self::options(Leads::CONTACT_WINDOWS),
             'defaultSlaMinutes'=> (int) Config::get('sla_minutes'),
+            // Damit der Wizard nachts nicht "in 10 Minuten" verspricht.
+            'hours'            => [
+                'open'        => Hours::isOpen(),
+                'nextOpening' => Hours::nextOpening()?->format('c'),
+            ],
         ]);
     }
 
@@ -102,6 +108,9 @@ final class PublicController
         Http::json([
             'ref'        => $result['lead']['ref'],
             'slaMinutes' => $result['slaMinutes'],
+            'slaDueAt'   => $result['lead']['slaDueAt'] ?? null,
+            'open'       => Hours::isOpen(),
+            'nextOpening'=> Hours::nextOpening()?->format('c'),
             'team'       => $result['lead']['team'],
             'assetClass' => $result['lead']['assetClass'],
             'contact'    => $result['contact'],

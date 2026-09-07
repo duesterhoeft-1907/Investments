@@ -105,6 +105,20 @@ php bin/doctor.php                 # Selbsttest
 
 </details>
 
+### 3b. Aktualisieren einer bestehenden Installation
+
+`schema.sql` legt nur an, was noch fehlt – neue Spalten in bestehenden
+Tabellen erreicht es nie. Dafür gibt es:
+
+```bash
+php db/migrate.php          # anwenden
+php db/migrate.php --dry    # nur zeigen, was zu tun wäre
+```
+
+Jeder Schritt prüft selbst, ob er nötig ist, darf beliebig oft laufen und
+löscht nichts. `bin/pull-deploy.sh`, der Deploy-Workflow und `bin/setup.php`
+rufen das von sich aus auf; `bin/doctor.php` meldet, wenn etwas aussteht.
+
 ### 4. Was der Seed anlegt
 
 Tabellen, drei Fachgruppen, acht Berater, neun Fachgebiete, die Chat-Kanäle
@@ -276,6 +290,34 @@ Portal-Zugangsdaten.
   (Monatsenden werden korrekt gekappt).
 - **Team & Routing** – Fachgebiet-zu-Gruppe-Matrix und SLA pro Gruppe direkt
   editierbar, Präsenzanzeige, Direktnachricht per Klick.
+- **Verwaltung** – Ruhezeiten und Mitarbeiter. Sichtbar für Leitung und
+  Verwaltung; Rollen, Zugänge und Passwörter setzt allein die Verwaltung.
+
+#### Ruhezeiten
+Die Reaktionsuhr läuft nur während der eingetragenen Geschäftszeiten. Ohne das
+wäre eine Anfrage um 23:40 Uhr zehn Minuten später „überschritten", obwohl
+niemand etwas falsch gemacht hat – die Kennzahl würde die Nacht messen statt
+die Arbeit.
+
+Angenommen wird trotzdem rund um die Uhr: der Wizard bleibt offen, die Frist
+beginnt zur nächsten Öffnung. Der Interessent liest dann „morgen früh ab 9:00
+Uhr" statt einer Minutenzahl, die niemand halten kann.
+
+Je Wochentag beliebig viele Zeitfenster (etwa mit Mittagspause), dazu
+Feiertage und Betriebsferien als ganztägige Ausnahmen. Gerechnet wird in der
+eingestellten Zeitzone, gespeichert in UTC. Die Rechnung deckt
+`bin/test-hours.php` mit zwanzig Proben ab – Wochenenden, Pausen,
+Zeitumstellung, kaputte Eingaben.
+
+Abschalten geht, dann läuft die Uhr wieder rund um die Uhr; die Oberfläche
+sagt, was das bedeutet.
+
+#### Abwesenheit
+Wer abwesend gemeldet ist, bekommt keine neuen Leads zugeteilt – die
+Verteilung überspringt ihn. Jeder kann sich selbst abmelden, Leitung und
+Verwaltung auch andere. Ist die ganze Gruppe abwesend, wird trotzdem
+zugewiesen: ein Lead ohne Zuständigen wäre schlimmer als einer bei jemandem im
+Urlaub, und die Gruppe wird ohnehin alarmiert.
 
 ### Interner Chat
 Firmenkanal, ein Kanal je Fachgruppe und Direktnachrichten. Ungelesen-Zähler,
@@ -319,8 +361,8 @@ public_html/
 ├── index.php     Front-Controller
 ├── .htaccess     Rewrite, Sicherheits-Header, Kompression
 └── assets/       CSS und ES-Module – genau das, was der Browser lädt
-db/               schema.sql und seed.php
-bin/              setup.php, cron-sla.php, doctor.php, test-mail.php, dev-router.php
+db/               schema.sql, seed.php und migrate.php
+bin/              setup.php, cron-sla.php, doctor.php, test-hours.php, test-mail.php, dev-router.php
 storage/          Uploads, Sitzungen, Protokolle (nicht öffentlich)
 ```
 

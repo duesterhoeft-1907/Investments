@@ -123,6 +123,14 @@ try {
     $router->patch('/api/directory/asset-classes/{id}', [C\DirectoryController::class, 'routeAssetClass']);
     $router->patch('/api/directory/teams/{id}', [C\DirectoryController::class, 'updateTeam']);
 
+    // ── Verwaltung: Ruhezeiten und Mitarbeiter ──
+    $router->get('/api/admin/hours', [C\AdminController::class, 'hours']);
+    $router->patch('/api/admin/hours', [C\AdminController::class, 'saveHours']);
+    $router->get('/api/admin/staff', [C\AdminController::class, 'staff']);
+    $router->post('/api/admin/staff', [C\AdminController::class, 'createStaff']);
+    $router->patch('/api/admin/staff/{id}', [C\AdminController::class, 'updateStaff']);
+    $router->patch('/api/staff/{id}/away', [C\AdminController::class, 'setAway']);
+
     // ── Kundenportal ──
     $router->get('/api/portal/preview/{token}', [C\PortalController::class, 'preview']);
     $router->post('/api/portal/login', [C\PortalController::class, 'login']);

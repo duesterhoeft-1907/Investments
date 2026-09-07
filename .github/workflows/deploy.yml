@@ -99,6 +99,18 @@ jobs:
           ssh -p "${PORT:-18765}" -i ~/.ssh/id_ed25519 "$USER@$HOST" \
             "mkdir -p '$TARGET'/storage/{uploads,logs,sessions} && chmod -R 775 '$TARGET'/storage"
 
+      # Laeuft bei jedem Ausrollen: die Schritte pruefen selbst, ob sie noetig
+      # sind, und aendern nichts an bestehenden Daten.
+      - name: Datenbank nachziehen
+        env:
+          HOST: ${{ secrets.SG_HOST }}
+          PORT: ${{ secrets.SG_PORT }}
+          USER: ${{ secrets.SG_USER }}
+          TARGET: ${{ secrets.SG_PATH }}
+        run: |
+          ssh -p "${PORT:-18765}" -i ~/.ssh/id_ed25519 "$USER@$HOST" \
+            "cd '$TARGET' && php db/migrate.php"
+
       - name: Schema und Demo-Daten einspielen
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.seed }}
         env:

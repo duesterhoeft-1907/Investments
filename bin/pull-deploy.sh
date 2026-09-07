@@ -55,5 +55,12 @@ if [ ! -f app/config.local.php ]; then
   echo
 fi
 
+# Neue Spalten erreichen eine bestehende Datenbank nur hierueber – schema.sql
+# legt ausschliesslich an, was noch gar nicht existiert.
+if [ -f app/config.local.php ]; then
+  echo "→ Datenbank nachziehen"
+  php db/migrate.php
+fi
+
 echo "→ Selbsttest"
 php bin/doctor.php

@@ -1,0 +1,353 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Domain;
+
+use App\Core\Db;
+use DateInterval;
+use DateTimeImmutable;
+use DateTimeZone;
+
+/**
+ * Geschaeftszeiten – die Ruhezeiten des Hauses.
+ *
+ * Warum das noetig ist: die Reaktionszeit ist ein Versprechen an den
+ * Interessenten, und ein Versprechen gilt nur, solange jemand da ist. Ohne
+ * diese Rechnung waere eine Anfrage um 23:40 zehn Minuten spaeter
+ * "ueberschritten", obwohl niemand etwas falsch gemacht hat – die Kennzahl
+ * misst dann die Nacht statt die Arbeit.
+ *
+ * Deshalb ruht die Uhr ausserhalb der Zeiten und laeuft zur naechsten
+ * Oeffnung weiter. Angenommen wird trotzdem rund um die Uhr; der Wizard
+ * bleibt offen, nur das Versprechen im Bestaetigungstext lautet dann
+ * "morgen frueh" statt "in zehn Minuten".
+ *
+ * Gerechnet wird in der eingestellten Zeitzone, gespeichert in UTC.
+ */
+final class Hours
+{
+    public const KEY = 'business_hours';
+
+    /** Reihenfolge und Beschriftung der Wochentage. */
+    public const DAYS = [
+        'mon' => 'Montag',
+        'tue' => 'Dienstag',
+        'wed' => 'Mittwoch',
+        'thu' => 'Donnerstag',
+        'fri' => 'Freitag',
+        'sat' => 'Samstag',
+        'sun' => 'Sonntag',
+    ];
+
+    /** Ohne eigene Einstellung gilt das hier. */
+    public static function defaults(): array
+    {
+        $week = ['09:00-18:00'];
+        return [
+            'enabled'  => true,
+            'timezone' => 'Europe/Berlin',
+            'days'     => [
+                'mon' => $week, 'tue' => $week, 'wed' => $week,
+                'thu' => $week, 'fri' => $week, 'sat' => [], 'sun' => [],
+            ],
+            'closedDates' => [],   // Feiertage und Betriebsferien: 'YYYY-MM-DD'
+        ];
+    }
+
+    /** @var array<string,mixed>|null einmal pro Anfrage geladen */
+    private static ?array $cache = null;
+
+    public static function config(): array
+    {
+        if (self::$cache !== null) {
+            return self::$cache;
+        }
+        $raw = Db::value('SELECT setting_value FROM settings WHERE setting_key = :k', ['k' => self::KEY]);
+        $stored = is_string($raw) ? json_decode($raw, true) : null;
+
+        return self::$cache = self::normalise(is_array($stored) ? $stored : []);
+    }
+
+    /**
+     * Nimmt entgegen, was aus der Oberflaeche kommt, und macht daraus einen
+     * Stand, mit dem gerechnet werden kann. Unsinn wird verworfen, nicht
+     * uebernommen – eine kaputte Zeitangabe wuerde sonst die Uhr anhalten.
+     */
+    public static function normalise(array $in): array
+    {
+        $defaults = self::defaults();
+
+        $timezone = (string) ($in['timezone'] ?? $defaults['timezone']);
+        if (!in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
+            $timezone = $defaults['timezone'];
+        }
+
+        $days = [];
+        foreach (array_keys(self::DAYS) as $day) {
+            $windows = [];
+            foreach ((array) ($in['days'][$day] ?? $defaults['days'][$day]) as $window) {
+                $parsed = self::parseWindow((string) $window);
+                if ($parsed !== null) {
+                    $windows[] = $parsed;
+                }
+            }
+            // Nach Beginn sortieren, damit die Rechnung sich auf die
+            // Reihenfolge verlassen kann.
+            usort($windows, static fn (string $a, string $b): int => strcmp($a, $b));
+            $days[$day] = $windows;
+        }
+
+        $closed = [];
+        foreach ((array) ($in['closedDates'] ?? []) as $date) {
+            $date = trim((string) $date);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1) {
+                $closed[$date] = true;
+            }
+        }
+        $closed = array_keys($closed);
+        sort($closed);
+
+        return [
+            'enabled'     => (bool) ($in['enabled'] ?? $defaults['enabled']),
+            'timezone'    => $timezone,
+            'days'        => $days,
+            'closedDates' => $closed,
+        ];
+    }
+
+    /** "9:00-18:00" wird zu "09:00-18:00"; Unsinn wird zu null. */
+    private static function parseWindow(string $window): ?string
+    {
+        if (preg_match('/^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$/', $window, $m) !== 1) {
+            return null;
+        }
+        [$fromH, $fromM, $toH, $toM] = [(int) $m[1], (int) $m[2], (int) $m[3], (int) $m[4]];
+        if ($fromH > 23 || $toH > 24 || $fromM > 59 || $toM > 59) {
+            return null;
+        }
+        $from = $fromH * 60 + $fromM;
+        $to   = $toH * 60 + $toM;
+        if ($to <= $from) {
+            return null;   // ueber Mitternacht wird bewusst nicht unterstuetzt
+        }
+        return sprintf('%02d:%02d-%02d:%02d', $fromH, $fromM, $toH, $toM);
+    }
+
+    public static function save(array $in): array
+    {
+        $config = self::normalise($in);
+        Db::run(
+            'INSERT INTO settings (setting_key, setting_value) VALUES (:k, :v)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()',
+            ['k' => self::KEY, 'v' => json_encode($config, JSON_UNESCAPED_UNICODE)]
+        );
+        self::$cache = $config;
+        return $config;
+    }
+
+    public static function timezone(): DateTimeZone
+    {
+        return new DateTimeZone(self::config()['timezone']);
+    }
+
+    /** Sind wir gerade im Dienst? */
+    public static function isOpen(?DateTimeImmutable $at = null): bool
+    {
+        $config = self::config();
+        if (!$config['enabled']) {
+            return true;
+        }
+        $local = ($at ?? new DateTimeImmutable('now', new DateTimeZone('UTC')))->setTimezone(self::timezone());
+
+        foreach (self::windowsOn($local, $config) as [$from, $to]) {
+            if ($local >= $from && $local < $to) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Wann geht es weiter? Null, wenn immer offen ist. */
+    public static function nextOpening(?DateTimeImmutable $at = null): ?DateTimeImmutable
+    {
+        $config = self::config();
+        if (!$config['enabled']) {
+            return null;
+        }
+        $now = $at ?? new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $window = self::nextWindow($now->setTimezone(self::timezone()), $config);
+
+        return $window === null ? null : $window[0]->setTimezone(new DateTimeZone('UTC'));
+    }
+
+    /**
+     * Der Kern: wann ist die Frist abgelaufen, wenn nur Dienstzeit zaehlt?
+     *
+     * Verbraucht die Minuten Fenster fuer Fenster. Sind keine Zeiten
+     * gepflegt oder ist die Rechnung abgeschaltet, bleibt es beim einfachen
+     * Aufschlag – lieber eine strenge Frist als gar keine.
+     */
+    public static function dueAt(DateTimeImmutable $start, int $minutes): DateTimeImmutable
+    {
+        $minutes = max(1, $minutes);
+        $config  = self::config();
+        $utc     = new DateTimeZone('UTC');
+
+        if (!$config['enabled'] || self::isNeverOpen($config)) {
+            return $start->setTimezone($utc)->add(new DateInterval('PT' . $minutes . 'M'));
+        }
+
+        $cursor    = $start->setTimezone(self::timezone());
+        $remaining = $minutes;
+
+        // 400 Durchlaeufe reichen fuer weit ueber ein Jahr Kalender – die
+        // Schleife endet in der Praxis nach ein bis zwei.
+        for ($guard = 0; $guard < 400; $guard++) {
+            $window = self::currentOrNextWindow($cursor, $config);
+            if ($window === null) {
+                break;
+            }
+            [$from, $to] = $window;
+            if ($cursor < $from) {
+                $cursor = $from;
+            }
+            $available = (int) floor(($to->getTimestamp() - $cursor->getTimestamp()) / 60);
+            if ($available >= $remaining) {
+                return $cursor->add(new DateInterval('PT' . $remaining . 'M'))->setTimezone($utc);
+            }
+            $remaining -= $available;
+            $cursor = $to;
+        }
+
+        // Kein Fenster gefunden (etwa: alle Tage leer) – nicht schweigend
+        // eine Frist verschlucken.
+        return $start->setTimezone($utc)->add(new DateInterval('PT' . $minutes . 'M'));
+    }
+
+    /** Ist ueberhaupt irgendwann geoeffnet? */
+    private static function isNeverOpen(array $config): bool
+    {
+        foreach ($config['days'] as $windows) {
+            if ($windows !== []) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Das Fenster, in dem der Zeitpunkt liegt – sonst das naechste danach.
+     * @return array{0:DateTimeImmutable,1:DateTimeImmutable}|null
+     */
+    private static function currentOrNextWindow(DateTimeImmutable $local, array $config): ?array
+    {
+        foreach (self::windowsOn($local, $config) as $window) {
+            if ($local < $window[1]) {
+                return $window;
+            }
+        }
+        return self::nextWindow($local, $config);
+    }
+
+    /**
+     * Das naechste Fenster, das spaeter beginnt als der Zeitpunkt.
+     * @return array{0:DateTimeImmutable,1:DateTimeImmutable}|null
+     */
+    private static function nextWindow(DateTimeImmutable $local, array $config): ?array
+    {
+        foreach (self::windowsOn($local, $config) as $window) {
+            if ($window[0] > $local) {
+                return $window;
+            }
+        }
+        // Bis zu 366 Tage vorausschauen, dann sind auch Betriebsferien
+        // ueberbrueckt.
+        $day = $local;
+        for ($i = 0; $i < 366; $i++) {
+            $day = $day->add(new DateInterval('P1D'))->setTime(0, 0);
+            $windows = self::windowsOn($day, $config);
+            if ($windows !== []) {
+                return $windows[0];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Die Zeitfenster des Kalendertages, auf den der Zeitpunkt faellt.
+     * @return list<array{0:DateTimeImmutable,1:DateTimeImmutable}>
+     */
+    private static function windowsOn(DateTimeImmutable $local, array $config): array
+    {
+        if (in_array($local->format('Y-m-d'), $config['closedDates'], true)) {
+            return [];
+        }
+        $key = strtolower($local->format('D'));   // mon, tue, …
+        $out = [];
+        foreach ($config['days'][$key] ?? [] as $window) {
+            [$from, $to] = explode('-', $window);
+            [$fh, $fm] = array_map('intval', explode(':', $from));
+            [$th, $tm] = array_map('intval', explode(':', $to));
+
+            $start = $local->setTime($fh, $fm);
+            // 24:00 heisst Tagesende, nicht 0 Uhr am selben Morgen.
+            $end = $th === 24
+                ? $local->setTime(0, 0)->add(new DateInterval('P1D'))
+                : $local->setTime($th, $tm);
+
+            $out[] = [$start, $end];
+        }
+        return $out;
+    }
+
+    /**
+     * Der Satzbaustein fuer das Versprechen an den Interessenten.
+     *
+     * Nachts "innerhalb von 10 Minuten" zu schreiben waere eine Zusage, die
+     * niemand halten kann – und der erste Eindruck waere ein gebrochenes
+     * Wort. Also sagen wir, wann es wirklich losgeht.
+     */
+    public static function promise(int $minutes): string
+    {
+        if (self::isOpen()) {
+            return 'innerhalb von ' . $minutes . ' Minuten';
+        }
+
+        $next = self::nextOpening();
+        if ($next === null) {
+            return 'innerhalb von ' . $minutes . ' Minuten';
+        }
+
+        $local = $next->setTimezone(self::timezone());
+        $today = new DateTimeImmutable('now', self::timezone());
+        $time  = $local->format('H:i') . ' Uhr';
+
+        $diff = (int) $local->setTime(0, 0)->diff($today->setTime(0, 0))->format('%r%a');
+        if ($diff === 0) {
+            return 'heute ab ' . $time;
+        }
+        if ($diff === -1) {
+            return 'morgen früh ab ' . $time;
+        }
+
+        $weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+        return 'am ' . $weekdays[(int) $local->format('w')] . ' ab ' . $time;
+    }
+
+    /** Kurzfassung fuer Oberflaeche und Bestaetigungstext. */
+    public static function summary(): array
+    {
+        $config = self::config();
+        $open   = self::isOpen();
+        $next   = $open ? null : self::nextOpening();
+
+        return [
+            'enabled'     => $config['enabled'],
+            'timezone'    => $config['timezone'],
+            'days'        => $config['days'],
+            'closedDates' => $config['closedDates'],
+            'open'        => $open,
+            'nextOpening' => $next?->format('c'),
+        ];
+    }
+}

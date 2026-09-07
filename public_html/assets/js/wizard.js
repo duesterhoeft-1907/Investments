@@ -55,6 +55,32 @@ function slaMinutes() {
   return asset?.slaMinutes ?? state.config?.defaultSlaMinutes ?? 15;
 }
 
+/**
+ * Was wir zusagen dürfen.
+ *
+ * Ausserhalb der Geschäftszeiten wäre „in 10 Minuten“ ein Wort, das niemand
+ * halten kann – und das wäre der erste Eindruck. Dann nennen wir die
+ * nächste Öffnung.
+ */
+function slaPromise(hours = state.config?.hours) {
+  const minutes = slaMinutes();
+  if (!hours || hours.open || !hours.nextOpening) {
+    return `innerhalb von ${minutes} Minuten`;
+  }
+
+  const next = new Date(hours.nextOpening);
+  const time = next.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+  const days = Math.round((startOfDay(next) - startOfDay(new Date())) / 86400000);
+
+  if (days <= 0) return `heute ab ${time}`;
+  if (days === 1) return `morgen früh ab ${time}`;
+  return `am ${next.toLocaleDateString('de-DE', { weekday: 'long' })} ab ${time}`;
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
 /** Prüfung je Schritt – erst wenn sie greift, geht es weiter. */
 function validate(step) {
   const errors = {};
@@ -149,7 +175,7 @@ function renderHero() {
   const company = window.__COMPANY__?.name || '21 Capital Invest';
   return h(
     'section.hero.rise',
-    h('span.promise', icon('timer', 14), `Rückmeldung in unter ${slaMinutes()} Minuten`),
+    h('span.promise', icon('timer', 14), 'Rückmeldung ' + slaPromise()),
     h('h1', 'Ihr Vermögen verdient', h('br'), h('span.gold-text', 'eine schnelle Antwort.')),
     h('p.lead', `Beantworten Sie vier kurze Fragen. Ihre Anfrage geht direkt an das zuständige Fachteam von ${company} – nicht in ein anonymes Postfach.`),
     h(
@@ -295,7 +321,7 @@ function stepContact() {
   const f = state.form;
   return h(
     'div',
-    heading('Wie erreichen wir Sie?', `Ihr Ansprechpartner meldet sich innerhalb von ${slaMinutes()} Minuten.`),
+    heading('Wie erreichen wir Sie?', 'Ihr Ansprechpartner meldet sich ' + slaPromise() + '.'),
     h(
       'div.form-grid',
       field('Vorname', textInput('firstName', { autocomplete: 'given-name' }), { required: true, error: state.errors.firstName }),
@@ -386,8 +412,9 @@ function stepDone() {
     h('h2', 'Ihre Anfrage ist angekommen.'),
     h('p.sub',
       r.team ? h('span', 'Das Team ', h('strong', r.team), ' wurde soeben benachrichtigt. ') : 'Unser Fachteam wurde soeben benachrichtigt. ',
-      'Sie hören innerhalb von ',
-      h('strong', { style: { color: 'var(--gold-300)' } }, `${r.slaMinutes} Minuten`),
+      'Sie hören ',
+      h('strong', { style: { color: 'var(--gold-300)' } },
+        slaPromise({ open: r.open, nextOpening: r.nextOpening })),
       ' von uns.'),
     h('div.done-grid',
       r.contact

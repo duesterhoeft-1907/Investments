@@ -107,6 +107,7 @@ input, textarea, select { font: inherit; }
 @keyframes slide-in  { from { opacity: 0; transform: translate3d(38px, 0, 0); } to { opacity: 1; transform: none; } }
 @keyframes slide-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(-38px, 0, 0); } }
 @keyframes pop       { from { opacity: 0; transform: scale(0.86); } to { opacity: 1; transform: scale(1); } }
+@keyframes fade      { from { opacity: 0; } to { opacity: 1; } }
 @keyframes float     { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(0,-18px,0) scale(1.04); } }
 @keyframes spin      { to { transform: rotate(360deg); } }
 @keyframes pulse-ring {
@@ -165,6 +166,18 @@ input, textarea, select { font: inherit; }
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
+}
+
+/* Eine Karte, aus der gerade ein Aufklappfeld herausragt.
+   Zwei Dinge stehen dem sonst im Weg: das overflow der Karte schneidet das
+   Feld an der Kante ab, und das backdrop-filter oben macht aus jeder Karte
+   einen eigenen Stapelkontext – darin bleibt jedes z-index des Feldes
+   wirkungslos, und die naechste Karte im Dokument legt sich darueber.
+   Beides hebt diese Klasse fuer die Dauer des Aufklappens auf. */
+.glass.popover-open {
+  overflow: visible !important;
+  position: relative;
+  z-index: 40;
 }
 
 .gold-text {

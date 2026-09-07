@@ -38,6 +38,8 @@ final class Intake
         $teamId       = Leads::teamForAssetClass($assetClassId);
         $slaMinutes   = Leads::slaMinutesForTeam($teamId);
         $ownerId      = Leads::pickOwner($teamId);
+        // Die Uhr laeuft nur waehrend der Geschaeftszeiten – nachts ruht sie.
+        $deadline     = Leads::slaDeadline($slaMinutes);
 
         $ref            = Leads::newRef();
         $portalToken    = Leads::newPortalToken();
@@ -45,20 +47,20 @@ final class Intake
         $band           = Leads::VOLUME_BANDS[(string) $in['volumeBand']] ?? null;
 
         // Lead und Aufgabe gehören zusammen – entweder beides oder nichts.
-        $leadId = Db::transaction(static function () use ($in, $ref, $assetClassId, $teamId, $ownerId, $slaMinutes, $band, $portalToken, $portalPassword): int {
+        $leadId = Db::transaction(static function () use ($in, $ref, $assetClassId, $teamId, $ownerId, $slaMinutes, $deadline, $band, $portalToken, $portalPassword): int {
             $id = Db::insert(
                 'INSERT INTO leads (
                     public_ref, first_name, last_name, email, phone, company, city, postal_code, country,
                     asset_class_id, team_id, owner_id, status, stage_changed_at, source, score,
                     volume_band, volume_value, horizon, experience, goal, contact_pref, contact_window,
                     message, wizard_payload, consent_contact, consent_marketing,
-                    sla_due_at, portal_token, portal_password_hash, created_at, updated_at
+                    sla_due_at, sla_warn_at, portal_token, portal_password_hash, created_at, updated_at
                  ) VALUES (
                     :ref, :first, :last, :email, :phone, :company, :city, :plz, :country,
                     :asset, :team, :owner, \'new\', NOW(), :source, :score,
                     :band, :value, :horizon, :experience, :goal, :pref, :window,
                     :message, :payload, 1, :marketing,
-                    DATE_ADD(NOW(), INTERVAL :sla MINUTE), :token, :pwd, NOW(), NOW()
+                    :slaDue, :slaWarn, :token, :pwd, NOW(), NOW()
                  )',
                 [
                     'ref'        => $ref,
@@ -96,7 +98,8 @@ final class Intake
                         'submittedAt'   => gmdate('c'),
                     ], JSON_UNESCAPED_UNICODE),
                     'marketing'  => $in['consentMarketing'] ? 1 : 0,
-                    'sla'        => $slaMinutes,
+                    'slaDue'     => $deadline['due'],
+                    'slaWarn'    => $deadline['warn'],
                     'token'      => $portalToken,
                     'pwd'        => Auth::hash($portalPassword),
                 ]
@@ -106,12 +109,12 @@ final class Intake
             Db::run(
                 "INSERT INTO tasks (lead_id, assigned_to, created_by, kind, title, description, due_at, duration_min, recurrence)
                  VALUES (:lead, :owner, NULL, 'call', 'Erstkontakt herstellen', :desc,
-                         DATE_ADD(NOW(), INTERVAL :sla MINUTE), 15, 'none')",
+                         :slaDue, 15, 'none')",
                 [
                     'lead'  => $id,
                     'owner' => $ownerId,
-                    'desc'  => $in['firstName'] . ' ' . $in['lastName'] . ' wartet auf den Rückruf – die Reaktionszeit läuft.',
-                    'sla'   => $slaMinutes,
+                    'desc'   => $in['firstName'] . ' ' . $in['lastName'] . ' wartet auf den Rückruf – die Reaktionszeit läuft.',
+                    'slaDue' => $deadline['due'],
                 ]
             );
 
@@ -196,6 +199,9 @@ final class Intake
             'contactWindow' => $in['contactWindow'],
             'message'       => $in['message'],
             'slaMinutes'    => $slaMinutes,
+            // Ausserhalb der Geschaeftszeiten nennt das die naechste Oeffnung
+            // statt einer Minutenzahl, die niemand einhalten koennte.
+            'slaPromise'    => Hours::promise($slaMinutes),
         ];
 
         if ($memberIds !== []) {

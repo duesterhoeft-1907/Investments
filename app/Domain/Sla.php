@@ -55,13 +55,16 @@ final class Sla
     private static function warn(): int
     {
         $ratio = (float) Config::get('sla_warn_ratio', 0.5);
-        // Die Vorwarnung greift, sobald der eingestellte Anteil der Frist
-        // verstrichen ist, aber die Frist selbst noch läuft.
+        // Der Vorwarnzeitpunkt steht am Lead, weil er in Dienstzeit gerechnet
+        // wird: die halbe Frist läge bei ruhender Uhr sonst mitten in der
+        // Nacht. Leads von vor dieser Änderung haben ihn nicht – für die
+        // bleibt es bei der halbierten Frist.
         $leads = self::openLeads(
             'l.sla_warned = 0 AND l.sla_breached = 0
              AND NOW() < l.sla_due_at
-             AND NOW() >= DATE_ADD(l.created_at,
-                   INTERVAL ROUND(TIMESTAMPDIFF(SECOND, l.created_at, l.sla_due_at) * ' . $ratio . ') SECOND)'
+             AND NOW() >= COALESCE(l.sla_warn_at,
+                   DATE_ADD(l.created_at,
+                     INTERVAL ROUND(TIMESTAMPDIFF(SECOND, l.created_at, l.sla_due_at) * ' . $ratio . ') SECOND))'
         );
 
         foreach ($leads as $row) {

@@ -136,11 +136,24 @@ final class Leads
                FROM team_members tm
                JOIN users u ON u.id = tm.user_id
               WHERE tm.team_id = :team AND u.is_active = 1
+                AND (u.away_until IS NULL OR u.away_until <= NOW())
               ORDER BY role_rank ASC, open_leads ASC, last_assigned ASC, u.id ASC
               LIMIT 1",
             ['team' => $teamId]
         );
-        return $row === null ? null : (int) $row['id'];
+        if ($row !== null) {
+            return (int) $row['id'];
+        }
+
+        // Ist die ganze Gruppe abwesend, ist ein abwesender Berater immer noch
+        // besser als ein herrenloser Lead – die Gruppe wird ohnehin alarmiert.
+        $fallback = Db::one(
+            "SELECT u.id FROM team_members tm JOIN users u ON u.id = tm.user_id
+              WHERE tm.team_id = :team AND u.is_active = 1
+              ORDER BY u.id ASC LIMIT 1",
+            ['team' => $teamId]
+        );
+        return $fallback === null ? null : (int) $fallback['id'];
     }
 
     /** @return list<int> */
@@ -167,6 +180,26 @@ final class Leads
         }
         $minutes = Db::value('SELECT sla_minutes FROM teams WHERE id = :id', ['id' => $teamId]);
         return $minutes === null ? $fallback : max(1, (int) $minutes);
+    }
+
+    /**
+     * Frist und Vorwarnung als UTC-Zeitstempel, gerechnet in Dienstzeit.
+     *
+     * Die Vorwarnung wird eigens gerechnet und nicht spaeter aus der Frist
+     * halbiert: bei ruhender Uhr laege die Haelfte sonst mitten in der Nacht.
+     *
+     * @return array{due:string, warn:string}
+     */
+    public static function slaDeadline(int $minutes, ?\DateTimeImmutable $from = null): array
+    {
+        $start = $from ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $ratio = (float) \App\Core\Config::get('sla_warn_ratio', 0.5);
+        $warnMinutes = max(1, (int) round($minutes * max(0.05, min(0.95, $ratio))));
+
+        return [
+            'due'  => Hours::dueAt($start, $minutes)->format('Y-m-d H:i:s'),
+            'warn' => Hours::dueAt($start, $warnMinutes)->format('Y-m-d H:i:s'),
+        ];
     }
 
     /** Nachvollziehbares Scoring von 0 bis 100. */

@@ -30,6 +30,7 @@ const ROUTES = [
   { pattern: /^\/app\/chat\/(\d+)$/,     load: () => import('./pages/chat.js') },
   { pattern: /^\/app\/chat\/?$/,         load: () => import('./pages/chat.js') },
   { pattern: /^\/app\/team\/?$/,         load: () => import('./pages/team.js') },
+  { pattern: /^\/app\/settings\/?$/,     load: () => import('./pages/settings.js') },
 ];
 
 const NAV = [
@@ -38,6 +39,9 @@ const NAV = [
   { href: '/app/tasks', label: 'Aufgaben', icon: 'calendar' },
   { href: '/app/chat', label: 'Chat', icon: 'chat', badge: 'chat' },
   { href: '/app/team', label: 'Team', icon: 'users' },
+  // Nur fuer die, die dort etwas aendern duerfen – sonst waere der Punkt
+  // eine Sackgasse mit einer 403 dahinter.
+  { href: '/app/settings', label: 'Verwaltung', icon: 'shield', roles: ['admin', 'manager'] },
 ];
 
 boot();
@@ -150,7 +154,7 @@ function headerBar() {
   return h(
     'div.bar',
     h('a.crm-brand.gold-text', { href: '/app' }, '21 CAPITAL'),
-    h('nav.crm-nav', NAV.map(navLink)),
+    h('nav.crm-nav', NAV.filter(visibleTo(session.user)).map(navLink)),
     h('div.crm-actions',
       h('a.icon-btn', { href: '/', target: '_blank', title: 'Öffentlichen Wizard ansehen' }, icon('external', 17)),
       bellButton(),
@@ -165,6 +169,11 @@ function headerBar() {
       ),
     ),
   );
+}
+
+/** Punkte ohne roles sieht jeder; mit roles nur die genannten. */
+function visibleTo(user) {
+  return (item) => !item.roles || item.roles.includes(user.role);
 }
 
 function navLink(item) {

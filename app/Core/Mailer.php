@@ -191,8 +191,9 @@ final class Mailer
         $html = self::layout(
             'Ihre Anfrage ist angekommen, ' . self::esc((string) $facts['firstName']),
             '<p>vielen Dank für Ihr Interesse an <strong>' . self::esc((string) $facts['assetClass']) . '</strong>. '
-            . 'Ihre Anfrage liegt bereits bei unserem Fachteam – wir melden uns <strong>innerhalb von '
-            . (int) $facts['slaMinutes'] . ' Minuten</strong> persönlich bei Ihnen.</p>'
+            . 'Ihre Anfrage liegt bereits bei unserem Fachteam – wir melden uns <strong>'
+            . self::esc((string) ($facts['slaPromise'] ?? 'innerhalb von ' . (int) $facts['slaMinutes'] . ' Minuten'))
+            . '</strong> persönlich bei Ihnen.</p>'
             . $contactHtml
             . '<p>In Ihrem persönlichen Kundenbereich sehen Sie jederzeit den Stand Ihrer Anfrage, '
             . 'die nächsten Schritte und – sobald erstellt – Ihr individuelles Angebot.</p>'
@@ -209,7 +210,7 @@ final class Mailer
         );
 
         $text = "Vielen Dank für Ihre Anfrage ({$facts['ref']}).\n"
-            . "Wir melden uns innerhalb von {$facts['slaMinutes']} Minuten.\n"
+            . 'Wir melden uns ' . ($facts['slaPromise'] ?? "innerhalb von {$facts['slaMinutes']} Minuten") . ".\n"
             . ($contact !== null ? "Ihr Ansprechpartner: {$contact['name']}, {$contact['title']}, {$contact['phone']}\n" : '')
             . "Kundenbereich: {$portalUrl}\n"
             . "Zugang: {$facts['email']}\n"

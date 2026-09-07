@@ -98,7 +98,17 @@ export function render(view, { params, session, navigate }) {
 
     const wrap = h('div', { style: { position: 'relative' } });
 
+    // Die umgebende Karte muss das Feld herauslassen und darf sich nicht von
+    // der naechsten Karte ueberdecken lassen – siehe .popover-open im CSS.
+    const liftCard = () => {
+      const card = wrap.closest('.glass');
+      if (card) {
+        card.classList.toggle('popover-open', open);
+      }
+    };
+
     const draw = () => {
+      liftCard();
       mount(wrap,
         h('button.btn.btn-primary', { onclick: () => { open = !open; draw(); } },
           icon('zap', 16), 'Erstkontakt erfassen', icon('chevron', 13)),
@@ -120,6 +130,7 @@ export function render(view, { params, session, navigate }) {
             try {
               const result = await api.post(`/leads/${leadId}/contact`, form);
               open = false;
+              liftCard();
               toast(`Erstkontakt in ${result.responseLabel ?? '–'} · Uhr gestoppt.`);
               await load();
             } catch (error) { toast(error.message, 'error'); form.busy = false; draw(); }

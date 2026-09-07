@@ -321,6 +321,11 @@ if ($seeded === false) {
     exit(1);
 }
 
+// Bei einer bestehenden Datenbank fehlen sonst neu hinzugekommene Spalten.
+if ($tables > 0) {
+    $runScript('db/migrate.php');
+}
+
 // ── Prüfen ──
 head('Selbsttest');
 $code = $runScript('bin/doctor.php') === null ? 1 : 0;
