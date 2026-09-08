@@ -1,7 +1,14 @@
 name: Deploy zu SiteGround
 
-# Läuft auf einem GitHub-Runner – der hat Netzzugang zu SiteGround.
-# Ausgelöst per Push auf den Branch oder von Hand über "Run workflow".
+# Zwei Wege führen auf den Server, und beide sind in Ordnung:
+#
+#   a) der Server holt sich den Stand selbst (bin/pull-deploy.sh im Cron)
+#   b) GitHub schiebt ihn per SSH hinüber – dafür braucht es Secrets
+#
+# Wer (a) nutzt, hat die Secrets nie angelegt. Dann soll dieser Workflow
+# nicht bei jedem Push eine Fehlermail schicken: die Prüfung läuft, das
+# Ausrollen wird übersprungen. Wer den Workflow von Hand startet, will
+# ausrollen – dann ist ein fehlendes Secret sehr wohl ein Fehler.
 on:
   push:
     branches: [claude/lead-management-crm-5kniyn, main]
@@ -17,8 +24,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # ── Prüfen ──────────────────────────────────────────────────────────
+  # Läuft immer. Beim Cron-Weg zieht sich der Server den Stand blind –
+  # eine kaputte Datei fiele dort erst auf, wenn die Seite weiß bleibt.
+  # Deshalb ist dieser Schritt auch dann nützlich, wenn nichts ausgerollt
+  # wird.
+  pruefen:
     runs-on: ubuntu-latest
+    outputs:
+      bereit: ${{ steps.zugang.outputs.bereit }}
     steps:
       - uses: actions/checkout@v4
 
@@ -30,34 +44,67 @@ jobs:
           echo "Syntax in Ordnung."
 
       - name: Zugangsdaten prüfen
+        id: zugang
         env:
-          HOST: ${{ secrets.SG_HOST }}
-          USER: ${{ secrets.SG_USER }}
-          TARGET: ${{ secrets.SG_PATH }}
-          KEY: ${{ secrets.SG_SSH_KEY }}
+          SG_HOST: ${{ secrets.SG_HOST }}
+          SG_USER: ${{ secrets.SG_USER }}
+          SG_PATH: ${{ secrets.SG_PATH }}
+          SG_SSH_KEY: ${{ secrets.SG_SSH_KEY }}
+          VON_HAND: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
+          # Bewusst mit if statt "[ -z ... ] && ...": GitHub führt jeden
+          # run-Block mit "bash -e" aus, und eine solche Und-Verkettung
+          # liefert 1, sobald die Bedingung nicht zutrifft – der Schritt
+          # wäre also ausgerechnet dann abgebrochen, wenn alle Secrets da
+          # sind.
           missing=""
-          [ -z "$HOST" ]   && missing="$missing SG_HOST"
-          [ -z "$USER" ]   && missing="$missing SG_USER"
-          [ -z "$TARGET" ] && missing="$missing SG_PATH"
-          [ -z "$KEY" ]    && missing="$missing SG_SSH_KEY"
-          if [ -n "$missing" ]; then
-            echo "::error::Es fehlen noch Secrets:$missing"
-            echo ""
-            echo "Anzulegen unter: Settings → Secrets and variables → Actions"
-            echo ""
-            echo "  SG_HOST     SSH-Host aus den Site Tools, z. B. ssh.meinkonto.sg-host.com"
-            echo "  SG_PORT     SSH-Port, meist 18765 (ohne Angabe wird 18765 verwendet)"
-            echo "  SG_USER     SSH-Benutzer, z. B. u1234-abcdefgh"
-            echo "  SG_PATH     Zielverzeichnis, z. B. /home/customer/www/meine-domain.de"
-            echo "  SG_SSH_KEY  der PRIVATE Schlüssel zu dem in SiteGround hinterlegten"
-            echo "              öffentlichen Schlüssel (vollständiger Inhalt inkl. der"
-            echo "              BEGIN- und END-Zeilen)"
-            echo ""
-            echo "Danach diesen Lauf über \"Re-run all jobs\" wiederholen."
+          for name in SG_HOST SG_USER SG_PATH SG_SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+
+          if [ -z "$missing" ]; then
+            echo "bereit=true" >> "$GITHUB_OUTPUT"
+            echo "Alle Zugangsdaten vorhanden."
+            exit 0
+          fi
+
+          echo "bereit=false" >> "$GITHUB_OUTPUT"
+
+          echo "Es fehlen die Secrets:$missing"
+          echo ""
+          echo "Anzulegen unter: Settings → Secrets and variables → Actions"
+          echo ""
+          echo "  SG_HOST     SSH-Host aus den Site Tools, z. B. ssh.meinkonto.sg-host.com"
+          echo "  SG_PORT     SSH-Port, meist 18765 (ohne Angabe wird 18765 verwendet)"
+          echo "  SG_USER     SSH-Benutzer, z. B. u1234-abcdefgh"
+          echo "  SG_PATH     Zielverzeichnis, z. B. /home/customer/www/meine-domain.de"
+          echo "  SG_SSH_KEY  der PRIVATE Schlüssel zu dem in SiteGround hinterlegten"
+          echo "              öffentlichen Schlüssel (inkl. BEGIN- und END-Zeile)"
+          echo ""
+
+          if [ "$VON_HAND" = "true" ]; then
+            # Von Hand gestartet heißt: es soll ausgerollt werden. Ohne
+            # Zugangsdaten geht das nicht, und das darf nicht durchrutschen.
+            echo "::error::Ausrollen nicht möglich – es fehlen die Secrets:$missing"
             exit 1
           fi
-          echo "Alle Zugangsdaten vorhanden."
+
+          # Bei einem Push ist das kein Fehler, sondern der andere Weg:
+          # der Server holt sich den Stand selbst per Cron
+          # (bin/pull-deploy.sh). Dann ist hier nichts zu tun.
+          echo "::notice::Ausrollen über GitHub übersprungen – es fehlen die Secrets:$missing. Holt der Server den Stand per Cron, ist das in Ordnung."
+
+  # ── Ausrollen ───────────────────────────────────────────────────────
+  # Nur wenn die Zugangsdaten da sind. Sonst überspringt GitHub den Job,
+  # der Lauf bleibt grün, und es kommt keine Mail.
+  deploy:
+    needs: pruefen
+    if: needs.pruefen.outputs.bereit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: SSH einrichten
         env:

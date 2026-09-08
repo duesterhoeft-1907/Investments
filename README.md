@@ -194,6 +194,17 @@ cd /home/customer/www/deine-domain.de && bin/pull-deploy.sh >/dev/null 2>&1
 Statt jedes Mal von Hand hochzuladen: `.github/workflows/deploy.yml` überträgt
 bei jedem Push auf den Branch. Der GitHub-Runner hat Netzzugang zu SiteGround.
 
+**Das ist der zweite von zwei Wegen – man braucht ihn nicht.** Holt sich der
+Server den Stand selbst (siehe *Der Server holt sich den Stand selbst*), sind
+die folgenden Secrets überflüssig. Der Workflow läuft dann trotzdem, prüft die
+PHP-Syntax und überspringt das Ausrollen; der Lauf bleibt grün, es kommt keine
+Fehlermail. Die Syntaxprüfung ist gerade beim Cron-Weg nützlich: dort zieht
+sich der Server den Stand blind, eine kaputte Datei fiele erst an der weißen
+Seite auf.
+
+Wer den Workflow von Hand startet (*Run workflow*), will ausrollen – dann sind
+fehlende Secrets sehr wohl ein Fehler und der Lauf bricht ab.
+
 Einmalig in GitHub → Repository → **Settings → Secrets and variables →
 Actions** anlegen:
 
