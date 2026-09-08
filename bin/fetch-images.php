@@ -22,12 +22,12 @@ $quelle = 'https://21capitalinvest.com/wp-content/uploads/2026/08/';
 
 /** Datei im Auftritt => Name bei uns. */
 $bilder = [
-    'digital_euro.png'          => 'thema-euro.png',
-    'inflation.png'             => 'thema-inflation.png',
-    'taxes.png'                 => 'thema-steuern.png',
-    'schutzschild.png'          => 'thema-schutz.png',
-    'legale_schlupfloecher.png' => 'thema-wege.png',
-    'rendite.png'               => 'thema-rendite.png',
+    'digital_euro.png'          => 'thema-euro.webp',
+    'inflation.png'             => 'thema-inflation.webp',
+    'taxes.png'                 => 'thema-steuern.webp',
+    'schutzschild.png'          => 'thema-schutz.webp',
+    'legale_schlupfloecher.png' => 'thema-wege.webp',
+    'rendite.png'               => 'thema-rendite.webp',
 ];
 
 echo "\n\033[1mBilder der Unternehmensseite holen\033[0m\n";

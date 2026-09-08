@@ -149,12 +149,12 @@ $strukturiert = [
           <li>Während der Staat über Vermögensabgaben nachdenkt, wirst du durch die Teuerungsrate
               schleichend enteignet.</li>
         </ul>
-        <?php if ($bild('thema-euro.png')): ?>
+        <?php if ($bild('thema-euro.webp')): ?>
         <div class="s-thumbs">
           <?php foreach ([
-              'thema-euro.png'      => 'Der digitale Euro',
-              'thema-inflation.png' => 'Inflation',
-              'thema-steuern.png'   => 'Vermögensabgaben',
+              'thema-euro.webp'      => 'Der digitale Euro',
+              'thema-inflation.webp' => 'Inflation',
+              'thema-steuern.webp'   => 'Vermögensabgaben',
           ] as $datei => $titel): ?>
             <?php if ($bild($datei)): ?>
               <figure><img src="<?= $bild($datei) ?>" alt="" loading="lazy"><figcaption><?= $titel ?></figcaption></figure>
@@ -204,9 +204,9 @@ $strukturiert = [
       <p class="s-sub reveal">In deinem kostenlosen und absolut vertraulichen Erstgespräch zeigen wir dir:</p>
       <div class="s-cards">
         <?php foreach ([
-            ['01', 'thema-schutz.png',  'Welche Sachwerte dein Vermögen unsichtbar für die EU machen und gleichzeitig historische Spitzen-Renditen abwerfen.'],
-            ['02', 'thema-wege.png',    'Wie du legale Schlupflöcher nutzt, um von den Wachstums-Märkten außerhalb Europas zu profitieren – weit weg von der Euro-Krise.'],
-            ['03', 'thema-rendite.png', 'Wie du dein Kapital innerhalb von 48 Stunden so umschichtest, dass es geschützt ist und sofort für dich arbeitet.'],
+            ['01', 'thema-schutz.webp',  'Welche Sachwerte dein Vermögen unsichtbar für die EU machen und gleichzeitig historische Spitzen-Renditen abwerfen.'],
+            ['02', 'thema-wege.webp',    'Wie du legale Schlupflöcher nutzt, um von den Wachstums-Märkten außerhalb Europas zu profitieren – weit weg von der Euro-Krise.'],
+            ['03', 'thema-rendite.webp', 'Wie du dein Kapital innerhalb von 48 Stunden so umschichtest, dass es geschützt ist und sofort für dich arbeitet.'],
         ] as [$nummer, $datei, $text]): ?>
           <article class="s-card reveal">
             <?php if ($bild($datei)): ?>
