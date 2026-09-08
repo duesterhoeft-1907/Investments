@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Vom Formular zum Anruf – Film</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --grund:   #0C1413;
+    --grund-2: #131E1C;
+    --linie:   #22302E;
+    --tinte:   #EAF2F0;
+    --tinte-2: #9FB0AC;
+    --tinte-3: #6C7C79;
+    --akzent:  #3FD6C9;
+    --akzent-2:#0FAF9F;
+    --gruen:   #6ED79E;
+    --gelb:    #E3B562;
+    --rot:     #EE8F86;
+    --display: "Bricolage Grotesque", Arial, sans-serif;
+    --body:    "Source Serif 4", Georgia, serif;
+    --mono:    "IBM Plex Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body {
+    background: var(--grund); color: var(--tinte);
+    font-family: var(--body);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Ein leiser Verlauf, damit die Fläche nicht tot wirkt. */
+  .grund {
+    position: fixed; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 18% 12%, rgba(63,214,201,0.10), transparent 70%),
+      radial-gradient(50% 45% at 85% 88%, rgba(15,175,159,0.07), transparent 70%);
+  }
+  .raster {
+    position: fixed; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+
+  /* Weisse Blende von 400 ms vor dem Start. Im fertigen Film nicht zu sehen –
+     sie markiert nur den Schnittpunkt fuer den Zuschnitt. */
+  .klappe { position: fixed; inset: 0; background: #fff; z-index: 999; display: none; }
+
+  .szene {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 0 140px;
+    opacity: 0; visibility: hidden;
+  }
+  .szene.an { opacity: 1; visibility: visible; }
+
+  /* ── Bausteine ── */
+  .kicker {
+    font-family: var(--mono); font-size: 20px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--akzent);
+  }
+  h1 {
+    font-family: var(--display); font-weight: 800;
+    font-size: 130px; line-height: 0.98; letter-spacing: -0.03em;
+    margin-top: 26px; text-wrap: balance;
+  }
+  h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: 78px; line-height: 1.04; letter-spacing: -0.025em;
+    margin-top: 18px;
+  }
+  .lead { margin-top: 28px; font-size: 34px; line-height: 1.5; color: var(--tinte-2); max-width: 1180px; }
+  .fein { font-family: var(--mono); font-size: 20px; color: var(--tinte-3); letter-spacing: 0.05em; }
+
+  .marke {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--mono); font-size: 19px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--tinte-3);
+  }
+  .marke i { width: 10px; height: 10px; background: var(--akzent); display: block; }
+
+  /* ── Einblenden: jedes Element bekommt seinen Moment ── */
+  .ein { opacity: 0; transform: translateY(22px); }
+  .szene.an .ein { animation: hoch 0.62s cubic-bezier(0.22,1,0.36,1) forwards; }
+  @keyframes hoch { to { opacity: 1; transform: none; } }
+
+  /* ── Ablauf-Kette im Überblick ── */
+  .kette { display: flex; gap: 0; margin-top: 60px; align-items: stretch; }
+  .glied {
+    flex: 1; padding: 30px 32px; border: 1px solid var(--linie);
+    border-right: none; background: var(--grund-2);
+    opacity: 0.28; transition: opacity 0.4s, border-color 0.4s, background 0.4s;
+  }
+  .glied:last-child { border-right: 1px solid var(--linie); }
+  .glied.hell { opacity: 1; border-color: rgba(63,214,201,0.45); background: rgba(63,214,201,0.07); }
+  .glied .zeit {
+    font-family: var(--mono); font-size: 21px; color: var(--akzent);
+    font-variant-numeric: tabular-nums;
+  }
+  .glied .was { font-family: var(--display); font-weight: 700; font-size: 34px; margin-top: 10px; }
+  .glied .dazu { margin-top: 10px; font-size: 21px; line-height: 1.45; color: var(--tinte-2); }
+
+  /* ── Zeilenliste ── */
+  .zeilen { margin-top: 46px; display: flex; flex-direction: column; gap: 22px; max-width: 1400px; }
+  .zeile { display: flex; gap: 26px; align-items: baseline; font-size: 33px; line-height: 1.4; }
+  .zeile .num {
+    font-family: var(--mono); font-size: 21px; color: var(--akzent);
+    min-width: 62px; padding-top: 6px;
+  }
+  .zeile .txt { color: var(--tinte); }
+  .zeile .txt em { font-style: normal; color: var(--tinte-2); }
+  .zeile b { font-weight: 600; color: var(--akzent); }
+
+  /* ── Stand-Marken ── */
+  .stand {
+    display: inline-flex; align-items: center; gap: 9px;
+    padding: 6px 16px; font-family: var(--mono); font-size: 18px;
+    letter-spacing: 0.09em; text-transform: uppercase;
+  }
+  .stand::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+  .st-gebaut { background: rgba(110,215,158,0.13); color: var(--gruen); }
+  .st-offen  { background: rgba(227,181,98,0.13);  color: var(--gelb); }
+  .st-frage  { background: rgba(238,143,134,0.13); color: var(--rot); }
+
+  /* ── Countdown ── */
+  #countdown {
+    align-items: center; justify-content: center; text-align: center;
+  }
+  .zahl {
+    font-family: var(--display); font-weight: 800;
+    font-size: 420px; line-height: 1; letter-spacing: -0.05em;
+    color: var(--akzent);
+    font-variant-numeric: tabular-nums;
+  }
+  .zahl.puls { animation: puls 1s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes puls {
+    0%   { transform: scale(0.86); opacity: 0; }
+    22%  { transform: scale(1.02); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .ring {
+    position: absolute; width: 560px; height: 560px; border-radius: 50%;
+    border: 2px solid rgba(63,214,201,0.3);
+  }
+  .ring.puls { animation: ringpuls 1s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes ringpuls {
+    from { transform: scale(0.7); opacity: 0.9; }
+    to   { transform: scale(1.25); opacity: 0; }
+  }
+  #countdown .titel {
+    position: absolute; bottom: 150px;
+    font-family: var(--mono); font-size: 26px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--tinte-3);
+  }
+
+  /* ── Abspann ── */
+  .zahlen { display: flex; gap: 90px; margin-top: 56px; }
+  .zahlen div .gross {
+    font-family: var(--display); font-weight: 800; font-size: 92px;
+    color: var(--akzent); line-height: 1; font-variant-numeric: tabular-nums;
+  }
+  .zahlen div .klein { margin-top: 12px; font-size: 24px; color: var(--tinte-2); }
+
+  .fussleiste {
+    position: fixed; left: 140px; right: 140px; bottom: 68px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--mono); font-size: 19px; color: var(--tinte-3);
+    letter-spacing: 0.08em; opacity: 0; transition: opacity 0.5s;
+  }
+  .fussleiste.an { opacity: 1; }
+  .balken { position: fixed; left: 0; top: 0; height: 3px; background: var(--akzent); width: 0; }
+</style>
+</head>
+<body>
+<div class="klappe" id="klappe"></div>
+<div class="grund"></div>
+<div class="raster"></div>
+<div class="balken" id="balken"></div>
+
+<!-- Der Film besteht aus Szenen; das Skript unten blendet sie nach Plan ein. -->
+<div class="szene" id="titel">
+  <div class="marke ein" style="animation-delay:.1s"><i></i>21 Capital Invest</div>
+  <h1 class="ein" style="animation-delay:.35s">Vom Formular<br>zum Anruf</h1>
+  <p class="lead ein" style="animation-delay:.8s">
+    Was zwischen „Anfrage absenden“ und dem Klingeln des Telefons passiert.
+  </p>
+</div>
+
+<div class="szene" id="ueberblick">
+  <div class="kicker ein">Überblick</div>
+  <h2 class="ein" style="animation-delay:.2s">Vier Fragen, dann ein Mensch</h2>
+  <div class="kette">
+    <div class="glied" id="g1"><div class="zeit">T+0</div><div class="was">Formular</div><div class="dazu">Vier Fragen auf dem Telefon. Kein Neuladen.</div></div>
+    <div class="glied" id="g2"><div class="zeit">+90 ms</div><div class="was">Zuteilung</div><div class="dazu">Fachgebiet → Gruppe → Berater. Abwesende werden übersprungen.</div></div>
+    <div class="glied" id="g3"><div class="zeit">≤ 3 s</div><div class="was">Alarm</div><div class="dazu">Glocke, Ton, Chat und Mail. Die Uhr läuft.</div></div>
+    <div class="glied" id="g4"><div class="zeit">≤ 10 Min.</div><div class="was">Anruf</div><div class="dazu">Und die Zeit dahin wird gemessen.</div></div>
+  </div>
+</div>
+
+<div class="szene" id="countdown">
+  <div class="ring" id="ring"></div>
+  <div class="zahl" id="zahl">4</div>
+  <div class="titel" id="cdtitel"></div>
+</div>
+
+<div class="szene" id="weg">
+  <div class="kicker ein">Bereich 1</div>
+  <h2 class="ein" style="animation-delay:.15s">Der Weg einer Anfrage</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">+40 ms</span><span class="txt">Jedes Feld geprüft. <b>Ohne Telefonnummer geht nichts weiter</b> – der Rückruf ist der Punkt.</span></div>
+    <div class="zeile ein" style="animation-delay:1.3s"><span class="num">+15 ms</span><span class="txt">Kennen wir den? Dann <b>derselbe Berater wie beim letzten Mal</b>.</span></div>
+    <div class="zeile ein" style="animation-delay:2.1s"><span class="num">+25 ms</span><span class="txt">Lead und Aufgabe in einer Transaktion. Die Frist rechnet <b>gegen die Geschäftszeiten</b>.</span></div>
+    <div class="zeile ein" style="animation-delay:2.9s"><span class="num">≤ 3 s</span><span class="txt">Alle offenen CRM-Fenster fragen im Sekundentakt nach. <em>Kein WebSocket – auf geteiltem Hosting gibt es keinen dauerhaften Prozess.</em></span></div>
+  </div>
+</div>
+
+<div class="szene" id="benachrichtigung">
+  <div class="kicker ein">Bereich 2</div>
+  <h2 class="ein" style="animation-delay:.15s">Jeder, wie er will</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">heute</span><span class="txt">CRM, Mail und interner Chat – für alle gleich. <span class="stand st-gebaut">läuft</span></span></div>
+    <div class="zeile ein" style="animation-delay:1.3s"><span class="num">neu</span><span class="txt">Eine Matrix im Profil: <b>welcher Anlass auf welchem Weg</b>, mit eigenen Ruhezeiten. <span class="stand st-offen">zu bauen</span></span></div>
+    <div class="zeile ein" style="animation-delay:2.1s"><span class="num">dazu</span><span class="txt">SMS und WhatsApp als <b>Eskalation</b>, nicht als Regelweg – beides kostet je Nachricht. <span class="stand st-frage">Entscheidung</span></span></div>
+    <div class="zeile ein" style="animation-delay:2.9s"><span class="num">wichtig</span><span class="txt">Bündeln statt einzeln. <em>Sonst schaltet nach der dritten Anfrage am Vormittag jemand alles ab.</em></span></div>
+  </div>
+</div>
+
+<div class="szene" id="pwa">
+  <div class="kicker ein">Bereich 3</div>
+  <h2 class="ein" style="animation-delay:.15s">Die App auf dem Telefon</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">was</span><span class="txt">Drei Dateien neben der Seite: Manifest, Service Worker, Push-Anmeldung.</span></div>
+    <div class="zeile ein" style="animation-delay:1.3s"><span class="num">dann</span><span class="txt">Das CRM liegt auf dem Startbildschirm und <b>meldet sich auch bei geschlossener App</b>.</span></div>
+    <div class="zeile ein" style="animation-delay:2.1s"><span class="num">wofür</span><span class="txt">Vor allem für den Chat: heute nützt er nur bei offenem Fenster.</span></div>
+    <div class="zeile ein" style="animation-delay:2.9s"><span class="num">kosten</span><span class="txt">Keine laufenden. <em>Android sofort, iPhone ab 16.4 nach dem Hinzufügen zum Startbildschirm.</em></span></div>
+  </div>
+</div>
+
+<div class="szene" id="vertretung">
+  <div class="kicker ein">Bereich 4</div>
+  <h2 class="ein" style="animation-delay:.15s">Zwei an einem Kunden</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">heute</span><span class="txt">Ein Vorgang, ein Zuständiger. Im Normalfall richtig – <em>geteilte Verantwortung ist keine</em>.</span></div>
+    <div class="zeile ein" style="animation-delay:1.3s"><span class="num">neu</span><span class="txt"><b>Zuständig</b> entscheidet und wird gemessen. <b>Vertretung</b> sieht alles, darf alles, wird nicht gemessen.</span></div>
+    <div class="zeile ein" style="animation-delay:2.1s"><span class="num">nutzen</span><span class="txt">Beim Eintragen einer Abwesenheit wandern die Vorgänge mit – und kommen zurück.</span></div>
+  </div>
+</div>
+
+<div class="szene" id="mail">
+  <div class="kicker ein">Bereich 5</div>
+  <h2 class="ein" style="animation-delay:.15s">Vorlagen und Nachverfolgung</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">jetzt</span><span class="txt">Drei Mailtexte stehen im Quelltext. Für Bestätigung und Alarm richtig – für alles Geschriebene falsch.</span></div>
+    <div class="zeile ein" style="animation-delay:1.3s"><span class="num">neu</span><span class="txt">Vorlagen mit Bausteinen, zweisprachig, Vorschau vor dem Senden.</span></div>
+    <div class="zeile ein" style="animation-delay:2.1s"><span class="num">achtung</span><span class="txt"><b>Klicks sind ehrlich, Öffnungen nicht.</b> Apple lädt das Zählbild seit 2021 im Voraus.</span></div>
+  </div>
+</div>
+
+<div class="szene" id="postfach">
+  <div class="kicker ein">Bereich 6</div>
+  <h2 class="ein" style="animation-delay:.15s">Das Antwortpostfach</h2>
+  <div class="zeilen">
+    <div class="zeile ein" style="animation-delay:.5s"><span class="num">idee</span><span class="txt">Jede Mail bekommt ein Antwort-an mit der Vorgangsnummer:<br><span class="fein">antwort+LD-7K3M9X@21capitalinvest.com</span></span></div>
+    <div class="zeile ein" style="animation-delay:1.4s"><span class="num">dann</span><span class="txt">Ein Cron holt per IMAP, was neu ist – und hängt die Antwort <b>ohne Zutun an den richtigen Vorgang</b>.</span></div>
+    <div class="zeile ein" style="animation-delay:2.3s"><span class="num">und</span><span class="txt">Unbekannter Absender? Einschätzung mit Begründung, daneben ein Knopf <em>Als Anfrage anlegen</em>.</span></div>
+    <div class="zeile ein" style="animation-delay:3.2s"><span class="num">grundsatz</span><span class="txt">Die Maschine schlägt vor, <b>der Mensch entscheidet</b>.</span></div>
+  </div>
+</div>
+
+<div class="szene" id="abspann">
+  <div class="kicker ein">Und was kostet das</div>
+  <h2 class="ein" style="animation-delay:.15s">Sechs Stufen, jede für sich nützlich</h2>
+  <div class="zahlen">
+    <div class="ein" style="animation-delay:.7s"><div class="gross">14,5</div><div class="klein">Tage insgesamt</div></div>
+    <div class="ein" style="animation-delay:1.0s"><div class="gross">0 €</div><div class="klein">laufend, außer SMS und WhatsApp</div></div>
+    <div class="ein" style="animation-delay:1.3s"><div class="gross">4</div><div class="klein">Entscheidungen von euch</div></div>
+  </div>
+  <p class="lead ein" style="animation-delay:1.8s; margin-top:52px">
+    Zuerst die Warteschlange für den Mailversand – ein halber Tag, und das Formular
+    hängt nie wieder am Mailserver.
+  </p>
+</div>
+
+<div class="fussleiste" id="fuss">
+  <span id="fuss-links">21 Capital Invest · Lead-Strecke</span>
+  <span id="fuss-rechts"></span>
+</div>
+
+<script>
+/**
+ * Der Ablauf.
+ *
+ * Eine Liste aus Szenen mit Dauer in Sekunden. Das Skript blendet sie
+ * nacheinander ein und schreibt den Fortschritt in den Balken oben. Die
+ * Zeiten sind zugleich das Budget für den Sprechertext – wer den Text
+ * ändert, ändert hier die Sekunden mit.
+ */
+const ABLAUF = [
+  { id: 'titel',           s: 6,  fuss: '' },
+  { id: 'ueberblick',      s: 26, fuss: 'Überblick', kette: true },
+  { id: 'countdown',       s: 5,  titel: 'Der Weg einer Anfrage' },
+  { id: 'weg',             s: 26, fuss: '1 / 6 · Der Weg einer Anfrage' },
+  { id: 'countdown',       s: 5,  titel: 'Benachrichtigungen' },
+  { id: 'benachrichtigung',s: 26, fuss: '2 / 6 · Benachrichtigungen' },
+  { id: 'countdown',       s: 5,  titel: 'Die App auf dem Telefon' },
+  { id: 'pwa',             s: 24, fuss: '3 / 6 · Die App auf dem Telefon' },
+  { id: 'countdown',       s: 5,  titel: 'Vertretung' },
+  { id: 'vertretung',      s: 22, fuss: '4 / 6 · Vertretung' },
+  { id: 'countdown',       s: 5,  titel: 'Vorlagen und Nachverfolgung' },
+  { id: 'mail',            s: 22, fuss: '5 / 6 · Vorlagen und Nachverfolgung' },
+  { id: 'countdown',       s: 5,  titel: 'Das Antwortpostfach' },
+  { id: 'postfach',        s: 26, fuss: '6 / 6 · Das Antwortpostfach' },
+  { id: 'abspann',         s: 14, fuss: '' },
+];
+
+const GESAMT = ABLAUF.reduce((a, b) => a + b.s, 0);
+window.__DAUER__ = GESAMT;
+
+const $ = (id) => document.getElementById(id);
+const balken = $('balken');
+const fuss = $('fuss');
+
+let start = 0;
+
+function szeneAn(eintrag) {
+  for (const el of document.querySelectorAll('.szene')) el.classList.remove('an');
+  const el = $(eintrag.id);
+  // Die Einblend-Animationen laufen nur einmal; für die zweite Nutzung
+  // derselben Szene (Countdown) wird sie neu aufgebaut.
+  el.classList.add('an');
+
+  if (eintrag.fuss !== undefined) {
+    $('fuss-rechts').textContent = eintrag.fuss;
+    fuss.classList.toggle('an', eintrag.fuss !== '');
+  }
+}
+
+/** Die vier Glieder der Kette leuchten nacheinander auf. */
+function kette(msSeitStart) {
+  const marken = [1200, 5000, 11000, 17000];
+  marken.forEach((ms, i) => {
+    $('g' + (i + 1)).classList.toggle('hell', msSeitStart >= ms);
+  });
+}
+
+/** 4 – 3 – 2 – 1, eine Zahl je Sekunde. */
+function countdown(msSeitStart, titel) {
+  $('cdtitel').textContent = titel ?? '';
+  const n = 4 - Math.floor(msSeitStart / 1000);
+  const zahl = $('zahl');
+  const ring = $('ring');
+  const zeige = n >= 1 ? String(n) : '1';
+  if (zahl.textContent !== zeige) {
+    zahl.textContent = zeige;
+    zahl.classList.remove('puls'); void zahl.offsetWidth; zahl.classList.add('puls');
+    ring.classList.remove('puls'); void ring.offsetWidth; ring.classList.add('puls');
+  }
+}
+
+function schritt(jetzt) {
+  if (!start) start = jetzt;
+  const t = (jetzt - start) / 1000;
+  balken.style.width = Math.min(100, (t / GESAMT) * 100) + '%';
+
+  let summe = 0;
+  for (const eintrag of ABLAUF) {
+    if (t < summe + eintrag.s) {
+      const inSzene = (t - summe) * 1000;
+      if (aktuell !== eintrag) { aktuell = eintrag; szeneAn(eintrag); }
+      if (eintrag.kette) kette(inSzene);
+      if (eintrag.id === 'countdown') countdown(inSzene, eintrag.titel);
+      break;
+    }
+    summe += eintrag.s;
+  }
+
+  if (t >= GESAMT) { window.__FERTIG__ = true; return; }
+  requestAnimationFrame(schritt);
+}
+
+let aktuell = null;
+// Erst starten, wenn die Schriften da sind – sonst springt das Layout im Bild.
+document.fonts.ready.then(async () => {
+  const klappe = $('klappe');
+  klappe.style.display = 'block';
+  await new Promise((fertig) => setTimeout(fertig, 400));
+  klappe.style.display = 'none';
+  window.__BEREIT__ = true;
+  requestAnimationFrame(schritt);
+});
+</script>
+</body>
+</html>

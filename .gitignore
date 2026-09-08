@@ -17,3 +17,9 @@ vendor/
 *.log
 .DS_Store
 Thumbs.db
+
+# Film: Quelle liegt im Git, die Ausgabe nicht (zu gross und jederzeit neu erzeugbar)
+video/*.mp4
+video/roh/
+video/film-lokal.html
+video/ton-*/
