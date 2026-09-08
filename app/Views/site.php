@@ -33,7 +33,71 @@ $bild = static function (string $datei): ?string {
 };
 
 require __DIR__ . '/partials/head.php';
+
+/*
+ * Strukturierte Daten.
+ *
+ * Klassische Suchmaschinen lesen daraus die Angaben für ihre Trefferkarte;
+ * KI-Suchsysteme zitieren daraus, wer hier eigentlich spricht. Beides sind
+ * Angaben, die im Fließtext stehen – hier stehen sie noch einmal in einer
+ * Form, die eine Maschine ohne Raten versteht.
+ */
+$firmenname = (string) ($company['name'] ?? '21 Capital Invest');
+$basis = rtrim((string) Config::get('base_url', ''), '/');
+$strukturiert = [
+    '@context' => 'https://schema.org',
+    '@graph'   => [
+        [
+            '@type'       => 'FinancialService',
+            '@id'         => $basis . '/#organisation',
+            'name'        => $firmenname,
+            'url'         => $basis . '/',
+            'logo'        => $basis . '/assets/brand/logo.png',
+            'description' => $description,
+            'telephone'   => (string) ($company['phone'] ?? ''),
+            'email'       => (string) ($company['email'] ?? ''),
+            'address'     => [
+                '@type'           => 'PostalAddress',
+                'streetAddress'   => 'Potsdamer Platz 1',
+                'postalCode'      => '10117',
+                'addressLocality' => 'Berlin',
+                'addressCountry'  => 'DE',
+            ],
+            'areaServed' => ['@type' => 'Country', 'name' => 'Deutschland'],
+            'knowsAbout' => [
+                'Vermögensschutz', 'Edelmetalle', 'Sachwerte',
+                'Private Equity', 'Diversifikation außerhalb der EU',
+            ],
+        ],
+        [
+            '@type'    => 'WebSite',
+            '@id'      => $basis . '/#website',
+            'url'      => $basis . '/',
+            'name'     => $firmenname,
+            'publisher' => ['@id' => $basis . '/#organisation'],
+            'inLanguage' => 'de-DE',
+        ],
+        [
+            // Das Versprechen, um das sich die ganze Anwendung dreht –
+            // maschinenlesbar, nicht nur als Werbezeile.
+            '@type'       => 'Service',
+            'name'        => 'Diskretes Erstgespräch zum Vermögensschutz',
+            'provider'    => ['@id' => $basis . '/#organisation'],
+            'description' => 'Kostenloses und vertrauliches Erstgespräch. Die Anfrage geht direkt '
+                . 'an das zuständige Fachteam; die Reaktionszeit wird gemessen.',
+            'areaServed'  => ['@type' => 'Country', 'name' => 'Deutschland'],
+            'offers'      => [
+                '@type'         => 'Offer',
+                'price'         => '0',
+                'priceCurrency' => 'EUR',
+                'url'           => $basis . '/anfrage',
+            ],
+        ],
+    ],
+];
 ?>
+<script type="application/ld+json"><?= json_encode($strukturiert, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
+
 <header class="s-top">
   <a class="s-logo" href="/" aria-label="<?= htmlspecialchars((string) ($company['name'] ?? ''), ENT_QUOTES) ?>">
     <img src="/assets/brand/logo.png" alt="<?= htmlspecialchars((string) ($company['name'] ?? ''), ENT_QUOTES) ?>" width="132" height="44">
