@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS users (
   phone          VARCHAR(60)  NOT NULL DEFAULT '',
   role           ENUM('admin','manager','agent') NOT NULL DEFAULT 'agent',
   accent         VARCHAR(9)   NOT NULL DEFAULT '#21B4A6',
+  -- Dateiname des Profilbildes in storage/uploads/avatars. Leer heisst:
+  -- die Initialen tun es auch.
+  avatar_file    VARCHAR(80)  NOT NULL DEFAULT '',
   is_active      TINYINT(1)   NOT NULL DEFAULT 1,
   away_until     DATETIME     NULL,
   away_note      VARCHAR(160) NOT NULL DEFAULT '',
@@ -107,6 +110,25 @@ CREATE TABLE IF NOT EXISTS customers (
   updated_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_customers_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Alle E-Mail-Adressen eines Menschen.
+--
+-- Erkannt wird ueber diese Tabelle, nicht ueber customers.email – dort
+-- steht nur, welche Adresse angezeigt wird. Wer unter zwei Adressen
+-- schreibt, wird sonst zweimal gezaehlt; und wuerde beim Zusammenfuehren
+-- die zweite Adresse verschwinden, legte die naechste Anfrage von dort
+-- prompt wieder einen neuen Kunden an.
+CREATE TABLE IF NOT EXISTS customer_emails (
+  id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  customer_id INT UNSIGNED NOT NULL,
+  email       VARCHAR(190) NOT NULL,
+  is_primary  TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_customer_email (email),
+  KEY idx_customer_email_owner (customer_id),
+  CONSTRAINT fk_customer_email FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ───────────────────────────── Leads ─────────────────────────────

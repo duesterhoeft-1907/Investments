@@ -408,6 +408,36 @@ Was daraus folgt:
   Anfrage der Stand von damals. Zieht jemand um, bleibt die alte Anfrage
   mit der alten Adresse richtig – sie wurde ja so gestellt.
 
+#### Zwei Datensätze, ein Mensch
+Wer unter zwei E-Mail-Adressen schreibt, steht zweimal da – die Erkennung
+kann das nicht anders wissen. An der Kundenkarte lässt sich das von Hand
+zusammenführen (Geschäftsführung und Leitung): Vorschläge kommen über
+gleiche Telefonnummer und gleichen Namen, dazu eine freie Suche.
+
+Wichtig dabei: **die zweite Adresse bleibt erhalten.** Sie wandert mit und
+wird künftig ebenfalls erkannt – sonst legte die nächste Anfrage von dort
+prompt wieder einen neuen Kunden an, und die Arbeit wäre umsonst. An jeder
+verschobenen Anfrage steht im Verlauf, woher sie kam. Rückgängig machen
+lässt sich das nicht, deshalb steht eine Rückfrage davor.
+
+#### Profil und Profilbild
+Name, Funktion, Telefonnummer, Farbe und Bild pflegt jede und jeder selbst
+unter *Mein Profil* (der eigene Name oben rechts). Rolle, Zugang und
+E-Mail-Adresse bleiben in der Verwaltung: das sind Entscheidungen über die
+Person, nicht von ihr.
+
+Das Bild wird beim Hochladen serverseitig mittig quadratisch zugeschnitten
+und auf 320 Pixel gebracht (WebP, ~15 kB) – ein Porträt aus einer
+Handykamera hat gern vier Megabyte, und es erscheint am Ende als 36 Pixel
+grosser Kreis. Es taucht überall auf, wo bisher Initialen standen: Kopfzeile,
+Lead-Liste, Verlauf, Chat, Team – **und im Kundenbereich bei dem, der auf
+den Rückruf wartet.** Fehlt es oder lädt es nicht, stehen die Initialen
+weiter da; es bleibt kein leeres Kästchen zurück.
+
+Ausgeliefert werden die Bilder ohne Anmeldung unter `/api/avatars/…`, weil
+sie auch in E-Mails erscheinen sollen und ein Mailprogramm keine Sitzung
+mitbringt. Der Dateiname ist zufällig und damit nicht zu erraten.
+
 #### Rückruf am Abend
 Ein zusätzliches Zeitfenster im Anfrageformular, in der Verwaltung unter
 *Ruhezeiten* ein- und ausschaltbar (Vorgabe: 19–21 Uhr). Es ist **getrennt

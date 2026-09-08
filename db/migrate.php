@@ -262,6 +262,59 @@ $steps = [
               WHERE l.customer_id IS NULL",
         ],
     ],
+    [
+        // Zweitadressen.
+        //
+        // Wer unter zwei Adressen schreibt, wurde zweimal gezaehlt. Beim
+        // Zusammenfuehren muessen beide Adressen erhalten bleiben – sonst
+        // legt die naechste Anfrage von der aufgeloesten Adresse prompt
+        // wieder einen neuen Kunden an, und die Arbeit war umsonst.
+        'name'  => 'Tabelle für weitere E-Mail-Adressen',
+        'check' => static fn (): bool => (int) Db::value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'customer_emails'"
+        ) === 0,
+        'sql'   => [
+            "CREATE TABLE customer_emails (
+               id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+               customer_id INT UNSIGNED NOT NULL,
+               email       VARCHAR(190) NOT NULL,
+               is_primary  TINYINT(1)   NOT NULL DEFAULT 0,
+               created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               PRIMARY KEY (id),
+               UNIQUE KEY uq_customer_email (email),
+               KEY idx_customer_email_owner (customer_id),
+               CONSTRAINT fk_customer_email FOREIGN KEY (customer_id)
+                 REFERENCES customers(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ],
+    ],
+    [
+        'name'  => 'Bekannte Adressen eintragen',
+        'check' => static fn (): bool => (int) Db::value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'customer_emails'"
+        ) > 0 && (int) Db::value(
+            'SELECT COUNT(*) FROM customers c
+              WHERE NOT EXISTS (SELECT 1 FROM customer_emails e WHERE e.customer_id = c.id)'
+        ) > 0,
+        'sql'   => [
+            'INSERT IGNORE INTO customer_emails (customer_id, email, is_primary, created_at)
+             SELECT c.id, c.email, 1, c.created_at FROM customers c',
+        ],
+    ],
+    [
+        // Profilbild je Mitarbeiter.
+        //
+        // Der Interessent sieht im Kundenbereich und in der Bestaetigung,
+        // wer sich meldet. Ein Gesicht dazu ist der Unterschied zwischen
+        // "jemand aus dem Vertrieb" und "Nadja Weber".
+        'name'  => 'Profilbild am Mitarbeiter',
+        'check' => static fn (): bool => !hasColumn('users', 'avatar_file'),
+        'sql'   => [
+            "ALTER TABLE users ADD COLUMN avatar_file VARCHAR(80) NOT NULL DEFAULT '' AFTER accent",
+        ],
+    ],
 ];
 
 $done = 0;

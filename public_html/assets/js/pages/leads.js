@@ -181,7 +181,7 @@ export function render(view, { session }) {
         h('span.score', { title: `Score ${lead.score}/100`, style: { background: (lead.teamColor || '#21b4a6') + '1a', color: lead.teamColor || '#21b4a6' } }, String(lead.score))),
       h('p.volume', lead.volumeLabel || '–'),
       h('div.foot',
-        lead.owner ? avatar(lead.owner.name, lead.owner.accent, 22) : h('span.faint', { style: { fontSize: '10px' } }, 'nicht zugewiesen'),
+        lead.owner ? avatar(lead.owner.name, lead.owner.accent, 22, { avatar: lead.owner.avatar }) : h('span.faint', { style: { fontSize: '10px' } }, 'nicht zugewiesen'),
         slaClock(lead, 'sm')),
     );
   }
@@ -201,7 +201,7 @@ export function render(view, { session }) {
             h('td.muted', lead.volumeLabel || '–'),
             h('td', statusBadge(lead.status, lead.statusLabel)),
             h('td', lead.owner
-              ? h('span.row', { style: { gap: '8px' } }, avatar(lead.owner.name, lead.owner.accent, 24), h('span.faint', { style: { fontSize: '12px' } }, lead.owner.name))
+              ? h('span.row', { style: { gap: '8px' } }, avatar(lead.owner.name, lead.owner.accent, 24, { avatar: lead.owner.avatar }), h('span.faint', { style: { fontSize: '12px' } }, lead.owner.name))
               : h('span.faint', { style: { fontSize: '12px' } }, 'offen')),
             h('td', slaClock(lead, 'sm')),
             h('td.faint', { style: { fontSize: '12px' } }, formatRelative(lead.createdAt))))),

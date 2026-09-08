@@ -98,6 +98,7 @@ final class AuthController
             'phone'      => $user['phone'],
             'role'       => $user['role'],
             'accent'     => $user['accent'],
+            'avatar'     => ProfileController::avatarUrl($user['avatar_file'] ?? ''),
             'lastSeenAt' => Leads::iso($user['last_seen_at']),
             'teams'      => $teams,
         ];

@@ -32,6 +32,7 @@ const ROUTES = [
   { pattern: /^\/app\/chat\/?$/,         load: () => import('./pages/chat.js') },
   { pattern: /^\/app\/team\/?$/,         load: () => import('./pages/team.js') },
   { pattern: /^\/app\/settings\/?$/,     load: () => import('./pages/settings.js') },
+  { pattern: /^\/app\/profil\/?$/,       load: () => import('./pages/profile.js') },
 ];
 
 const NAV = [
@@ -164,8 +165,12 @@ function headerBar() {
       umschalter(),
       bellButton(),
       h('div.crm-user',
-        avatar(session.user.name, session.user.accent, 30),
-        h('div.who', h('div.name', session.user.name), h('div.title', session.user.title)),
+        // Der eigene Name führt zum eigenen Profil – dort, wo man ihn
+        // sucht, wenn man ihn ändern will.
+        h('a.crm-ich', { href: '/app/profil', onclick: (e) => { e.preventDefault(); navigate('/app/profil'); },
+          title: 'Mein Profil' },
+          avatar(session.user.name, session.user.accent, 30, { avatar: session.user.avatar }),
+          h('div.who', h('div.name', session.user.name), h('div.title', session.user.title))),
         h('button.icon-btn', {
           style: { padding: '2px' },
           'aria-label': 'Abmelden',
@@ -197,7 +202,14 @@ function bellButton() {
   }, icon('bell', 18), session.unread > 0 ? h('span.count', session.unread > 99 ? '99+' : String(session.unread)) : null);
 }
 
-function refreshHeader() {
+/**
+ * Kopfleiste neu zeichnen.
+ *
+ * Exportiert, weil das eigene Profil sie ändert: wer sein Bild oder
+ * seinen Namen speichert, soll ihn oben sofort sehen und nicht erst nach
+ * dem nächsten Neuladen.
+ */
+export function refreshHeader() {
   const header = $('.crm-header');
   if (header) mount(header, headerBar());
 }

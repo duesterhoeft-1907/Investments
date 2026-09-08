@@ -101,7 +101,7 @@ export function render(view, { params, session, navigate }) {
       h('div', { style: { maxHeight: '13rem', overflowY: 'auto', padding: '6px 0' } },
         state.users.filter((u) => u.id !== session.user.id).map((u) =>
           h('button.row', { style: { gap: '10px', width: '100%', padding: '6px 16px', background: 'none', border: 'none', textAlign: 'left' }, onclick: () => openDirect(u.id) },
-            avatar(u.name, u.accent, 24, u.online),
+            avatar(u.name, u.accent, 24, { avatar: u.avatar, online: u.online }),
             h('span.grow',
               h('span.truncate', { style: { display: 'block', fontSize: '12px' } }, u.name),
               h('span.truncate.faint', { style: { display: 'block', fontSize: '10px' } }, u.title))))));
@@ -122,7 +122,7 @@ export function render(view, { params, session, navigate }) {
       },
     },
       channel.type === 'dm' && channel.partner
-        ? avatar(channel.partner.name, channel.partner.accent, 22, partnerOnline)
+        ? avatar(channel.partner.name, channel.partner.accent, 22, { avatar: channel.partner.avatar, online: partnerOnline })
         : h('span', { style: { color: channel.teamColor || 'rgba(var(--auf), 0.3)', display: 'flex' } },
             icon(channel.type === 'company' ? 'building' : 'hash', 16)),
       h('span.grow',
@@ -176,7 +176,7 @@ export function render(view, { params, session, navigate }) {
     }
 
     return h('div.msg' + (grouped ? '.grouped' : ''),
-      h('span.slot', !grouped && message.author ? avatar(message.author.name, message.author.accent, 32) : null),
+      h('span.slot', !grouped && message.author ? avatar(message.author.name, message.author.accent, 32, { avatar: message.author.avatar }) : null),
       h('div.grow',
         !grouped ? h('div.row', { style: { gap: '8px', alignItems: 'baseline' } },
           h('span.author' + (isMe ? '.me' : ''), message.author?.name ?? 'System'),

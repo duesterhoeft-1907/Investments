@@ -50,7 +50,13 @@ final class Customers
             return ['id' => 0, 'neu' => true, 'anfragen' => 0];
         }
 
-        $vorhanden = Db::one('SELECT id FROM customers WHERE email = :e', ['e' => $email]);
+        // Gesucht wird ueber alle bekannten Adressen, nicht nur ueber die
+        // angezeigte: nach einem Zusammenfuehren gehoeren einem Menschen
+        // mehrere, und eine Anfrage von der zweiten soll bei ihm landen.
+        $vorhanden = Db::one(
+            'SELECT customer_id AS id FROM customer_emails WHERE email = :e',
+            ['e' => $email]
+        );
 
         if ($vorhanden === null) {
             $id = Db::insert(
@@ -68,6 +74,10 @@ final class Customers
                     'country' => ($in['country'] ?? '') !== '' ? (string) $in['country'] : 'DE',
                     'lang'    => in_array($in['lang'] ?? 'de', ['de', 'en'], true) ? (string) $in['lang'] : 'de',
                 ]
+            );
+            Db::run(
+                'INSERT IGNORE INTO customer_emails (customer_id, email, is_primary) VALUES (:c, :e, 1)',
+                ['c' => $id, 'e' => $email]
             );
             return ['id' => $id, 'neu' => true, 'anfragen' => 0];
         }
@@ -114,8 +124,30 @@ final class Customers
     /** @return array<string,mixed>|null */
     public static function byEmail(string $email): ?array
     {
-        $row = Db::one('SELECT * FROM customers WHERE email = :e', ['e' => self::normalise($email)]);
+        $row = Db::one(
+            'SELECT c.* FROM customers c
+               JOIN customer_emails e ON e.customer_id = c.id
+              WHERE e.email = :e',
+            ['e' => self::normalise($email)]
+        );
         return $row === null ? null : self::present($row);
+    }
+
+    /**
+     * Alle Adressen, unter denen dieser Mensch bekannt ist.
+     *
+     * @return list<array{email:string, primary:bool}>
+     */
+    public static function emails(int $customerId): array
+    {
+        return array_map(
+            static fn (array $r): array => ['email' => (string) $r['email'], 'primary' => (bool) $r['is_primary']],
+            Db::all(
+                'SELECT email, is_primary FROM customer_emails
+                  WHERE customer_id = :id ORDER BY is_primary DESC, email',
+                ['id' => $customerId]
+            )
+        );
     }
 
     /**
@@ -210,7 +242,7 @@ final class Customers
     public static function activities(int $customerId, int $limit = 200): array
     {
         return Db::all(
-            'SELECT a.*, u.name AS user_name, u.accent AS user_accent,
+            'SELECT a.*, u.name AS user_name, u.accent AS user_accent, u.avatar_file AS user_avatar,
                     l.public_ref AS lead_ref, l.id AS lead_ref_id,
                     ac.name AS lead_asset_class
                FROM activities a
@@ -247,6 +279,193 @@ final class Customers
             ['id' => $customerId, 'team' => $teamId, 'team2' => $teamId]
         );
         return $row === null ? null : (int) $row['owner_id'];
+    }
+
+    /**
+     * Zwei Datensätze, ein Mensch.
+     *
+     * Zusammengeführt wird in den Ziel-Kunden hinein: der behält seine
+     * Kennung, seine angezeigte Adresse und seinen Portalzugang. Vom
+     * aufgelösten kommt alles mit, was das Ziel nicht hat – vor allem
+     * seine E-Mail-Adresse, denn sonst legte die nächste Anfrage von
+     * dort prompt wieder einen neuen Kunden an.
+     *
+     * Der Verlauf hält es an jeder verschobenen Anfrage fest. Rückgängig
+     * machen lässt sich das nicht, deshalb steht in der Oberfläche eine
+     * Rückfrage davor.
+     *
+     * @return array{leads:int, emails:int}
+     */
+    public static function merge(int $quelle, int $ziel): array
+    {
+        if ($quelle === $ziel) {
+            throw new \InvalidArgumentException('Ein Kunde lässt sich nicht mit sich selbst zusammenführen.');
+        }
+
+        $von = Db::one('SELECT * FROM customers WHERE id = :id', ['id' => $quelle]);
+        $nach = Db::one('SELECT * FROM customers WHERE id = :id', ['id' => $ziel]);
+        if ($von === null || $nach === null) {
+            throw new \RuntimeException('Kunde nicht gefunden.');
+        }
+
+        $verschobene = Db::all('SELECT id FROM leads WHERE customer_id = :id', ['id' => $quelle]);
+        $adressen = count(self::emails($quelle));
+
+        Db::transaction(static function () use ($quelle, $ziel, $von, $nach): void {
+            Db::run('UPDATE leads SET customer_id = :ziel WHERE customer_id = :quelle',
+                ['ziel' => $ziel, 'quelle' => $quelle]);
+
+            // Die Adressen wandern mit. is_primary faellt dabei weg – die
+            // angezeigte Adresse ist die des Ziels.
+            Db::run('UPDATE customer_emails SET customer_id = :ziel, is_primary = 0 WHERE customer_id = :quelle',
+                ['ziel' => $ziel, 'quelle' => $quelle]);
+
+            // Stammdaten nur dort ergaenzen, wo das Ziel nichts hat.
+            Db::run(
+                "UPDATE customers SET
+                    first_name  = COALESCE(NULLIF(first_name, ''),  :first),
+                    last_name   = COALESCE(NULLIF(last_name, ''),   :last),
+                    phone       = COALESCE(NULLIF(phone, ''),       :phone),
+                    company     = COALESCE(NULLIF(company, ''),     :company),
+                    city        = COALESCE(NULLIF(city, ''),        :city),
+                    postal_code = COALESCE(NULLIF(postal_code, ''), :plz),
+                    portal_password_hash = COALESCE(portal_password_hash, :pwd),
+                    portal_last_login    = GREATEST(
+                        COALESCE(portal_last_login, '1970-01-01'),
+                        COALESCE(:login, '1970-01-01')),
+                    note = TRIM(CONCAT(note, CASE WHEN note <> '' AND :note1 <> '' THEN '\n' ELSE '' END, :note2))
+                  WHERE id = :id",
+                [
+                    'first'   => $von['first_name'],
+                    'last'    => $von['last_name'],
+                    'phone'   => $von['phone'],
+                    'company' => $von['company'],
+                    'city'    => $von['city'],
+                    'plz'     => $von['postal_code'],
+                    'pwd'     => $von['portal_password_hash'],
+                    'login'   => $von['portal_last_login'],
+                    'note1'   => $von['note'],
+                    'note2'   => $von['note'],
+                    'id'      => $ziel,
+                ]
+            );
+
+            // Der aufgeloeste Datensatz verschwindet. Seine Adressen und
+            // Anfragen haengen jetzt am Ziel, also loescht das nichts,
+            // woran noch etwas haengt.
+            Db::run('DELETE FROM customers WHERE id = :id', ['id' => $quelle]);
+        });
+
+        // Erst nach der Transaktion: der Verlauf soll nur stehen, wenn es
+        // wirklich geklappt hat.
+        foreach ($verschobene as $l) {
+            Leads::logActivity(
+                (int) $l['id'],
+                'customer_merged',
+                'Kunde zusammengeführt',
+                body: 'Diese Anfrage gehört jetzt zu ' . trim($nach['first_name'] . ' ' . $nach['last_name'])
+                    . ' (' . $nach['email'] . '). Zusammengeführt aus ' . $von['email'] . '.',
+                meta: ['from' => $quelle, 'into' => $ziel],
+            );
+        }
+
+        return ['leads' => count($verschobene), 'emails' => $adressen];
+    }
+
+    /**
+     * Wer könnte derselbe Mensch sein?
+     *
+     * Die Telefonnummer ist der stärkste Hinweis – Menschen tippen sie
+     * selten falsch und teilen sie selten. Der Name allein reicht nicht:
+     * "Müller" gibt es oft. Deshalb Name *und* Ort, oder Name und
+     * dieselbe Firma. Vorgeschlagen wird, entschieden wird von Hand.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public static function duplicates(int $customerId, int $limit = 8): array
+    {
+        $ich = Db::one('SELECT * FROM customers WHERE id = :id', ['id' => $customerId]);
+        if ($ich === null) {
+            return [];
+        }
+
+        $tel = self::phoneKey((string) $ich['phone']);
+        $rows = Db::all(
+            "SELECT c.*,
+                    (SELECT COUNT(*) FROM leads l WHERE l.customer_id = c.id) AS anfragen
+               FROM customers c
+              WHERE c.id <> :id
+                AND (
+                     (:tel <> '' AND REPLACE(REPLACE(REPLACE(REPLACE(c.phone, ' ', ''), '-', ''), '/', ''), '+', '') LIKE CONCAT('%', :tel2))
+                  OR (c.last_name <> '' AND LOWER(c.last_name) = LOWER(:last)
+                      AND (LOWER(c.first_name) = LOWER(:first)
+                           OR (c.city <> '' AND LOWER(c.city) = LOWER(:city))
+                           OR (c.company <> '' AND LOWER(c.company) = LOWER(:company))))
+                )
+              ORDER BY anfragen DESC, c.id DESC
+              LIMIT " . max(1, min(20, $limit)),
+            [
+                'id' => $customerId, 'tel' => $tel, 'tel2' => $tel,
+                'last' => $ich['last_name'], 'first' => $ich['first_name'],
+                'city' => $ich['city'], 'company' => $ich['company'],
+            ]
+        );
+
+        return array_map(static function (array $r) use ($ich): array {
+            $eintrag = self::present($r);
+            $eintrag['requestCount'] = (int) $r['anfragen'];
+            $eintrag['reason'] = self::phoneKey((string) $r['phone']) !== ''
+                && self::phoneKey((string) $r['phone']) === self::phoneKey((string) $ich['phone'])
+                ? 'gleiche Telefonnummer'
+                : 'gleicher Name';
+            return $eintrag;
+        }, $rows);
+    }
+
+    /**
+     * Freie Suche über Name, Firma und alle bekannten Adressen – für den
+     * Fall, dass der Vorschlag danebenliegt.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public static function search(string $begriff, int $ausser = 0, int $limit = 10): array
+    {
+        $begriff = trim($begriff);
+        if (mb_strlen($begriff) < 2) {
+            return [];
+        }
+        $rows = Db::all(
+            "SELECT DISTINCT c.*,
+                    (SELECT COUNT(*) FROM leads l WHERE l.customer_id = c.id) AS anfragen
+               FROM customers c
+               LEFT JOIN customer_emails e ON e.customer_id = c.id
+              WHERE c.id <> :ausser
+                AND (c.first_name LIKE :q OR c.last_name LIKE :q2 OR c.company LIKE :q3
+                     OR e.email LIKE :q4
+                     OR CONCAT(c.first_name, ' ', c.last_name) LIKE :q5)
+              ORDER BY anfragen DESC, c.id DESC
+              LIMIT " . max(1, min(25, $limit)),
+            [
+                'ausser' => $ausser,
+                'q' => '%' . $begriff . '%', 'q2' => '%' . $begriff . '%', 'q3' => '%' . $begriff . '%',
+                'q4' => '%' . $begriff . '%', 'q5' => '%' . $begriff . '%',
+            ]
+        );
+
+        return array_map(static function (array $r): array {
+            $eintrag = self::present($r);
+            $eintrag['requestCount'] = (int) $r['anfragen'];
+            return $eintrag;
+        }, $rows);
+    }
+
+    /** Telefonnummer auf das Vergleichbare reduziert: nur Ziffern, ohne Vorwahlzeichen. */
+    private static function phoneKey(string $phone): string
+    {
+        $ziffern = preg_replace('/\D+/', '', $phone) ?? '';
+        // Die letzten acht Stellen genuegen: 040/1234567, +49 40 1234567
+        // und 0049401234567 sind dieselbe Nummer.
+        return mb_strlen($ziffern) >= 8 ? mb_substr($ziffern, -8) : '';
     }
 
     /** @param array<string,mixed> $r */

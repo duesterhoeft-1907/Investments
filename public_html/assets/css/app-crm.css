@@ -526,3 +526,39 @@ table.data tbody tr:hover { background: rgba(var(--auf), 0.04); }
 
 /* Die Anfrage-Marke im zusammengefassten Verlauf. */
 .chip.klein { padding: 1px 7px; font-size: 10px; letter-spacing: 0.04em; }
+
+
+/* ── Zwei Datensätze, ein Mensch ── */
+.zusammen {
+  margin-top: 14px; padding: 14px;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: var(--surface-tief);
+}
+.zusammen .kicker {
+  margin: 0 0 4px; font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.kandidat {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px; border: 1px solid var(--hairline);
+  border-radius: var(--radius); background: var(--surface);
+}
+.kandidat:hover { border-color: rgba(var(--accent-rgb), 0.4); }
+.kandidat .grow { flex: 1; min-width: 0; }
+
+
+/* ── Eigenes Profil ── */
+.crm-ich {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 8px 4px 4px; border-radius: var(--radius);
+  transition: background 0.15s;
+}
+.crm-ich:hover { background: rgba(var(--auf), 0.06); }
+
+.farbwahl {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border: 2px solid transparent; border-radius: var(--radius-btn);
+  transition: transform 0.15s var(--ease), border-color 0.15s;
+}
+.farbwahl:hover { transform: scale(1.08); }
+.farbwahl.on { border-color: var(--text); }

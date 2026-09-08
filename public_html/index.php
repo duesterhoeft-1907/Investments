@@ -92,6 +92,10 @@ try {
 
     // ── Öffentlich ──
     $router->get('/api/public/wizard-config', [C\PublicController::class, 'wizardConfig']);
+    // Profilbilder ohne Anmeldung: sie stehen im Kundenbereich und in der
+    // Bestätigungsmail, und ein Mailprogramm bringt keine Sitzung mit.
+    // Der Dateiname ist zufällig und damit nicht zu erraten.
+    $router->get('/api/avatars/{name}', [C\ProfileController::class, 'serve']);
     $router->post('/api/public/leads', [C\PublicController::class, 'submit']);
 
     // ── Anmeldung ──
@@ -100,12 +104,19 @@ try {
     $router->get('/api/auth/me', [C\AuthController::class, 'me']);
     $router->post('/api/auth/password', [C\AuthController::class, 'changePassword']);
 
+    // ── Eigenes Profil ──
+    $router->patch('/api/me', [C\ProfileController::class, 'update']);
+    $router->post('/api/me/avatar', [C\ProfileController::class, 'avatar']);
+    $router->delete('/api/me/avatar', [C\ProfileController::class, 'removeAvatar']);
+
     // ── Ereignisse (ersetzt WebSockets) ──
     $router->get('/api/events', [C\EventsController::class, 'poll']);
 
     // ── Kunden ──
     $router->get('/api/customers/{id}', [C\CustomersController::class, 'show']);
     $router->get('/api/customers/{id}/activities', [C\CustomersController::class, 'activities']);
+    $router->get('/api/customers/{id}/duplicates', [C\CustomersController::class, 'duplicates']);
+    $router->post('/api/customers/{id}/merge', [C\CustomersController::class, 'merge']);
     $router->patch('/api/customers/{id}', [C\CustomersController::class, 'update']);
 
     // ── Leads ──

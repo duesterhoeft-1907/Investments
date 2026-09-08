@@ -524,6 +524,15 @@ select.input { cursor: pointer; }
   content: normal;
 }
 
+/* Das Profilbild liegt über den Initialen, nicht an ihrer Stelle: fehlt
+   es, stehen sie weiter da. */
+.avatar { position: relative; overflow: hidden; }
+.avatar-bild {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  border-radius: inherit;
+}
+
 /* Umschalter hell/dunkel. Unauffällig, aber überall an derselben Stelle:
    oben rechts, neben dem, was der Bereich sonst dort anbietet. */
 .theme-knopf {

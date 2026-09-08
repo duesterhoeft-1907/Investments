@@ -452,6 +452,7 @@ final class AdminController
             'phone'      => $row['phone'],
             'role'       => $row['role'],
             'accent'     => $row['accent'],
+            'avatar'     => ProfileController::avatarUrl($row['avatar_file'] ?? ''),
             'isActive'   => (bool) $row['is_active'],
             'awayUntil'  => Leads::iso($awayUntil),
             'awayNote'   => $row['away_note'] ?? '',

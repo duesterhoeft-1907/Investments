@@ -14,7 +14,7 @@ use App\Domain\Notify;
 final class ChatController
 {
     private const MESSAGE_SELECT = "
-        SELECT m.*, u.name AS author_name, u.accent AS author_accent, u.title AS author_title,
+        SELECT m.*, u.name AS author_name, u.accent AS author_accent, u.avatar_file AS author_avatar, u.title AS author_title,
                CONCAT(l.first_name, ' ', l.last_name) AS lead_name, l.public_ref AS lead_ref
           FROM messages m
           LEFT JOIN users u ON u.id = m.user_id
@@ -61,14 +61,15 @@ final class ChatController
             // Eine Direktnachricht trägt den Namen des jeweils anderen.
             if ($row['type'] === 'dm') {
                 $other = Db::one(
-                    'SELECT u.id, u.name, u.accent FROM channel_members cm
+                    'SELECT u.id, u.name, u.accent, u.avatar_file FROM channel_members cm
                        JOIN users u ON u.id = cm.user_id
                       WHERE cm.channel_id = :c AND cm.user_id <> :me LIMIT 1',
                     ['c' => (int) $row['id'], 'me' => $userId]
                 );
                 if ($other !== null) {
                     $name = (string) $other['name'];
-                    $partner = ['id' => (int) $other['id'], 'name' => $other['name'], 'accent' => $other['accent']];
+                    $partner = ['id' => (int) $other['id'], 'name' => $other['name'], 'accent' => $other['accent'],
+                        'avatar' => \App\Controllers\ProfileController::avatarUrl($other['avatar_file'] ?? '')];
                 }
             }
 
@@ -254,6 +255,7 @@ final class ChatController
                 'id'     => (int) $m['user_id'],
                 'name'   => $m['author_name'] ?? '',
                 'accent' => $m['author_accent'] ?? '#21b4a6',
+                'avatar' => ProfileController::avatarUrl($m['author_avatar'] ?? ''),
                 'title'  => $m['author_title'] ?? '',
             ],
             'createdAt' => Leads::iso($m['created_at']),

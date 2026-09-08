@@ -32,7 +32,21 @@ export function statusBadge(status, label) {
   return h('span.badge.badge-' + status, h('span.dot'), label);
 }
 
-export function avatar(name, accent = '#21b4a6', size = 36, online) {
+/**
+ * Bildmarke einer Person.
+ *
+ * Mit Profilbild das Bild, ohne die Initialen in ihrer Farbe. Das Bild
+ * liegt darüber statt an seiner Stelle: fehlt es oder lädt es nicht,
+ * stehen darunter weiter die Initialen, und es bleibt kein leeres
+ * Kästchen zurück.
+ *
+ * Der vierte Parameter darf ein Objekt sein ({ avatar, online }) oder
+ * wie bisher nur der Anwesenheitszustand – es gibt zu viele Aufrufer,
+ * um sie alle anzufassen.
+ */
+export function avatar(name, accent = '#21b4a6', size = 36, opts) {
+  const { avatar: bild, online } = (opts && typeof opts === 'object') ? opts : { online: opts };
+
   const el = h(
     'span.avatar',
     {
@@ -48,6 +62,17 @@ export function avatar(name, accent = '#21b4a6', size = 36, online) {
     },
     initials(name),
   );
+
+  if (bild) {
+    const img = h('img.avatar-bild', {
+      src: bild, alt: '', loading: 'lazy', decoding: 'async',
+      width: String(size), height: String(size),
+    });
+    // Lädt es nicht, verschwindet es – die Initialen darunter bleiben.
+    img.addEventListener('error', () => img.remove(), { once: true });
+    el.appendChild(img);
+  }
+
   if (online !== undefined) {
     const dotSize = Math.max(8, Math.round(size * 0.28));
     el.appendChild(

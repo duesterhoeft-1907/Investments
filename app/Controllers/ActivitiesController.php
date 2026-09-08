@@ -64,7 +64,7 @@ final class ActivitiesController
         );
 
         $row = Db::one(
-            'SELECT a.*, u.name AS user_name, u.accent AS user_accent
+            'SELECT a.*, u.name AS user_name, u.accent AS user_accent, u.avatar_file AS user_avatar
                FROM activities a LEFT JOIN users u ON u.id = a.user_id WHERE a.id = :id',
             ['id' => $activityId]
         );
@@ -98,7 +98,7 @@ final class ActivitiesController
         $limit = max(1, min(200, Http::queryInt('limit', 40)));
 
         $rows = Db::all(
-            "SELECT a.*, u.name AS user_name, u.accent AS user_accent,
+            "SELECT a.*, u.name AS user_name, u.accent AS user_accent, u.avatar_file AS user_avatar,
                     CONCAT(l.first_name, ' ', l.last_name) AS lead_name, l.public_ref AS lead_ref
                FROM activities a
                LEFT JOIN users u ON u.id = a.user_id

@@ -64,7 +64,8 @@ final class Leads
                t.color  AS team_color,
                u.name   AS owner_name,
                u.email  AS owner_email,
-               u.accent AS owner_accent
+               u.accent AS owner_accent,
+               u.avatar_file AS owner_avatar
           FROM leads l
           LEFT JOIN asset_classes ac ON ac.id = l.asset_class_id
           LEFT JOIN teams t          ON t.id  = l.team_id
@@ -369,6 +370,7 @@ final class Leads
                 'name'   => $r['owner_name'],
                 'email'  => $r['owner_email'],
                 'accent' => $r['owner_accent'],
+                'avatar' => \App\Controllers\ProfileController::avatarUrl($r['owner_avatar'] ?? ''),
             ],
             'status'          => $status,
             'statusLabel'     => self::STATUS_LABELS[$status] ?? $status,

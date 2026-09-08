@@ -82,7 +82,7 @@ export function render(view) {
             ? h('span.row', { style: { gap: '4px', color: 'var(--orchid-400)' } }, icon('repeat', 11), RECURRENCE[task.recurrence] ?? task.recurrence)
             : null),
         task.description ? h('p.faint', { style: { marginTop: '4px', fontSize: '12px' } }, task.description) : null),
-      task.assignee ? avatar(task.assignee.name, task.assignee.accent, 26) : null,
+      task.assignee ? avatar(task.assignee.name, task.assignee.accent, 26, { avatar: task.assignee.avatar }) : null,
     );
   }
 }

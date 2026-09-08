@@ -147,7 +147,7 @@ final class PortalController
         $lead = Leads::present($row);
 
         $advisor = $row['owner_id'] === null ? null : Db::one(
-            'SELECT name, title, phone, email, accent FROM users WHERE id = :id',
+            'SELECT name, title, phone, email, accent, avatar_file FROM users WHERE id = :id',
             ['id' => (int) $row['owner_id']]
         );
 
@@ -234,6 +234,7 @@ final class PortalController
                 'phone'  => $advisor['phone'],
                 'email'  => $advisor['email'],
                 'accent' => $advisor['accent'],
+                'avatar' => ProfileController::avatarUrl($advisor['avatar_file'] ?? ''),
             ],
             'nextSteps' => array_map(static fn (array $t): array => [
                 'id'          => (int) $t['id'],

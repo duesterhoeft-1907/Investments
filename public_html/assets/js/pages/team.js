@@ -86,7 +86,7 @@ export function render(view, { session, navigate }) {
         h('div', { style: { display: 'grid', gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
           state.users.map((u) =>
             h('div.row', { style: { gap: '12px', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)', padding: '12px' } },
-              avatar(u.name, u.accent, 36, u.online),
+              avatar(u.name, u.accent, 36, { avatar: u.avatar, online: u.online }),
               h('div.grow',
                 h('p.truncate', { style: { fontSize: '14px' } }, u.name),
                 h('p.truncate.faint', { style: { fontSize: '11px' } }, u.title)),
@@ -121,7 +121,7 @@ export function render(view, { session, navigate }) {
               team.members.map((member) => {
                 const full = state.users.find((u) => u.id === member.id);
                 return h('div.row', { style: { gap: '10px', padding: '6px 8px', borderRadius: 'var(--radius)' } },
-                  avatar(member.name, member.accent, 30, full?.online),
+                  avatar(member.name, member.accent, 30, { avatar: member.avatar ?? full?.avatar, online: full?.online }),
                   h('div.grow',
                     h('p.truncate', { style: { fontSize: '14px' } }, member.name),
                     h('p.truncate.faint', { style: { fontSize: '11px' } },

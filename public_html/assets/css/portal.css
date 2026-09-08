@@ -208,3 +208,6 @@ body.page-portal .toast-error { border-color: rgba(var(--danger-rgb), 0.45); col
 .p-anfrage .t { font-weight: 600; font-size: 14px; }
 .p-anfrage .s { font-size: 12px; color: var(--text-dim); }
 .p-anfrage .r { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+
+/* Das Profilbild des Beraters liegt über den Initialen. */
+.p-advisor .mono-avatar { position: relative; overflow: hidden; }

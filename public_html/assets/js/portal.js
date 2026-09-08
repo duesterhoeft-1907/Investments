@@ -270,7 +270,17 @@ function advisorCard(advisor) {
   return h('div.p-card.p-advisor',
     h('p.kicker', 'Ihr Ansprechpartner'),
     h('div.who',
-      h('span.mono-avatar', { style: { background: advisor.accent + '1f', color: advisor.accent } }, initials(advisor.name)),
+      // Mit Profilbild das Bild, ohne die Initialen. Genau hier zahlt es
+      // sich aus: der Interessent sieht, wer sich melden wird.
+      h('span.mono-avatar', { style: { background: advisor.accent + '1f', color: advisor.accent } },
+        initials(advisor.name),
+        advisor.avatar
+          ? (() => {
+              const img = h('img.avatar-bild', { src: advisor.avatar, alt: '', loading: 'lazy' });
+              img.addEventListener('error', () => img.remove(), { once: true });
+              return img;
+            })()
+          : null),
       h('div', { style: { minWidth: '0' } },
         h('p.name.truncate', advisor.name),
         h('p.title.truncate', advisor.title))),

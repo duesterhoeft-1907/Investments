@@ -271,7 +271,7 @@ export function render(view, { session }) {
     const busy = state.busy === 'staff-' + person.id;
 
     return h('div.staff-row' + (person.isActive ? '' : '.is-off'),
-      avatar(person.name, person.accent, 36),
+      avatar(person.name, person.accent, 36, { avatar: person.avatar }),
 
       h('div', { style: { minWidth: 0, flex: '1' } },
         h('div.row', { style: { gap: '8px', alignItems: 'baseline' } },
@@ -442,7 +442,7 @@ export function render(view, { session }) {
   function personCard(person, teamId = null) {
     return card(
       [
-        avatar(person.name, person.accent, 28),
+        avatar(person.name, person.accent, 28, { avatar: person.avatar }),
         h('div', { style: { minWidth: 0 } },
           h('p.truncate', { style: { fontSize: '13px' } }, person.name),
           h('p.truncate.faint', { style: { fontSize: '10.5px' } },

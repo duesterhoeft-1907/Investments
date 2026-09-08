@@ -205,7 +205,7 @@ final class Intake
         }
 
         $owner = $ownerId === null ? null : Db::one(
-            'SELECT id, name, title, phone, email FROM users WHERE id = :id',
+            'SELECT id, name, title, phone, email, avatar_file FROM users WHERE id = :id',
             ['id' => $ownerId]
         );
 
@@ -293,10 +293,13 @@ final class Intake
         }
 
         $contact = $owner === null ? null : [
-            'name'  => (string) $owner['name'],
-            'title' => (string) $owner['title'],
-            'phone' => (string) $owner['phone'],
-            'email' => (string) $owner['email'],
+            'name'   => (string) $owner['name'],
+            'title'  => (string) $owner['title'],
+            'phone'  => (string) $owner['phone'],
+            'email'  => (string) $owner['email'],
+            // Ein Gesicht dazu: das ist der Unterschied zwischen "jemand
+            // aus dem Vertrieb" und "Nadja Weber".
+            'avatar' => \App\Controllers\ProfileController::avatarUrl($owner['avatar_file'] ?? ''),
         ];
 
         Mailer::send((string) $in['email'], Mailer::leadWelcome($facts, $portalUrl, $portalPassword, $contact), $leadId);

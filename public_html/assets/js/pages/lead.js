@@ -18,6 +18,9 @@ export function render(view, { params, session, navigate }) {
     // angerufen hat, soll das nicht in zwei Listen suchen müssen.
     verlaufAlle: false,
     kundenVerlauf: null,
+    // Zusammenführen: geschlossen, geöffnet mit Vorschlägen, oder mit
+    // einer laufenden Suche.
+    zusammen: null,
   };
 
   const load = async () => {
@@ -97,7 +100,10 @@ export function render(view, { params, session, navigate }) {
         h('div.lead-chips',
           chip(lead.assetClass ?? '–', lead.teamColor),
           chip(lead.volumeLabel || '–'), chip(lead.horizonLabel || '–'), chip(lead.experienceLabel || '–'),
-          chip(`Kontakt: ${lead.contactPrefLabel}${lead.contactWindowLabel ? ` (${lead.contactWindowLabel})` : ''}`),
+          // Zwei Angaben, zwei Chips: "Telefon (Abends (19 – 21 Uhr))"
+          // wäre Klammer in Klammer.
+          chip(`Kontakt: ${lead.contactPrefLabel}`),
+          lead.contactWindowLabel ? chip(lead.contactWindowLabel) : null,
           chip(`Score ${lead.score}`)),
       ),
       h('div.stack', { style: { gap: '12px', alignItems: 'flex-end', flexShrink: '0' } },
@@ -330,20 +336,50 @@ export function render(view, { params, session, navigate }) {
    */
   function kundenKarte() {
     const kunde = state.data.customer;
-    if (!kunde || kunde.leads.length === 0) return null;
+    const darfZusammen = ['admin', 'manager'].includes(session.user.role);
+    // Auch bei einer einzigen Anfrage sichtbar, sobald jemand
+    // zusammenführen darf – genau dann ist der Doppelgänger ja noch
+    // getrennt und die Karte der einzige Ort, an dem man das sieht.
+    if (!kunde || (kunde.leads.length === 0 && !darfZusammen)) return null;
 
     const zahl = (n) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(n);
 
     return h('div.glass.card-pad',
       h('div.section-title',
-        h('h2', 'Weitere Anfragen dieses Kunden'),
-        h('span.hint', `erste Anfrage ${formatRelative(kunde.summary.first)}`)),
+        h('h2', kunde.leads.length ? 'Weitere Anfragen dieses Kunden' : 'Kunde'),
+        h('div.row', { style: { gap: '10px' } },
+          h('span.hint', `erste Anfrage ${formatRelative(kunde.summary.first)}`),
+          darfZusammen
+            ? button(state.zusammen?.offen ? 'Schließen' : 'Zusammenführen', {
+                variant: 'ghost', size: 'sm', iconName: 'users',
+                onclick: () => {
+                  if (state.zusammen?.offen) { state.zusammen = null; paint(); }
+                  else void zusammenOeffnen();
+                },
+              })
+            : null)),
+
+      // Mehrere bekannte Adressen: das Ergebnis eines Zusammenführens.
+      // Es muss sichtbar sein, sonst wundert sich jemand, warum eine
+      // fremde Adresse hier auftaucht.
+      (kunde.emails?.length ?? 0) > 1
+        ? h('p.faint', { style: { fontSize: '12px', marginTop: '6px' } },
+            'Bekannt auch als ',
+            kunde.emails.filter((e) => !e.primary).map((e) => e.email).join(', '))
+        : null,
+
+      zusammenPanel(),
 
       h('div.lead-chips', { style: { marginTop: '10px' } },
         chip(`${kunde.summary.count} Anfragen`),
         kunde.summary.volume > 0 ? chip(`${zahl(kunde.summary.volume)} € angefragt`) : null,
         kunde.summary.won > 0 ? chip(`${kunde.summary.won} gewonnen`) : null,
         kunde.hasPortal ? chip(kunde.lastLogin ? `Portal zuletzt ${formatRelative(kunde.lastLogin)}` : 'Portal nie genutzt') : null),
+
+      kunde.leads.length === 0
+        ? h('p.faint', { style: { fontSize: '13px', marginTop: '12px' } },
+            'Bisher nur diese eine Anfrage.')
+        : null,
 
       h('ul.kunden-anfragen', { style: { listStyle: 'none', margin: '14px 0 0', padding: '0' } },
         kunde.leads.map((l) =>
@@ -361,6 +397,117 @@ export function render(view, { params, session, navigate }) {
                   [l.volumeLabel, l.owner, formatRelative(l.createdAt)].filter(Boolean).join(' · '))),
               h('span.mono.faint', { style: { fontSize: '11px' } }, l.ref)))))
     );
+  }
+
+  /**
+   * Zwei Datensätze, ein Mensch.
+   *
+   * Erkannt wird über die E-Mail-Adresse – wer unter zwei Adressen
+   * schreibt, steht zweimal da. Das Zusammenführen macht daraus einen
+   * Menschen und behält beide Adressen, damit die nächste Anfrage von der
+   * zweiten nicht wieder einen neuen Kunden anlegt.
+   *
+   * Vorgeschlagen wird über Telefonnummer und Namen; entschieden wird von
+   * Hand. Eine Maschine, die zwei Menschen von sich aus zusammenlegt,
+   * richtet mehr Schaden an, als sie Arbeit spart.
+   */
+  async function zusammenOeffnen() {
+    state.zusammen = { offen: true, laden: true, vorschlaege: [], treffer: [], suche: '', busy: false };
+    paint();
+    await kandidatenLaden();
+  }
+
+  async function kandidatenLaden() {
+    const id = state.data.customer.id;
+    const q = state.zusammen.suche.trim();
+    try {
+      const d = await api.get(`/customers/${id}/duplicates${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+      state.zusammen.vorschlaege = d.suggestions;
+      state.zusammen.treffer = d.results;
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    state.zusammen.laden = false;
+    paint();
+  }
+
+  async function zusammenfuehren(ziel) {
+    const kunde = state.data.customer;
+    const frage = `${kunde.name || kunde.email} mit ${ziel.name || ziel.email} zusammenführen?\n\n`
+      + `${kunde.summary.count} Anfrage(n) wandern zu ${ziel.name || ziel.email}. `
+      + `Die Adresse ${kunde.email} bleibt erhalten und wird künftig ebenfalls erkannt.\n\n`
+      + 'Das lässt sich nicht rückgängig machen.';
+    if (!window.confirm(frage)) return;
+
+    state.zusammen.busy = true;
+    paint();
+    try {
+      const d = await api.post(`/customers/${kunde.id}/merge`, { into: ziel.id });
+      toast(`Zusammengeführt – ${d.moved.leads} Anfrage(n) übernommen.`);
+      state.zusammen = null;
+      state.kundenVerlauf = null;
+      await load();
+    } catch (error) {
+      toast(error.message, 'error');
+      state.zusammen.busy = false;
+      paint();
+    }
+  }
+
+  function kandidatenZeile(k, art) {
+    return h('div.kandidat',
+      h('span.grow',
+        h('span.row', { style: { gap: '8px', flexWrap: 'wrap' } },
+          h('strong', k.name || '(ohne Namen)'),
+          k.reason ? h('span.chip.klein', k.reason) : null),
+        h('span.faint', { style: { display: 'block', marginTop: '2px', fontSize: '12px' } },
+          [k.email, k.phone, `${k.requestCount} Anfrage(n)`].filter(Boolean).join(' · '))),
+      button('Hierhin', {
+        variant: 'outline', size: 'sm',
+        disabled: state.zusammen.busy,
+        onclick: () => zusammenfuehren(k),
+      }));
+  }
+
+  function zusammenPanel() {
+    const z = state.zusammen;
+    if (!z?.offen) return null;
+
+    return h('div.zusammen',
+      h('p.faint', { style: { fontSize: '12px', lineHeight: '1.6', margin: '0 0 12px' } },
+        'Der geöffnete Kunde wird in den gewählten hineingeführt und verschwindet. ',
+        'Seine Anfragen und seine E-Mail-Adresse wandern mit – die Adresse wird danach ',
+        'weiterhin erkannt.'),
+
+      z.laden ? h('div.row', { style: { justifyContent: 'center', padding: '12px' } }, spinner(18)) : null,
+
+      !z.laden && z.vorschlaege.length
+        ? h('div.stack', { style: { gap: '6px' } },
+            h('p.kicker', 'Könnte derselbe Mensch sein'),
+            z.vorschlaege.map((k) => kandidatenZeile(k)))
+        : null,
+
+      !z.laden && !z.vorschlaege.length && !z.suche
+        ? h('p.faint', { style: { fontSize: '13px', margin: '0 0 12px' } },
+            'Kein Vorschlag – weder gleiche Telefonnummer noch gleicher Name. Suche unten von Hand.')
+        : null,
+
+      h('div.row', { style: { gap: '8px', marginTop: '14px' } },
+        h('input.input', {
+          placeholder: 'Nach Name, Firma oder E-Mail suchen …',
+          value: z.suche,
+          oninput: (e) => { z.suche = e.target.value; },
+          onkeydown: (e) => { if (e.key === 'Enter') kandidatenLaden(); },
+        }),
+        button('Suchen', { variant: 'ghost', size: 'sm', iconName: 'search', onclick: kandidatenLaden })),
+
+      z.treffer.length
+        ? h('div.stack', { style: { gap: '6px', marginTop: '10px' } },
+            h('p.kicker', `${z.treffer.length} Treffer`),
+            z.treffer.map((k) => kandidatenZeile(k)))
+        : z.suche && !z.laden
+          ? h('p.faint', { style: { fontSize: '13px', marginTop: '10px' } }, 'Nichts gefunden.')
+          : null);
   }
 
   function entry(activity, index, attachments, mitAnfrage = false) {
@@ -393,7 +540,7 @@ export function render(view, { params, session, navigate }) {
         attachments.map(attachment),
         activity.user
           ? h('div.row.faint', { style: { gap: '6px', marginTop: '8px', fontSize: '11px' } },
-              avatar(activity.user.name, activity.user.accent, 16), activity.user.name)
+              avatar(activity.user.name, activity.user.accent, 16, { avatar: activity.user.avatar }), activity.user.name)
           : null,
       ),
     );
@@ -589,7 +736,7 @@ export function render(view, { params, session, navigate }) {
           h('span', { style: { color: overdue ? 'var(--danger-text)' : undefined } }, formatRelative(task.dueAt)),
           task.recurrence !== 'none' ? h('span', '· wiederkehrend') : null,
           task.visibleToClient ? h('span', '· im Portal sichtbar') : null)),
-      task.assignee ? avatar(task.assignee.name, task.assignee.accent, 20) : null,
+      task.assignee ? avatar(task.assignee.name, task.assignee.accent, 20, { avatar: task.assignee.avatar }) : null,
     );
   }
 

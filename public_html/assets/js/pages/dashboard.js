@@ -168,7 +168,7 @@ export function render(view, { session, navigate }) {
             stats.leaderboard.slice(0, 8).map((agent, i) =>
               h('li.row', { style: { gap: '12px' } },
                 h('span', { style: { width: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? 'var(--accent-300)' : 'rgba(var(--auf), 0.25)' } }, String(i + 1)),
-                avatar(agent.name, agent.accent, 30, stats.onlineUserIds.includes(agent.id)),
+                avatar(agent.name, agent.accent, 30, { avatar: agent.avatar, online: stats.onlineUserIds.includes(agent.id) }),
                 h('div.grow',
                   h('p.truncate', { style: { fontSize: '14px' } }, agent.name),
                   h('p.faint', { style: { fontSize: '11px' } }, `${agent.leads} Leads · ${agent.won} gewonnen`)),

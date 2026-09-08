@@ -91,7 +91,7 @@ final class LeadsController
         }
 
         $activities = Db::all(
-            'SELECT a.*, u.name AS user_name, u.accent AS user_accent
+            'SELECT a.*, u.name AS user_name, u.accent AS user_accent, u.avatar_file AS user_avatar
                FROM activities a LEFT JOIN users u ON u.id = a.user_id
               WHERE a.lead_id = :id ORDER BY a.occurred_at DESC, a.id DESC',
             ['id' => $leadId]
@@ -370,6 +370,7 @@ final class LeadsController
                 'id'     => (int) $a['user_id'],
                 'name'   => $a['user_name'] ?? '',
                 'accent' => $a['user_accent'] ?? '#21b4a6',
+                'avatar' => ProfileController::avatarUrl($a['user_avatar'] ?? ''),
             ],
             'occurredAt' => Leads::iso($a['occurred_at']),
             'createdAt'  => Leads::iso($a['created_at']),

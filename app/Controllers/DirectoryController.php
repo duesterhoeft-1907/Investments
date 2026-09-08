@@ -32,6 +32,7 @@ final class DirectoryController
                 'phone'      => $row['phone'],
                 'role'       => $row['role'],
                 'accent'     => $row['accent'],
+                'avatar'     => ProfileController::avatarUrl($row['avatar_file'] ?? ''),
                 'online'     => isset($online[$id]),
                 'lastSeenAt' => Leads::iso($row['last_seen_at']),
                 'teams'      => array_map(
@@ -77,10 +78,11 @@ final class DirectoryController
                         'name'     => $m['name'],
                         'title'    => $m['title'],
                         'accent'   => $m['accent'],
+                        'avatar'   => ProfileController::avatarUrl($m['avatar_file'] ?? ''),
                         'teamRole' => $m['teamRole'],
                     ],
                     Db::all(
-                        'SELECT u.id, u.name, u.title, u.accent, tm.team_role AS teamRole
+                        'SELECT u.id, u.name, u.title, u.accent, u.avatar_file, tm.team_role AS teamRole
                            FROM team_members tm JOIN users u ON u.id = tm.user_id
                           WHERE tm.team_id = :t AND u.is_active = 1 ORDER BY u.name',
                         ['t' => $id]

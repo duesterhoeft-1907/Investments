@@ -31,6 +31,7 @@ final class CustomersController
 
         $customer['summary'] = Customers::summary($customerId);
         $customer['leads'] = Customers::leads($customerId);
+        $customer['emails'] = Customers::emails($customerId);
 
         Http::json(['customer' => $customer]);
     }
@@ -66,6 +67,66 @@ final class CustomersController
                 return $eintrag;
             }, $rows),
         ]);
+    }
+
+    /**
+     * Wer könnte derselbe Mensch sein?
+     *
+     * Vorgeschlagen wird über Telefonnummer und Namen; dazu eine freie
+     * Suche, falls der Vorschlag danebenliegt. Entschieden wird von Hand –
+     * eine Maschine, die zwei Menschen von sich aus zusammenlegt, richtet
+     * mehr Schaden an, als sie Arbeit spart.
+     */
+    public static function duplicates(string $id): void
+    {
+        Auth::requireStaff();
+        $customerId = (int) $id;
+
+        if (Customers::find($customerId) === null) {
+            Http::error('Kunde nicht gefunden.', 404);
+        }
+
+        $suche = trim((string) (Http::query('q') ?? ''));
+
+        Http::json([
+            'suggestions' => Customers::duplicates($customerId),
+            'results'     => $suche === '' ? [] : Customers::search($suche, $customerId),
+        ]);
+    }
+
+    /**
+     * Zwei Datensätze, ein Mensch.
+     *
+     * Der aufgerufene Kunde wird in den angegebenen hineingeführt und
+     * verschwindet. Seine Adressen wandern mit, damit die nächste Anfrage
+     * von dort nicht wieder einen neuen Kunden anlegt.
+     *
+     * Rückgängig machen lässt sich das nicht – deshalb nur für
+     * Geschäftsführung und Leitung.
+     */
+    public static function merge(string $id): void
+    {
+        Auth::requireRole('admin', 'manager');
+        $quelle = (int) $id;
+
+        $v = new Validator(Http::body());
+        $v->int('into', 1, PHP_INT_MAX, 0, true);
+        $ziel = (int) $v->orFail()['into'];
+
+        try {
+            $ergebnis = Customers::merge($quelle, $ziel);
+        } catch (\InvalidArgumentException $e) {
+            Http::error($e->getMessage(), 400);
+        } catch (\RuntimeException $e) {
+            Http::error($e->getMessage(), 404);
+        }
+
+        $customer = Customers::find($ziel);
+        $customer['summary'] = Customers::summary($ziel);
+        $customer['leads'] = Customers::leads($ziel);
+        $customer['emails'] = Customers::emails($ziel);
+
+        Http::json(['customer' => $customer, 'moved' => $ergebnis]);
     }
 
     /** Eine Notiz am Menschen, nicht am Vorgang. */
