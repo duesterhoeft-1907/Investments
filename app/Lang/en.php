@@ -71,6 +71,7 @@ return [
             'login'    => 'Login',
             'password' => 'Password',
             'ref'      => 'Reference',
+            'known'    => 'You already have access: the password from your first confirmation still applies.',
             'button'   => 'Go to your client area',
             'change'   => 'Please change the password after your first login.',
             'text'     => "Thank you for your enquiry (%s).\nWe will be in touch %s.",

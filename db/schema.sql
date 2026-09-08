@@ -76,11 +76,48 @@ CREATE TABLE IF NOT EXISTS asset_classes (
   CONSTRAINT fk_asset_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ───────────────────────────── Kunden ─────────────────────────────
+--
+-- Ein Mensch, der sich meldet – und zwar auch dann derselbe, wenn er es
+-- zum dritten Mal tut. Ohne diese Tabelle waeren drei Anfragen desselben
+-- Interessenten drei Fremde: dreimal dieselbe Frage am Telefon, drei
+-- Portalzugaenge, und niemand sieht, dass hier jemand zum dritten Mal
+-- anklopft.
+--
+-- Erkannt wird ueber die E-Mail-Adresse, kleingeschrieben. Das ist nicht
+-- perfekt – wer zweimal verschiedene Adressen benutzt, zaehlt zweimal –
+-- aber es ist die einzige Angabe, die im Wizard verpflichtend ist und die
+-- Menschen selten vertippen.
+CREATE TABLE IF NOT EXISTS customers (
+  id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  email                VARCHAR(190) NOT NULL,
+  first_name           VARCHAR(80)  NOT NULL DEFAULT '',
+  last_name            VARCHAR(80)  NOT NULL DEFAULT '',
+  phone                VARCHAR(60)  NOT NULL DEFAULT '',
+  company              VARCHAR(160) NOT NULL DEFAULT '',
+  city                 VARCHAR(120) NOT NULL DEFAULT '',
+  postal_code          VARCHAR(20)  NOT NULL DEFAULT '',
+  country              VARCHAR(4)   NOT NULL DEFAULT 'DE',
+  lang                 CHAR(2)      NOT NULL DEFAULT 'de',
+  -- Ein Zugang je Mensch, nicht je Anfrage.
+  portal_password_hash VARCHAR(255) NULL,
+  portal_last_login    DATETIME     NULL,
+  note                 VARCHAR(1000) NOT NULL DEFAULT '',
+  created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_customers_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ───────────────────────────── Leads ─────────────────────────────
 
 CREATE TABLE IF NOT EXISTS leads (
   id                INT UNSIGNED NOT NULL AUTO_INCREMENT,
   public_ref        VARCHAR(20)  NOT NULL,
+  -- Wer gefragt hat. Die Angaben stehen zusaetzlich am Lead, weil sie zum
+  -- Zeitpunkt der Anfrage gelten sollen – zieht jemand um, bleibt die alte
+  -- Anfrage mit der alten Adresse richtig.
+  customer_id       INT UNSIGNED NULL,
   first_name        VARCHAR(80)  NOT NULL,
   last_name         VARCHAR(80)  NOT NULL,
   email             VARCHAR(190) NOT NULL,
@@ -139,9 +176,11 @@ CREATE TABLE IF NOT EXISTS leads (
   KEY idx_leads_status (status),
   KEY idx_leads_created (created_at),
   KEY idx_leads_email (email),
+  KEY idx_leads_customer (customer_id),
   -- Trägt die Abfrage "wartet noch auf Erstkontakt, sortiert nach Frist".
   KEY idx_leads_open_sla (first_contact_at, sla_due_at),
   KEY idx_leads_sla_warn (sla_warn_at),
+  CONSTRAINT fk_lead_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
   CONSTRAINT fk_lead_asset FOREIGN KEY (asset_class_id) REFERENCES asset_classes(id) ON DELETE SET NULL,
   CONSTRAINT fk_lead_team  FOREIGN KEY (team_id)  REFERENCES teams(id) ON DELETE SET NULL,
   CONSTRAINT fk_lead_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL,

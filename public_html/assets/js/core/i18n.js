@@ -90,6 +90,7 @@ const DICT = {
     donePortalKicker: 'Dein Kundenbereich',
     donePortalText: 'Dort siehst du den Stand deiner Anfrage, die nächsten Schritte und dein Angebot. '
       + 'Die Zugangsdaten stehen auch in deiner Bestätigungs-E-Mail.',
+    portalKnown: 'Dein Passwort kennst du schon – es steht in deiner ersten Bestätigungs-E-Mail und gilt weiter.',
     labelRef: 'Referenz',
     labelLogin: 'Zugang',
     labelPassword: 'Passwort',
@@ -176,6 +177,7 @@ const DICT = {
     donePortalKicker: 'Your client area',
     donePortalText: 'There you can see the status of your enquiry, the next steps and your offer. '
       + 'The credentials are also in your confirmation e-mail.',
+    portalKnown: 'You already know your password – it is in your first confirmation e-mail and still applies.',
     labelRef: 'Reference',
     labelLogin: 'Login',
     labelPassword: 'Password',

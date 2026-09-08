@@ -134,8 +134,9 @@ final class PublicController
         // Bestaetigungsmail und darueber, wie zurueckgerufen wird.
         $clean['lang'] = I18n::lang();
 
-        // Ohne Telefonnummer kein Rückruf – das ist der ganze Sinn der Strecke.
-        if ($clean['contactPref'] !== 'email' && $clean['phone'] === '') {
+        // Ohne Telefonnummer kein Rückruf – das ist der ganze Sinn der
+        // Strecke, unabhängig davon, welchen Kanal jemand bevorzugt.
+        if ($clean['phone'] === '') {
             Http::error(I18n::t('intake.phone'), 400, [
                 'fields' => ['phone' => I18n::t('intake.phone')],
             ]);

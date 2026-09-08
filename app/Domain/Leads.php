@@ -355,6 +355,8 @@ final class Leads
             // Lead, damit niemand auf Deutsch zurueckruft, wo Englisch
             // gefragt war.
             'lang'            => (string) ($r['lang'] ?? 'de'),
+            'customerId'      => isset($r['customer_id']) && $r['customer_id'] !== null
+                ? (int) $r['customer_id'] : null,
             'assetClassId'    => $r['asset_class_id'] === null ? null : (int) $r['asset_class_id'],
             'assetClass'      => $r['asset_class_name'] ?? null,
             'assetClassSlug'  => $r['asset_class_slug'] ?? null,
@@ -383,6 +385,10 @@ final class Leads
             'goal'            => $r['goal'],
             'contactPref'     => $r['contact_pref'],
             'contactPrefLabel'=> self::CONTACT_PREFS[$r['contact_pref']] ?? $r['contact_pref'],
+            // Die Beschriftung kommt aus den gepflegten Zeiten, damit im
+            // CRM "Abends (19 – 21 Uhr)" steht und nicht "abends".
+            'contactWindowLabel' => Hours::contactWindows()[$r['contact_window']]
+                ?? self::CONTACT_WINDOWS[$r['contact_window']] ?? $r['contact_window'],
             'contactWindow'   => $r['contact_window'],
             'message'         => (string) ($r['message'] ?? ''),
             'wizard'          => $r['wizard_payload'] === null ? [] : (json_decode((string) $r['wizard_payload'], true) ?: []),

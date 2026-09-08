@@ -10,7 +10,7 @@ import { icon } from './core/icons.js';
 import { api, ApiError } from './core/api.js';
 import { aurora, button, field, logo, spinner, toast } from './core/ui.js';
 import { lang, locale, t } from './core/i18n.js';
-import { hintergrundBewegen, neigen, tippen, zeigen } from './core/motion.js';
+import { hintergrundBewegen, neigen, ruhig, tippen, zeigen } from './core/motion.js';
 import { umschalter } from './core/theme.js';
 
 const STEPS = t('steps');
@@ -38,6 +38,11 @@ const root = $('#app');
 // jedem Aufbau weg, also merken wir uns das Abmelden – sonst sammeln sich
 // mit jedem Schritt weitere Beobachter an, die auf tote Elemente zeigen.
 let hintergrundAus = null;
+
+// Welcher Schritt zuletzt gezeichnet wurde. Die Einlauf-Animation gehört
+// zum Wechsel – spielt sie bei jeder Kleinigkeit, wirkt die Seite unruhig
+// und wie neu geladen.
+let gezeichneterSchritt = null;
 
 init();
 
@@ -108,9 +113,7 @@ function validate(step) {
     if (f.firstName.trim().length < 2) errors.firstName = t('errFirstName');
     if (f.lastName.trim().length < 2) errors.lastName = t('errLastName');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())) errors.email = t('errEmail');
-    if (f.contactPref !== 'email' && f.phone.trim().length < 6) {
-      errors.phone = t('errPhone');
-    }
+    if (f.phone.trim().length < 6) errors.phone = t('errPhone');
     if (!f.consentContact) errors.consentContact = t('errConsent');
   }
 
@@ -123,6 +126,7 @@ function go(delta, skipValidation = false) {
   // eine erneute Prüfung würde auf dem alten Stand scheitern.
   if (delta > 0 && !skipValidation && !validate(state.step)) {
     render();
+    bemaengeln();
     return;
   }
   state.rueck = delta < 0;
@@ -139,7 +143,11 @@ function go(delta, skipValidation = false) {
 }
 
 async function submit() {
-  if (!validate(3)) return render();
+  if (!validate(3)) {
+    render();
+    bemaengeln();
+    return;
+  }
   state.busy = true;
   render();
   try {
@@ -160,9 +168,56 @@ async function submit() {
   }
 }
 
+/**
+ * Zeigen, was fehlt.
+ *
+ * Eine rote Zeile irgendwo auf der Seite reicht nicht: auf dem Telefon
+ * steht sie oft ausserhalb des Bildes, und wer auf "Weiter" tippt und
+ * nichts passieren sieht, tippt noch dreimal und geht dann. Also drei
+ * Dinge auf einmal – die Schaltfläche schlägt kurz nach Rot aus, die
+ * Seite springt zur ersten Lücke, und die blinkt zweimal auf. Bei
+ * Eingabefeldern kommt der Schreibfokus dazu, damit man sofort tippen
+ * kann.
+ */
+function bemaengeln() {
+  const knopf = $('.wizard-nav .btn-primary');
+  if (knopf) {
+    knopf.classList.remove('fehlt');
+    // Ein erzwungener Layout-Zugriff, damit die Animation auch beim
+    // zweiten Tippen von vorn beginnt statt stumm zu bleiben.
+    void knopf.offsetWidth;
+    knopf.classList.add('fehlt');
+    setTimeout(() => knopf.classList.remove('fehlt'), 700);
+  }
+
+  const erstes = Object.keys(state.errors).find((k) => k !== '_');
+  if (!erstes) return;
+
+  const ziel = document.querySelector(`[data-feld="${erstes}"]`);
+  if (!ziel) return;
+
+  // Erst sichtbar machen, dann hinspringen. Was noch nicht eingeblendet
+  // ist, wäre sonst ein leerer roter Rahmen: die Stelle blinkt, aber man
+  // sieht nicht, was dort fehlt.
+  ziel.classList.add('ist-da');
+  for (const el of ziel.querySelectorAll('.kommt')) el.classList.add('ist-da');
+
+  ziel.scrollIntoView({ behavior: ruhig() ? 'auto' : 'smooth', block: 'center' });
+  ziel.classList.add('blinkt');
+  setTimeout(() => ziel.classList.remove('blinkt'), 1300);
+
+  if (ziel.matches('input, textarea, select')) {
+    // Nach dem weichen Scrollen, sonst reisst der Fokus die Seite sofort
+    // wieder an eine andere Stelle.
+    setTimeout(() => ziel.focus({ preventScroll: true }), ruhig() ? 0 : 320);
+  }
+}
+
 // ───────────────────────────── Darstellung ─────────────────────────────
 
 function render() {
+  const wechsel = gezeichneterSchritt !== state.step || state.result !== null;
+  gezeichneterSchritt = state.step;
   mount(
     root,
     aurora(),
@@ -174,7 +229,7 @@ function render() {
       h(
         'div.wizard-body',
         !state.result ? renderStepper() : null,
-        h('div.step-panel.enter' + (state.rueck ? '.rueck' : ''), renderStep()),
+        h('div.step-panel' + (wechsel ? '.enter' : '') + (state.rueck ? '.rueck' : ''), renderStep()),
         !state.result ? renderNav() : null,
       ),
     ),
@@ -266,6 +321,7 @@ function stepAsset() {
     heading(t('stepAssetH'), t('stepAssetP')),
     h(
       'div.asset-grid',
+      { 'data-feld': 'assetClassSlug' },
       state.config.assetClasses.map((asset, i) => {
         const accent = asset.teamColor || '#21b4a6';
         const selected = state.form.assetClassSlug === asset.slug;
@@ -297,7 +353,7 @@ function stepAsset() {
         );
       }),
     ),
-    state.errors.assetClassSlug ? h('p.error', { style: { marginTop: '12px', color: 'var(--danger-text)' } }, state.errors.assetClassSlug) : null,
+    fehlerZeile('assetClassSlug'),
   );
 }
 
@@ -307,17 +363,55 @@ function iconFor(name) {
   return map[name] || 'sparkles';
 }
 
-function optionGrid(options, current, onPick, cols = 2) {
-  return h(
+/**
+ * Eine Reihe Kacheln zur Auswahl.
+ *
+ * Der Klick baut die Seite *nicht* neu auf. Vorher tat er das: jeder
+ * Tipper lief durch render(), und das ersetzt den gesamten Inhalt samt
+ * Einlauf-Animation des Schritts. Es sah aus, als lade die Seite neu –
+ * mitten in einem Formular, das man gerade ausfüllt. Jetzt wechselt nur
+ * die Markierung der betroffenen Kacheln, und die Fehlerzeile darunter
+ * verschwindet an Ort und Stelle.
+ */
+function optionGrid(options, feld, current, onPick, cols = 2) {
+  const grid = h(
     'div.option-grid.cols-' + cols,
+    { 'data-feld': feld },
     options.map((option, i) =>
       h(
         'button.option' + (current === option.value ? '.selected' : ''),
-        { type: 'button', style: { animationDelay: Math.min(i * 35, 300) + 'ms' }, onclick: () => { onPick(option.value); render(); } },
+        {
+          type: 'button',
+          style: { animationDelay: Math.min(i * 35, 300) + 'ms' },
+          onclick: (e) => {
+            // currentTarget festhalten: nach dem Ende des Handlers ist es
+            // null, und der Timeout unten liefe sonst ins Leere.
+            const kachel = e.currentTarget;
+            onPick(option.value);
+            tippen();
+            for (const k of grid.querySelectorAll('.option')) k.classList.remove('selected');
+            kachel.classList.add('selected', 'eben-gewaehlt');
+            setTimeout(() => kachel.classList.remove('eben-gewaehlt'), 420);
+            fehlerZeileWeg(feld);
+          },
+        },
         option.label,
       ),
     ),
   );
+  return grid;
+}
+
+/** Die Fehlerzeile eines Feldes entfernen, ohne alles neu zu bauen. */
+function fehlerZeileWeg(feld) {
+  document.querySelector(`[data-fehler="${feld}"]`)?.remove();
+}
+
+/** Fehlerzeile unter einem Feld. */
+function fehlerZeile(feld) {
+  return state.errors[feld]
+    ? h('p.feld-fehler', { 'data-fehler': feld }, state.errors[feld])
+    : null;
 }
 
 function stepVolume() {
@@ -325,13 +419,13 @@ function stepVolume() {
     'div',
     h('div', { style: { marginBottom: '32px' } },
       heading(t('stepVolumeH'), t('stepVolumeP')),
-      optionGrid(state.config.volumeBands, state.form.volumeBand, (v) => set('volumeBand', v), 2),
-      state.errors.volumeBand ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: 'var(--danger-text)' } }, state.errors.volumeBand) : null,
+      optionGrid(state.config.volumeBands, 'volumeBand', state.form.volumeBand, (v) => set('volumeBand', v), 2),
+      fehlerZeile('volumeBand'),
     ),
     h('div',
       h('h3', { style: { marginBottom: '12px', fontSize: '14px', color: 'var(--text-dim)' } }, t('stepVolumeH2')),
-      optionGrid(state.config.horizons, state.form.horizon, (v) => set('horizon', v), 2),
-      state.errors.horizon ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: 'var(--danger-text)' } }, state.errors.horizon) : null,
+      optionGrid(state.config.horizons, 'horizon', state.form.horizon, (v) => set('horizon', v), 2),
+      fehlerZeile('horizon'),
     ),
   );
 }
@@ -341,7 +435,7 @@ function stepProfile() {
     'div',
     h('div', { style: { marginBottom: '32px' } },
       heading(t('stepProfileH'), t('stepProfileP')),
-      optionGrid(state.config.experience, state.form.experience, (v) => set('experience', v), 2),
+      optionGrid(state.config.experience, 'experience', state.form.experience, (v) => set('experience', v), 2),
     ),
     field(
       t('goalLabel'),
@@ -359,6 +453,7 @@ function stepProfile() {
 function textInput(key, { type = 'text', autocomplete } = {}) {
   return h('input.input' + (state.errors[key] ? '.invalid' : ''), {
     type,
+    'data-feld': key,
     value: state.form[key],
     autocomplete,
     oninput: (e) => { state.form[key] = e.target.value; },
@@ -390,9 +485,13 @@ function stepContact() {
       field(t('firstName'), textInput('firstName', { autocomplete: 'given-name' }), { required: true, error: state.errors.firstName }),
       field(t('lastName'), textInput('lastName', { autocomplete: 'family-name' }), { required: true, error: state.errors.lastName }),
       field(t('email'), textInput('email', { type: 'email', autocomplete: 'email' }), { required: true, error: state.errors.email }),
+      // Pflicht, unabhängig vom gewählten Kanal: der ganze Sinn dieser
+      // Strecke ist der persönliche Rückruf. Ein Sternchen, das je nach
+      // Auswahl erscheint und wieder verschwindet, verwirrt zudem mehr,
+      // als es hilft.
       field(t('phone'), textInput('phone', { type: 'tel', autocomplete: 'tel' }), {
+        required: true,
         error: state.errors.phone,
-        hint: f.contactPref === 'email' ? t('optional') : undefined,
       }),
       field(t('company'), textInput('company', { autocomplete: 'organization' }), { hint: t('optional') }),
       h('div', { style: { display: 'grid', gridTemplateColumns: '7rem 1fr', gap: '12px' } },
@@ -403,11 +502,11 @@ function stepContact() {
     h('div.form-grid.waehler', { style: { marginTop: '20px' } },
       h('div',
         h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, t('channel')),
-        optionGrid(state.config.contactPrefs, f.contactPref, (v) => set('contactPref', v), 3),
+        optionGrid(state.config.contactPrefs, 'contactPref', f.contactPref, (v) => set('contactPref', v), 3),
       ),
       h('div',
         h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, t('bestTime')),
-        optionGrid(state.config.contactWindows, f.contactWindow, (v) => set('contactWindow', v), 2),
+        optionGrid(state.config.contactWindows, 'contactWindow', f.contactWindow, (v) => set('contactWindow', v), 2),
       ),
     ),
     h('div', { style: { marginTop: '20px' } },
@@ -432,13 +531,23 @@ function stepContact() {
 }
 
 function consent(key, error, text) {
+  const kasten = h('div.consent' + (state.form[key] ? '.on' : ''),
+    {
+      'data-feld': key,
+      onclick: () => {
+        // Auch hier: nur das Häkchen wechselt, nicht die Seite.
+        set(key, !state.form[key]);
+        kasten.classList.toggle('on', state.form[key]);
+        tippen();
+        fehlerZeileWeg(key);
+      },
+    },
+    h('span.box', icon('check', 13)),
+    h('span.text', text),
+  );
   return h('div',
-    h('div.consent' + (state.form[key] ? '.on' : ''),
-      { onclick: () => { set(key, !state.form[key]); render(); } },
-      h('span.box', icon('check', 13)),
-      h('span.text', text),
-    ),
-    error ? h('p', { style: { margin: '6px 0 0 32px', fontSize: '12px', color: 'var(--danger-text)' } }, error) : null,
+    kasten,
+    error ? h('p.feld-fehler.eingerueckt', { 'data-fehler': key }, error) : null,
   );
 }
 
@@ -494,12 +603,21 @@ function stepDone() {
         h('p.faint', { style: { fontSize: '12px', lineHeight: '1.6', marginTop: '10px' } },
           t('donePortalText')),
         h('div.stack', { style: { gap: '8px', marginTop: '14px' } },
-          [[t('labelRef'), r.ref], [t('labelLogin'), r.portal.email], [t('labelPassword'), r.portal.password]].map(([label, value]) => {
+          [
+            [t('labelRef'), r.ref],
+            [t('labelLogin'), r.portal.email],
+            // Wer schon einen Zugang hat, bekommt kein neues Passwort
+            // angezeigt – es gäbe keins, und das alte gilt weiter.
+            ...(r.portal.isNew === false ? [] : [[t('labelPassword'), r.portal.password]]),
+          ].map(([label, value]) => {
             const btn = h('button', { type: 'button', 'aria-label': t('copyAria', label) }, icon('copy', 13));
             btn.addEventListener('click', () => copy(label, value, btn));
             return h('div.credential', h('span.faint', label), h('span.row', { style: { gap: '8px' } }, h('span.value', value), btn));
           }),
         ),
+        r.portal.isNew === false
+          ? h('p.faint', { style: { marginTop: '10px', fontSize: '12px', lineHeight: '1.6' } }, t('portalKnown'))
+          : null,
         h('a', { href: '/portal/' + r.portal.token, style: { display: 'block', marginTop: '16px' } },
           h('button.btn.btn-primary.btn-sm.btn-block', icon('lock', 13), t('openPortal'))),
       ),

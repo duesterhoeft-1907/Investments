@@ -39,6 +39,7 @@ final class AdminController
             'timezone'    => (string) ($body['timezone'] ?? 'Europe/Berlin'),
             'days'        => (array) ($body['days'] ?? []),
             'closedDates' => (array) ($body['closedDates'] ?? []),
+            'evening'     => (array) ($body['evening'] ?? []),
         ]);
 
         // Alle offenen CRM-Fenster sollen die neue Regel sofort sehen.

@@ -184,7 +184,7 @@ final class Mailer
      * @param array<string,mixed> $facts
      * @param array{name:string,title:string,phone:string,email:string}|null $contact
      */
-    public static function leadWelcome(array $facts, string $portalUrl, string $password, ?array $contact): array
+    public static function leadWelcome(array $facts, string $portalUrl, ?string $password, ?array $contact): array
     {
         // Die Sprache steht schon fest: PublicController hat sie aus der
         // Anfrage uebernommen. Eine deutsche Bestaetigung auf eine englische
@@ -211,11 +211,17 @@ final class Mailer
             . '<p>' . $w('portal') . '</p>'
             . '<table style="font-size:14px;background:#fff;border-radius:12px;padding:16px;margin:8px 0;">'
             . $zeile($w('login'), (string) $facts['email'])
-            . $zeile($w('password'), $password, 'font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;')
+            . ($password !== null
+                ? $zeile($w('password'), $password, 'font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;')
+                : '')
             . $zeile($w('ref'), (string) $facts['ref'])
             . '</table>'
+            // Wer schon einen Zugang hat, bekommt kein neues Passwort –
+            // sonst waere seine erste Bestaetigungsmail stillschweigend
+            // ungueltig geworden.
+            . ($password === null ? '<p>' . $w('known') . '</p>' : '')
             . self::button($portalUrl, $w('button'))
-            . '<p style="font-size:13px;color:#6b6b6b;">' . $w('change') . '</p>',
+            . ($password !== null ? '<p style="font-size:13px;color:#6b6b6b;">' . $w('change') . '</p>' : ''),
             I18n::lang()
         );
 
@@ -225,7 +231,7 @@ final class Mailer
                 : '')
             . $w('button') . ': ' . $portalUrl . "\n"
             . $w('login') . ': ' . $facts['email'] . "\n"
-            . $w('password') . ': ' . $password;
+            . ($password !== null ? $w('password') . ': ' . $password : $w('known'));
 
         return [
             'subject'  => $w('subject', (string) $facts['ref']),

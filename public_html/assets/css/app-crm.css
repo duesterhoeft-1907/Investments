@@ -498,3 +498,31 @@ table.data tbody tr:hover { background: rgba(var(--auf), 0.04); }
 @media (max-width: 720px) {
   .dnd-board { grid-template-columns: 1fr; }
 }
+
+
+/* ── Weitere Anfragen desselben Kunden ──
+   Eine Liste, keine Karten: sie steht neben dem eigentlichen Vorgang und
+   soll ihn nicht überstrahlen. */
+.kunden-anfragen { display: flex; flex-direction: column; gap: 6px; }
+.kunden-anfrage {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--hairline);
+  border-radius: var(--radius); background: var(--surface-tief);
+  transition: border-color 0.15s, background 0.15s, transform 0.15s var(--ease);
+}
+.kunden-anfrage:hover {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  background: var(--surface-hover);
+  transform: translateX(2px);
+}
+.kunden-anfrage .strich { width: 3px; align-self: stretch; flex-shrink: 0; }
+.kunden-anfrage .grow { flex: 1; min-width: 0; }
+
+/* Die Marke am Namen: kennt uns schon. */
+.badge-wieder {
+  background: rgba(var(--orchid-rgb), 0.16); color: var(--orchid-text);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+
+/* Die Anfrage-Marke im zusammengefassten Verlauf. */
+.chip.klein { padding: 1px 7px; font-size: 10px; letter-spacing: 0.04em; }

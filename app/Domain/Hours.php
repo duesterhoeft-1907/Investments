@@ -52,6 +52,20 @@ final class Hours
                 'thu' => $week, 'fri' => $week, 'sat' => [], 'sun' => [],
             ],
             'closedDates' => [],   // Feiertage und Betriebsferien: 'YYYY-MM-DD'
+
+            /*
+             * Rueckruf am Abend.
+             *
+             * Absichtlich getrennt von den Geschaeftszeiten daruber: die
+             * bestimmen, wann die Reaktionsuhr laeuft – wann also jemand
+             * am Platz sitzt und eine neue Anfrage annimmt. Ein Rueckruf
+             * um halb acht ist etwas anderes; den macht eine Beraterin
+             * nach Feierabend, wenn es so verabredet ist.
+             *
+             * Wer das nicht anbietet, schaltet es hier ab; dann steht das
+             * Fenster auch nicht mehr im Wizard.
+             */
+            'evening' => ['enabled' => true, 'from' => '19:00', 'to' => '21:00'],
         ];
     }
 
@@ -116,12 +130,47 @@ final class Hours
         $closed = array_keys($closed);
         sort($closed);
 
+        // Abendfenster: nur uebernehmen, was sich als Uhrzeit lesen
+        // laesst und wo der Beginn vor dem Ende liegt.
+        $evIn = (array) ($in['evening'] ?? []);
+        $evening = $defaults['evening'];
+        $evening['enabled'] = (bool) ($evIn['enabled'] ?? $defaults['evening']['enabled']);
+        $von = self::parseTime((string) ($evIn['from'] ?? $defaults['evening']['from']));
+        $bis = self::parseTime((string) ($evIn['to'] ?? $defaults['evening']['to']));
+        if ($von !== null && $bis !== null && $bis > $von) {
+            $evening['from'] = $von;
+            $evening['to'] = $bis;
+        }
+
         return [
             'enabled'     => (bool) ($in['enabled'] ?? $defaults['enabled']),
             'timezone'    => $timezone,
             'days'        => $days,
             'closedDates' => $closed,
+            'evening'     => $evening,
         ];
+    }
+
+    /** 'HH:MM' oder null, wenn es keine Uhrzeit ist. */
+    private static function parseTime(string $wert): ?string
+    {
+        $wert = trim($wert);
+        if (preg_match('/^(\d{1,2}):(\d{2})$/', $wert, $m) !== 1) {
+            return null;
+        }
+        $h = (int) $m[1];
+        $i = (int) $m[2];
+        if ($h > 24 || $i > 59 || ($h === 24 && $i > 0)) {
+            return null;
+        }
+        return sprintf('%02d:%02d', $h, $i);
+    }
+
+    /** Minuten seit Mitternacht aus 'HH:MM'. */
+    private static function minuten(string $zeit): int
+    {
+        [$h, $i] = array_map('intval', explode(':', $zeit));
+        return $h * 60 + $i;
     }
 
     /** "9:00-18:00" wird zu "09:00-18:00"; Unsinn wird zu null. */
@@ -355,45 +404,58 @@ final class Hours
     {
         $config = self::config();
         [$frueh, $spaet] = self::spanne($config);
-
-        // Ohne gepflegte Zeiten bleibt es bei der allgemeinen Einteilung.
-        if (!$config['enabled'] || $frueh === null || $spaet === null) {
-            return [
-                'vormittags'  => I18n::t('hours.windows.vormittags', self::stunde(8 * 60), self::stunde(12 * 60)),
-                'nachmittags' => I18n::t('hours.windows.nachmittags', self::stunde(12 * 60), self::stunde(17 * 60)),
-                'abends'      => I18n::t('hours.windows.abends', self::stunde(17 * 60), self::stunde(20 * 60)),
-                'flexibel'    => I18n::t('hours.windows.flexibel'),
-            ];
-        }
+        $abendAn = (bool) ($config['evening']['enabled'] ?? false);
+        $abendVon = self::minuten((string) ($config['evening']['from'] ?? '19:00'));
+        $abendBis = self::minuten((string) ($config['evening']['to'] ?? '21:00'));
 
         $fenster = [];
 
-        // Ein eigenes Abendfenster lohnt erst, wenn danach noch etwas kommt:
-        // "Abends (17 – 18 Uhr)" waere eine Stunde und stuende dem Nachmittag
-        // nur im Weg. Unter zwei Stunden zaehlt der Rest zum Nachmittag.
-        $abends = $spaet >= 19 * 60;
-
-        if ($frueh < 12 * 60) {
-            $fenster['vormittags'] = I18n::t(
-                'hours.windows.vormittags',
-                self::stunde($frueh),
-                self::stunde(12 * 60)
-            );
-        }
-        if ($spaet > 12 * 60) {
-            // Wer erst nachmittags oeffnet, soll auch das als Beginn sehen.
-            $von = max(12 * 60, $frueh);
-            $bis = $abends ? 17 * 60 : $spaet;
-            if ($bis > $von) {
-                $fenster['nachmittags'] = I18n::t(
-                    'hours.windows.nachmittags',
-                    self::stunde($von),
-                    self::stunde($bis)
+        if (!$config['enabled'] || $frueh === null || $spaet === null) {
+            // Ohne gepflegte Zeiten bleibt es bei der allgemeinen Einteilung.
+            $fenster['vormittags'] = I18n::t('hours.windows.vormittags', self::stunde(8 * 60), self::stunde(12 * 60));
+            $fenster['nachmittags'] = I18n::t('hours.windows.nachmittags', self::stunde(12 * 60), self::stunde(17 * 60));
+        } else {
+            if ($frueh < 12 * 60) {
+                $fenster['vormittags'] = I18n::t(
+                    'hours.windows.vormittags',
+                    self::stunde($frueh),
+                    self::stunde(12 * 60)
                 );
             }
+            if ($spaet > 12 * 60) {
+                // Wer erst nachmittags oeffnet, soll auch das als Beginn sehen.
+                $von = max(12 * 60, $frueh);
+                // Der Nachmittag endet dort, wo der Abend beginnt – sonst
+                // ueberlappen sich zwei Fenster und niemand weiss, welches
+                // gemeint ist.
+                $bis = $abendAn ? min($spaet, $abendVon) : $spaet;
+                if ($bis > $von) {
+                    $fenster['nachmittags'] = I18n::t(
+                        'hours.windows.nachmittags',
+                        self::stunde($von),
+                        self::stunde($bis)
+                    );
+                }
+            }
         }
-        if ($abends) {
-            $fenster['abends'] = I18n::t('hours.windows.abends', self::stunde(17 * 60), self::stunde($spaet));
+
+        /*
+         * Das Abendfenster steht ausdruecklich in den Einstellungen und
+         * wird nicht aus den Geschaeftszeiten abgeleitet.
+         *
+         * Der Grund: die Geschaeftszeiten sagen, wann die Reaktionsuhr
+         * laeuft – wann also jemand am Platz sitzt und eine neue Anfrage
+         * annimmt. Ein Rueckruf um halb acht ist etwas anderes; den macht
+         * eine Beraterin nach Feierabend, wenn es so verabredet ist. Wer
+         * das nicht anbietet, schaltet es in der Verwaltung ab, und dann
+         * steht es auch hier nicht mehr.
+         */
+        if ($abendAn) {
+            $fenster['abends'] = I18n::t(
+                'hours.windows.abends',
+                self::stunde($abendVon),
+                self::stunde($abendBis)
+            );
         }
 
         // Bleibt nichts uebrig – etwa bei einem einzigen kurzen Fenster –,
@@ -457,6 +519,7 @@ final class Hours
             'timezone'    => $config['timezone'],
             'days'        => $config['days'],
             'closedDates' => $config['closedDates'],
+            'evening'     => $config['evening'],
             'open'        => $open,
             'nextOpening' => $next?->format('c'),
         ];

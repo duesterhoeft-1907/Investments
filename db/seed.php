@@ -364,6 +364,39 @@ foreach ($leads as $index => $l) {
     }
 }
 
+/*
+ * Die Demo-Anfragen ihren Kunden zuordnen.
+ *
+ * Steht hier und nicht nur in der Wanderung: ein frisch aufgesetzter
+ * Stand soll vollstaendig sein, ohne dass jemand hinterher noch ein
+ * zweites Skript aufrufen muss.
+ */
+Db::pdo()->exec(
+    "INSERT INTO customers (email, first_name, last_name, phone, company, city, postal_code,
+                            country, lang, portal_password_hash, created_at)
+     SELECT LOWER(TRIM(l.email)),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.first_name ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.last_name  ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.phone      ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.company    ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.city       ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.postal_code ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.country    ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.lang       ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            SUBSTRING_INDEX(GROUP_CONCAT(l.portal_password_hash ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+            MIN(l.created_at)
+       FROM leads l
+      WHERE l.customer_id IS NULL AND l.email <> ''
+      GROUP BY LOWER(TRIM(l.email))
+     ON DUPLICATE KEY UPDATE customers.id = customers.id"
+);
+Db::pdo()->exec(
+    "UPDATE leads l JOIN customers c ON c.email = LOWER(TRIM(l.email))
+        SET l.customer_id = c.id WHERE l.customer_id IS NULL"
+);
+$kunden = (int) Db::value('SELECT COUNT(*) FROM customers');
+echo "[seed] Kunden gebildet: $kunden\n";
+
 $counts = Db::one('SELECT (SELECT COUNT(*) FROM leads) AS leads,
                           (SELECT COUNT(*) FROM activities) AS activities,
                           (SELECT COUNT(*) FROM tasks) AS tasks');

@@ -62,6 +62,7 @@ export function render(view, { session }) {
         timezone: state.hours.timezone,
         days: state.hours.days,
         closedDates: state.hours.closedDates,
+        evening: state.hours.evening,
       });
       state.hours = result.hours;
       toast('Ruhezeiten gespeichert.');
@@ -147,6 +148,52 @@ export function render(view, { session }) {
         }, icon('plus', 13), 'Tag hinzufügen')));
   }
 
+  /**
+   * Rückruf am Abend.
+   *
+   * Steht absichtlich getrennt von den Ruhezeiten darüber. Die sagen,
+   * wann die Reaktionsuhr läuft – wann also jemand am Platz sitzt und
+   * eine neue Anfrage annimmt. Ein Rückruf um halb acht ist etwas
+   * anderes: den macht eine Beraterin nach Feierabend, wenn es so
+   * verabredet ist. Wer das nicht anbietet, schaltet es hier ab, und
+   * dann steht das Fenster auch nicht mehr im Anfrageformular.
+   */
+  function abendfenster() {
+    const abend = state.hours.evening ?? { enabled: false, from: '19:00', to: '21:00' };
+    const setzen = (feld, wert) => {
+      state.hours = { ...state.hours, evening: { ...abend, [feld]: wert } };
+      paint();
+    };
+
+    return h('div.stack', { style: { gap: '10px' } },
+      h('div.section-title',
+        h('span', 'Rückruf am Abend'),
+        h('label.switch',
+          h('input', {
+            type: 'checkbox', checked: abend.enabled,
+            onchange: (e) => setzen('enabled', e.target.checked),
+          }),
+          h('span', abend.enabled ? 'wird angeboten' : 'aus'))),
+
+      h('p.faint', { style: { fontSize: '13px', margin: 0 } },
+        'Ein zusätzliches Zeitfenster im Anfrageformular – unabhängig von den Ruhezeiten. ',
+        'Die Reaktionsuhr läuft dadurch nicht länger; es ist eine Verabredung für den Rückruf.'),
+
+      abend.enabled
+        ? h('div.row', { style: { gap: '8px', alignItems: 'center' } },
+            h('span.faint', { style: { fontSize: '13px' } }, 'von'),
+            h('input.input', {
+              type: 'time', value: abend.from, style: { maxWidth: '130px' },
+              onchange: (e) => setzen('from', e.target.value),
+            }),
+            h('span.faint', { style: { fontSize: '13px' } }, 'bis'),
+            h('input.input', {
+              type: 'time', value: abend.to, style: { maxWidth: '130px' },
+              onchange: (e) => setzen('to', e.target.value),
+            }))
+        : null);
+  }
+
   function hoursCard() {
     const { hours } = state;
 
@@ -181,6 +228,8 @@ export function render(view, { session }) {
         h('div.hours-grid', { style: { marginTop: '16px' } }, DAYS.map(dayRow)),
 
         h('div', { style: { marginTop: '20px' } }, closedDates()),
+
+        h('div', { style: { marginTop: '20px' } }, abendfenster()),
 
         h('div.row', { style: { marginTop: '20px', justifyContent: 'flex-end', gap: '10px' } },
           h('span.faint', { style: { fontSize: '12px' } },

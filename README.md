@@ -375,6 +375,49 @@ Kundenbereich. Die Wortmarke ist weiß gezeichnet und würde auf Weiß
 verschwinden – für die helle Fassung liegt sie als `logo-hell.png` daneben,
 mit der Wortmarke in Textfarbe und unverändertem Türkis.
 
+#### Kunden statt lauter Fremder
+Bis hierher war jede Anfrage ein Fremder. Wer sich zum dritten Mal meldete,
+wurde dreimal neu erfasst: dreimal dieselbe Frage am Telefon, drei
+Portalzugänge – und im Kundenbereich funktionierte nur der neueste, weil die
+Anmeldung die jüngste Anfrage zur Adresse nahm. Die anderen beiden waren für
+den Kunden verschwunden.
+
+Erkannt wird über die E-Mail-Adresse, kleingeschrieben und ohne Leerraum.
+Das ist nicht perfekt – wer zwei Adressen benutzt, zählt zweimal – aber es
+ist die einzige Angabe, die im Wizard verpflichtend ist und die Menschen
+selten vertippen.
+
+Was daraus folgt:
+
+- **Am Namen steht, die wievielte Anfrage das ist** („2. von 3"). Das ändert
+  die Haltung im Gespräch, und ohne die Marke bemerkt es niemand.
+- **Eine Karte listet die anderen Anfragen** mit Fachgebiet, Status, Volumen
+  und Berater; ein Klick öffnet sie.
+- **Der Verlauf lässt sich zusammenfassen**: „Diese Anfrage" oder „Alle 3".
+  In der zusammengefassten Ansicht trägt jeder Eintrag die Anfrage mit, zu
+  der er gehört.
+- **Wiederkehrende bekommen denselben Berater**, sofern er noch aktiv und
+  nicht abwesend ist – er kennt den Vorgang schon.
+- **Ein Portalzugang für alles.** Das Passwort hängt am Menschen, nicht an
+  der Anfrage, und wird bei einer weiteren Anfrage *nicht* neu vergeben:
+  sonst würde die erste Bestätigungsmail stillschweigend ungültig. Die
+  zweite Mail nennt deshalb kein Passwort, sondern sagt, dass die
+  bekannten Zugangsdaten weiter gelten. Im Kundenbereich steht oben eine
+  Leiste mit allen eigenen Anfragen.
+- Die Stammdaten stehen doppelt: am Kunden der aktuelle Stand, an der
+  Anfrage der Stand von damals. Zieht jemand um, bleibt die alte Anfrage
+  mit der alten Adresse richtig – sie wurde ja so gestellt.
+
+#### Rückruf am Abend
+Ein zusätzliches Zeitfenster im Anfrageformular, in der Verwaltung unter
+*Ruhezeiten* ein- und ausschaltbar (Vorgabe: 19–21 Uhr). Es ist **getrennt
+von den Geschäftszeiten**: die sagen, wann die Reaktionsuhr läuft – wann
+also jemand am Platz sitzt und eine neue Anfrage annimmt. Ein Rückruf um
+halb acht ist etwas anderes; den macht eine Beraterin nach Feierabend, wenn
+es so verabredet ist. Reicht der Dienst selbst in den Abend hinein, endet
+der Nachmittag dort, wo das Abendfenster beginnt – sonst überlappen sich
+zwei Angebote.
+
 ### CRM
 - **Dashboard** – Ø- und Median-Reaktionszeit, SLA-Quote, Pipeline-Wert,
   Abschlussquote, Verlauf, Leistung pro Fachgruppe gegen deren SLA,

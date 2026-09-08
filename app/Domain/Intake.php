@@ -34,6 +34,16 @@ final class Intake
             ['slug' => (string) $in['assetClassSlug']]
         );
 
+        /*
+         * Wer fragt da? Erst den Menschen, dann die Anfrage.
+         *
+         * Meldet sich jemand zum zweiten Mal, ist das die wertvollste
+         * Information, die diese Anfrage mitbringt – und die einzige, die
+         * bisher verlorenging: bis hierher war jede Anfrage ein Fremder.
+         */
+        $kunde = Customers::findOrCreate($in);
+        $wiederkehrer = $kunde['anfragen'] > 0;
+
         $assetClassId = $assetClass === null ? null : (int) $assetClass['id'];
         // Intern bleibt der deutsche Name stehen – Verlauf, Gruppen-Chat und
         // die Mail an das Fachteam lesen Kolleginnen und Kollegen.
@@ -44,26 +54,50 @@ final class Intake
             : $assetName;
         $teamId       = Leads::teamForAssetClass($assetClassId);
         $slaMinutes   = Leads::slaMinutesForTeam($teamId);
-        $ownerId      = Leads::pickOwner($teamId);
+        /*
+         * Wiederkehrende bekommen moeglichst denselben Menschen ans
+         * Telefon. Der kennt den Vorgang schon, und der Anrufer muss
+         * seine Geschichte nicht zum zweiten Mal erzaehlen. Ist die
+         * Person nicht mehr da oder gerade abwesend, greift wieder die
+         * normale Verteilung.
+         */
+        $ownerId      = ($wiederkehrer ? Customers::lastOwner($kunde['id'], $teamId) : null)
+                        ?? Leads::pickOwner($teamId);
+        $ownerBekannt = $wiederkehrer && $ownerId !== null
+                        && $ownerId === Customers::lastOwner($kunde['id'], $teamId);
         // Die Uhr laeuft nur waehrend der Geschaeftszeiten – nachts ruht sie.
         $deadline     = Leads::slaDeadline($slaMinutes);
 
         $ref            = Leads::newRef();
         $portalToken    = Leads::newPortalToken();
-        $portalPassword = Leads::newPortalPassword();
+        /*
+         * Das Passwort wird nur einmal vergeben.
+         *
+         * Bei jeder Anfrage ein neues zu wuerfeln hiesse: die aeltere
+         * Bestaetigungsmail wird stillschweigend ungueltig. Wer die
+         * aufhebt und Wochen spaeter hervorholt, kommt nicht mehr hinein
+         * und weiss nicht, warum. Also behaelt ein wiederkehrender Kunde
+         * sein Passwort – die neue Mail nennt dann keins, sondern sagt,
+         * dass die alten Zugangsdaten weiter gelten.
+         */
+        $hatZugang = $kunde['id'] > 0 && Db::value(
+            'SELECT portal_password_hash FROM customers WHERE id = :id',
+            ['id' => $kunde['id']]
+        ) !== null;
+        $portalPassword = $hatZugang ? null : Leads::newPortalPassword();
         $band           = Leads::VOLUME_BANDS[(string) $in['volumeBand']] ?? null;
 
         // Lead und Aufgabe gehören zusammen – entweder beides oder nichts.
-        $leadId = Db::transaction(static function () use ($in, $ref, $assetClassId, $teamId, $ownerId, $slaMinutes, $deadline, $band, $portalToken, $portalPassword): int {
+        $leadId = Db::transaction(static function () use ($in, $ref, $kunde, $assetClassId, $teamId, $ownerId, $slaMinutes, $deadline, $band, $portalToken, $portalPassword): int {
             $id = Db::insert(
                 'INSERT INTO leads (
-                    public_ref, first_name, last_name, email, phone, company, city, postal_code, country, lang,
+                    public_ref, customer_id, first_name, last_name, email, phone, company, city, postal_code, country, lang,
                     asset_class_id, team_id, owner_id, status, stage_changed_at, source, score,
                     volume_band, volume_value, horizon, experience, goal, contact_pref, contact_window,
                     message, wizard_payload, consent_contact, consent_marketing,
                     sla_due_at, sla_warn_at, portal_token, portal_password_hash, created_at, updated_at
                  ) VALUES (
-                    :ref, :first, :last, :email, :phone, :company, :city, :plz, :country, :lang,
+                    :ref, :kunde, :first, :last, :email, :phone, :company, :city, :plz, :country, :lang,
                     :asset, :team, :owner, \'new\', NOW(), :source, :score,
                     :band, :value, :horizon, :experience, :goal, :pref, :window,
                     :message, :payload, 1, :marketing,
@@ -71,6 +105,7 @@ final class Intake
                  )',
                 [
                     'ref'        => $ref,
+                    'kunde'      => $kunde['id'] > 0 ? $kunde['id'] : null,
                     'first'      => $in['firstName'],
                     'last'       => $in['lastName'],
                     'email'      => $in['email'],
@@ -111,7 +146,7 @@ final class Intake
                     'slaDue'     => $deadline['due'],
                     'slaWarn'    => $deadline['warn'],
                     'token'      => $portalToken,
-                    'pwd'        => Auth::hash($portalPassword),
+                    'pwd'        => $portalPassword === null ? null : Auth::hash($portalPassword),
                 ]
             );
 
@@ -131,6 +166,22 @@ final class Intake
             return $id;
         });
 
+        /*
+         * Das Portalpasswort gehoert dem Menschen, nicht der Anfrage.
+         *
+         * Vorher lag es nur am Lead, und die Anmeldung nahm die juengste
+         * Anfrage zur Adresse – wer zum zweiten Mal fragte, kam mit dem
+         * alten Passwort nicht mehr hinein und sah seine erste Anfrage
+         * nie wieder. Jetzt gilt das zuletzt verschickte Passwort fuer
+         * alles, was diesem Kunden gehoert.
+         */
+        if ($kunde['id'] > 0 && $portalPassword !== null) {
+            Db::run(
+                'UPDATE customers SET portal_password_hash = :pwd WHERE id = :id',
+                ['pwd' => Auth::hash($portalPassword), 'id' => $kunde['id']]
+            );
+        }
+
         Leads::logActivity(
             $leadId,
             'lead_created',
@@ -138,6 +189,20 @@ final class Intake
             body: 'Fachgebiet ' . $assetName . ($band !== null ? ' · Volumen ' . $band['label'] : ''),
             meta: ['source' => $in['source'] ?? 'wizard', 'assetClass' => $assetClass['slug'] ?? null],
         );
+
+        // Der Verlauf soll es ausdruecklich festhalten: hier klopft jemand
+        // nicht zum ersten Mal an.
+        $nummer = $kunde['anfragen'] + 1;
+        if ($wiederkehrer) {
+            Leads::logActivity(
+                $leadId,
+                'customer_return',
+                'Wiederkehrender Interessent – ' . $nummer . '. Anfrage',
+                body: 'Frühere Anfragen liegen unter derselben E-Mail-Adresse. '
+                    . 'Der Verlauf lässt sich über den Kunden zusammen ansehen.',
+                meta: ['customerId' => $kunde['id'], 'nummer' => $nummer],
+            );
+        }
 
         $owner = $ownerId === null ? null : Db::one(
             'SELECT id, name, title, phone, email FROM users WHERE id = :id',
@@ -149,8 +214,10 @@ final class Intake
                 $leadId,
                 'assignment',
                 'Automatisch zugewiesen an ' . $owner['name'],
-                body: 'Routing über Fachgebiet ' . $assetName . ' → Gruppe',
-                meta: ['ownerId' => (int) $owner['id'], 'automatic' => true],
+                body: $ownerBekannt
+                    ? 'Betreut den Kunden schon aus einer früheren Anfrage'
+                    : 'Routing über Fachgebiet ' . $assetName . ' → Gruppe',
+                meta: ['ownerId' => (int) $owner['id'], 'automatic' => true, 'bekannt' => $ownerBekannt],
             );
         }
 
@@ -166,8 +233,10 @@ final class Intake
             Notify::send(
                 $memberId,
                 $isOwner ? 'assignment' : 'new_lead',
-                $isOwner ? 'Dir zugewiesen: ' . $lead['name'] : 'Neuer Lead in ' . ($lead['team'] ?? 'deiner Gruppe'),
-                $assetName . ' · ' . ($band['label'] ?? '') . ' · Reaktion innerhalb von ' . $slaMinutes . ' Min.',
+                ($isOwner ? 'Dir zugewiesen: ' : 'Neuer Lead: ') . $lead['name']
+                    . ($wiederkehrer ? ' (' . $nummer . '. Anfrage)' : ''),
+                ($wiederkehrer ? 'Kennt uns schon · ' : '')
+                    . $assetName . ' · ' . ($band['label'] ?? '') . ' · Reaktion innerhalb von ' . $slaMinutes . ' Min.',
                 '/app/leads/' . $leadId,
                 $leadId,
                 $isOwner ? 'critical' : 'high',
@@ -260,7 +329,16 @@ final class Intake
 
         return [
             'lead'       => $present,
-            'portal'     => ['url' => $portalUrl, 'token' => $portalToken, 'email' => $in['email'], 'password' => $portalPassword],
+            'portal'     => [
+                'url'      => $portalUrl,
+                'token'    => $portalToken,
+                'email'    => $in['email'],
+                // Leer bei einem wiederkehrenden Kunden: sein Passwort
+                // gilt weiter, und ein neues gaebe es nur, um das alte
+                // zu entwerten.
+                'password' => $portalPassword,
+                'isNew'    => $portalPassword !== null,
+            ],
             'contact'    => $contact,
             'slaMinutes' => $slaMinutes,
         ];

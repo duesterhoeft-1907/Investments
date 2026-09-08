@@ -6,7 +6,7 @@
 import { h, mount, $ } from './core/dom.js';
 import { icon } from './core/icons.js';
 import { api, ApiError, setCsrf } from './core/api.js';
-import { formatCurrency, formatDate, formatDateTime, initials, renderMarkdown } from './core/format.js';
+import { formatCurrency, formatDate, formatDateTime, formatRelative, initials, renderMarkdown } from './core/format.js';
 import { logo, spinner, toast } from './core/ui.js';
 import { umschalter } from './core/theme.js';
 
@@ -107,6 +107,7 @@ function renderPortal() {
         umschalter(),
         h('button.p-logout', { onclick: async () => { await api.post('/portal/logout').catch(() => {}); location.reload(); } }, 'Abmelden')))),
     h('main.p-main',
+      anfragenLeiste(),
       heroSection(lead),
       h('div.p-grid',
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '24px' } },
@@ -114,6 +115,42 @@ function renderPortal() {
         h('aside', { style: { display: 'flex', flexDirection: 'column', gap: '20px' } },
           advisorCard(advisor), messageCard(), factsCard(lead), footerNote(company))),
     ));
+}
+
+/**
+ * Umschalter zwischen den eigenen Anfragen.
+ *
+ * Erscheint nur, wenn es mehr als eine gibt. Vorher war der
+ * Kundenbereich ein Fenster auf genau einen Vorgang: wer zum dritten Mal
+ * gefragt hatte, sah die ersten beiden nie wieder – und kam mit dem alten
+ * Passwort nicht einmal mehr hinein.
+ */
+function anfragenLeiste() {
+  const anfragen = state.data.requests ?? [];
+  if (anfragen.length < 2) return null;
+
+  return h('section.p-card.p-anfragen',
+    h('p.kicker', `Deine Anfragen (${anfragen.length})`),
+    h('div.p-anfragen-liste',
+      anfragen.map((a) =>
+        h('button.p-anfrage' + (a.aktiv ? '.on' : ''), {
+          type: 'button',
+          disabled: a.aktiv,
+          onclick: async () => {
+            try {
+              await api.post('/portal/switch', { leadId: a.id });
+              state.data = await api.get('/portal/me');
+              state.openOffer = null;
+              renderPortal();
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (error) {
+              toast(error.message, 'error');
+            }
+          },
+        },
+          h('span.t', a.assetClass ?? 'Anfrage'),
+          h('span.s', `${a.statusLabel} · ${formatRelative(a.createdAt)}`),
+          h('span.r', a.ref)))));
 }
 
 function heroSection(lead) {

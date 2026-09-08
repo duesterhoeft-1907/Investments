@@ -12,13 +12,32 @@ const STAGE_LABEL = { new: 'Neu', contacted: 'Kontaktiert', qualified: 'Qualifiz
 
 export function render(view, { params, session, navigate }) {
   const leadId = Number(params[0]);
-  const state = { data: null, users: [], tab: 'stream', busy: '', ai: { enabled: false, model: null }, openOffer: null };
+  const state = {
+    data: null, users: [], tab: 'stream', busy: '', ai: { enabled: false, model: null }, openOffer: null,
+    // Verlauf: nur diese Anfrage oder alle des Kunden. Wer schon zweimal
+    // angerufen hat, soll das nicht in zwei Listen suchen müssen.
+    verlaufAlle: false,
+    kundenVerlauf: null,
+  };
 
   const load = async () => {
     state.data = await api.get(`/leads/${leadId}`);
     if (state.openOffer === null && state.data.offers.length) state.openOffer = state.data.offers[0].id;
+    if (state.verlaufAlle) await kundenVerlaufLaden();
     paint();
   };
+
+  async function kundenVerlaufLaden() {
+    const id = state.data?.customer?.id;
+    if (!id) return;
+    try {
+      const d = await api.get(`/customers/${id}/activities`);
+      state.kundenVerlauf = d.activities;
+    } catch (error) {
+      toast(error.message, 'error');
+      state.verlaufAlle = false;
+    }
+  }
 
   const offUpdated = pulse.on('lead:updated', (p) => {
     if (p.lead?.id === leadId && state.data) { state.data.lead = p.lead; paint(); }
@@ -63,6 +82,12 @@ export function render(view, { params, session, navigate }) {
           lead.lang && lead.lang !== 'de'
             ? h('span.badge', { title: 'Anfrage kam über die englische Strecke' }, lead.lang.toUpperCase())
             : null,
+          // Kennt uns schon. Steht direkt am Namen, weil es die Haltung
+          // im Gespräch ändert – und weil es sonst niemand bemerkt.
+          (state.data.customer?.summary?.count ?? 1) > 1
+            ? h('span.badge.badge-wieder', { title: 'Dieser Mensch hat schon früher angefragt' },
+                icon('users', 12), `${anfrageNummer()}. von ${state.data.customer.summary.count}`)
+            : null,
           h('span.mono.faint', { style: { fontSize: '12px' } }, lead.ref)),
         h('div.lead-contacts',
           h('a', { href: 'mailto:' + lead.email }, icon('mail', 14), lead.email),
@@ -72,7 +97,7 @@ export function render(view, { params, session, navigate }) {
         h('div.lead-chips',
           chip(lead.assetClass ?? '–', lead.teamColor),
           chip(lead.volumeLabel || '–'), chip(lead.horizonLabel || '–'), chip(lead.experienceLabel || '–'),
-          chip(`Kontakt: ${lead.contactPrefLabel}${lead.contactWindow ? ` (${lead.contactWindow})` : ''}`),
+          chip(`Kontakt: ${lead.contactPrefLabel}${lead.contactWindowLabel ? ` (${lead.contactWindowLabel})` : ''}`),
           chip(`Score ${lead.score}`)),
       ),
       h('div.stack', { style: { gap: '12px', alignItems: 'flex-end', flexShrink: '0' } },
@@ -242,23 +267,118 @@ export function render(view, { params, session, navigate }) {
           h('span.faint', { style: { marginLeft: 'auto', fontSize: '11px' } }, 'Kontaktarten stoppen automatisch die Reaktionsuhr.')),
         h('div', { style: { marginTop: '12px' } }, voiceRecorder(leadId, load)),
       ),
-      h('div.glass.card-pad',
-        h('div.section-title', h('h2', 'Verlauf'), h('span.hint', `${state.data.activities.length} Einträge`)),
-        state.data.activities.length === 0
-          ? empty('Noch keine Einträge.')
-          : h('ol.timeline', { style: { listStyle: 'none', margin: '0' } },
-              state.data.activities.map((activity, i) => entry(activity, i, byActivity.get(activity.id) ?? []))),
-      ),
+      kundenKarte(),
+      verlauf(byActivity),
     );
   }
 
-  function entry(activity, index, attachments) {
+  /**
+   * Der Verlauf – wahlweise nur zu dieser Anfrage oder über alle
+   * Anfragen dieses Kunden hinweg.
+   *
+   * Der Umschalter erscheint nur, wenn es überhaupt mehr als eine gibt.
+   * Ein Knopf, der nichts ändert, ist schlimmer als kein Knopf.
+   */
+  function verlauf(byActivity) {
+    const kunde = state.data.customer;
+    const mehrere = (kunde?.summary?.count ?? 1) > 1;
+    const alle = state.verlaufAlle && state.kundenVerlauf !== null;
+    const liste = alle ? state.kundenVerlauf : state.data.activities;
+
+    return h('div.glass.card-pad',
+      h('div.section-title',
+        h('h2', 'Verlauf'),
+        h('div.row', { style: { gap: '10px' } },
+          h('span.hint', `${liste.length} Einträge`),
+          mehrere
+            ? h('div.row', { style: { gap: '4px' } },
+                h('button.chip' + (alle ? '' : '.on'), {
+                  onclick: () => { state.verlaufAlle = false; paint(); },
+                }, 'Diese Anfrage'),
+                h('button.chip' + (alle ? '.on' : ''), {
+                  onclick: async () => {
+                    state.verlaufAlle = true;
+                    if (state.kundenVerlauf === null) await kundenVerlaufLaden();
+                    paint();
+                  },
+                }, `Alle ${kunde.summary.count}`))
+            : null)),
+      liste.length === 0
+        ? empty('Noch keine Einträge.')
+        : h('ol.timeline', { style: { listStyle: 'none', margin: '0' } },
+            liste.map((activity, i) => entry(activity, i, byActivity.get(activity.id) ?? [], alle))));
+  }
+
+  /** Die wievielte Anfrage dieses Kunden die geöffnete ist – ältestes zuerst gezählt. */
+  function anfrageNummer() {
+    const kunde = state.data.customer;
+    if (!kunde) return 1;
+    // Bei gleichem Zeitstempel entscheidet die laufende Nummer. Ohne das
+    // ist die Reihenfolge zufällig, sobald zwei Anfragen in derselben
+    // Sekunde eingehen – und die Zählung stimmt nicht mehr.
+    const alle = [...kunde.leads, { id: leadId, createdAt: state.data.lead.createdAt }]
+      .sort((a, b) => (new Date(a.createdAt) - new Date(b.createdAt)) || (a.id - b.id));
+    return alle.findIndex((l) => l.id === leadId) + 1;
+  }
+
+  /**
+   * Der Mensch hinter der Anfrage.
+   *
+   * Steht bewusst weit oben und nicht unter "sonstiges": wer zum dritten
+   * Mal fragt, ist ein anderer Gesprächspartner als jemand, der zum ersten
+   * Mal anruft – und ohne diese Karte sieht man den Unterschied nicht.
+   */
+  function kundenKarte() {
+    const kunde = state.data.customer;
+    if (!kunde || kunde.leads.length === 0) return null;
+
+    const zahl = (n) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(n);
+
+    return h('div.glass.card-pad',
+      h('div.section-title',
+        h('h2', 'Weitere Anfragen dieses Kunden'),
+        h('span.hint', `erste Anfrage ${formatRelative(kunde.summary.first)}`)),
+
+      h('div.lead-chips', { style: { marginTop: '10px' } },
+        chip(`${kunde.summary.count} Anfragen`),
+        kunde.summary.volume > 0 ? chip(`${zahl(kunde.summary.volume)} € angefragt`) : null,
+        kunde.summary.won > 0 ? chip(`${kunde.summary.won} gewonnen`) : null,
+        kunde.hasPortal ? chip(kunde.lastLogin ? `Portal zuletzt ${formatRelative(kunde.lastLogin)}` : 'Portal nie genutzt') : null),
+
+      h('ul.kunden-anfragen', { style: { listStyle: 'none', margin: '14px 0 0', padding: '0' } },
+        kunde.leads.map((l) =>
+          h('li',
+            h('a.kunden-anfrage', {
+              href: '/app/leads/' + l.id,
+              onclick: (e) => { e.preventDefault(); navigate('/app/leads/' + l.id); },
+            },
+              h('span.strich', { style: { background: l.teamColor || 'var(--accent-400)' } }),
+              h('span.grow',
+                h('span.row', { style: { gap: '8px', flexWrap: 'wrap' } },
+                  h('strong', l.assetClass ?? 'Ohne Fachgebiet'),
+                  statusBadge(l.status, l.statusLabel)),
+                h('span.faint', { style: { display: 'block', marginTop: '3px', fontSize: '12px' } },
+                  [l.volumeLabel, l.owner, formatRelative(l.createdAt)].filter(Boolean).join(' · '))),
+              h('span.mono.faint', { style: { fontSize: '11px' } }, l.ref)))))
+    );
+  }
+
+  function entry(activity, index, attachments, mitAnfrage = false) {
     const meta = ACTIVITY_META[activity.type] ?? ACTIVITY_META.system;
     return h('li.entry', { style: { animationDelay: Math.min(index * 25, 350) + 'ms' } },
       h('span.bullet', { style: { color: meta.color } }, h('i')),
       h('div.body',
         h('div.row', { style: { gap: '10px', flexWrap: 'wrap' } },
           h('span.kind', { style: { color: meta.color } }, meta.label),
+          // In der zusammengefassten Ansicht muss an jedem Eintrag stehen,
+          // zu welcher Anfrage er gehört – sonst ist die Liste nicht zu
+          // lesen. Der Eintrag der gerade geöffneten Anfrage bleibt ohne
+          // Marke, damit die fremden auffallen.
+          mitAnfrage && activity.lead && activity.lead.id !== leadId
+            ? h('a.chip.klein', { href: '/app/leads/' + activity.lead.id,
+                onclick: (e) => { e.preventDefault(); navigate('/app/leads/' + activity.lead.id); },
+                title: activity.lead.assetClass ?? '' }, activity.lead.ref)
+            : null,
           h('span.title', activity.title),
           activity.outcome ? h('span', { style: { borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.06)', padding: '1px 6px', fontSize: '10px', color: 'var(--text-dim)' } }, activity.outcome) : null,
           activity.durationS > 0 ? h('span.row.faint', { style: { gap: '4px', fontSize: '10px' } }, icon('timer', 11), formatDuration(activity.durationS)) : null,

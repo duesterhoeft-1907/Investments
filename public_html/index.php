@@ -103,6 +103,11 @@ try {
     // ── Ereignisse (ersetzt WebSockets) ──
     $router->get('/api/events', [C\EventsController::class, 'poll']);
 
+    // ── Kunden ──
+    $router->get('/api/customers/{id}', [C\CustomersController::class, 'show']);
+    $router->get('/api/customers/{id}/activities', [C\CustomersController::class, 'activities']);
+    $router->patch('/api/customers/{id}', [C\CustomersController::class, 'update']);
+
     // ── Leads ──
     $router->get('/api/leads', [C\LeadsController::class, 'index']);
     $router->get('/api/leads/{id}', [C\LeadsController::class, 'show']);
@@ -175,6 +180,7 @@ try {
     $router->get('/api/portal/preview/{token}', [C\PortalController::class, 'preview']);
     $router->post('/api/portal/login', [C\PortalController::class, 'login']);
     $router->post('/api/portal/logout', [C\PortalController::class, 'logout']);
+    $router->post('/api/portal/switch', [C\PortalController::class, 'switchLead']);
     $router->get('/api/portal/me', [C\PortalController::class, 'me']);
     $router->post('/api/portal/messages', [C\PortalController::class, 'message']);
     $router->post('/api/portal/offers/respond', [C\PortalController::class, 'respondToOffer']);

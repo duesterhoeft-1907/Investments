@@ -183,6 +183,85 @@ $steps = [
             "ALTER TABLE leads ADD COLUMN lang CHAR(2) NOT NULL DEFAULT 'de' AFTER country",
         ],
     ],
+    [
+        // Kunden als eigene Groesse.
+        //
+        // Bisher war jede Anfrage ein Fremder: wer sich zum dritten Mal
+        // meldete, wurde dreimal neu erfasst, bekam drei Portalzugaenge –
+        // und im Portal funktionierte nur der neueste, weil die Anmeldung
+        // die juengste Anfrage zur Adresse nahm. Die anderen beiden waren
+        // fuer den Kunden verschwunden.
+        'name'  => 'Kundentabelle anlegen',
+        'check' => static fn (): bool => (int) Db::value(
+            "SELECT COUNT(*) FROM information_schema.tables
+              WHERE table_schema = DATABASE() AND table_name = 'customers'"
+        ) === 0,
+        'sql'   => [
+            "CREATE TABLE customers (
+               id                   INT UNSIGNED NOT NULL AUTO_INCREMENT,
+               email                VARCHAR(190) NOT NULL,
+               first_name           VARCHAR(80)  NOT NULL DEFAULT '',
+               last_name            VARCHAR(80)  NOT NULL DEFAULT '',
+               phone                VARCHAR(60)  NOT NULL DEFAULT '',
+               company              VARCHAR(160) NOT NULL DEFAULT '',
+               city                 VARCHAR(120) NOT NULL DEFAULT '',
+               postal_code          VARCHAR(20)  NOT NULL DEFAULT '',
+               country              VARCHAR(4)   NOT NULL DEFAULT 'DE',
+               lang                 CHAR(2)      NOT NULL DEFAULT 'de',
+               portal_password_hash VARCHAR(255) NULL,
+               portal_last_login    DATETIME     NULL,
+               note                 VARCHAR(1000) NOT NULL DEFAULT '',
+               created_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               updated_at           DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+               PRIMARY KEY (id),
+               UNIQUE KEY uq_customers_email (email)
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ],
+    ],
+    [
+        'name'  => 'Anfragen mit dem Kunden verbinden',
+        'check' => static fn (): bool => !hasColumn('leads', 'customer_id'),
+        'sql'   => [
+            'ALTER TABLE leads ADD COLUMN customer_id INT UNSIGNED NULL AFTER public_ref',
+            'ALTER TABLE leads ADD KEY idx_leads_customer (customer_id)',
+            'ALTER TABLE leads ADD CONSTRAINT fk_lead_customer
+               FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL',
+        ],
+    ],
+    [
+        // Bestand nachziehen: aus den vorhandenen Anfragen die Kunden
+        // bilden. Gruppiert wird ueber die kleingeschriebene E-Mail; die
+        // Stammdaten kommen aus der juengsten Anfrage, denn die ist die
+        // aktuellste. Das Portalpasswort ebenso – es ist das einzige, das
+        // der Kunde ueberhaupt kennt.
+        'name'  => 'Bestehende Anfragen Kunden zuordnen',
+        'check' => static fn (): bool => hasColumn('leads', 'customer_id')
+            && (int) Db::value('SELECT COUNT(*) FROM leads WHERE customer_id IS NULL') > 0,
+        'sql'   => [
+            "INSERT INTO customers (email, first_name, last_name, phone, company, city, postal_code,
+                                    country, lang, portal_password_hash, portal_last_login, created_at)
+             SELECT LOWER(TRIM(l.email)),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.first_name ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.last_name  ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.phone      ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.company    ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.city       ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.postal_code ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.country    ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.lang       ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    SUBSTRING_INDEX(GROUP_CONCAT(l.portal_password_hash ORDER BY l.id DESC SEPARATOR 0x1f), 0x1f, 1),
+                    MAX(l.portal_last_login),
+                    MIN(l.created_at)
+               FROM leads l
+              WHERE l.customer_id IS NULL AND l.email <> ''
+              GROUP BY LOWER(TRIM(l.email))
+             ON DUPLICATE KEY UPDATE customers.id = customers.id",
+            "UPDATE leads l
+               JOIN customers c ON c.email = LOWER(TRIM(l.email))
+                SET l.customer_id = c.id
+              WHERE l.customer_id IS NULL",
+        ],
+    ],
 ];
 
 $done = 0;

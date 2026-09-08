@@ -102,11 +102,34 @@ check('sonntags geschlossen',    promiseAt('2026-09-13 12:00', 10), 'spaeter');
 setHours();
 App\Core\I18n::use('de');
 check('Zeitfenster deutsch', implode(' · ', Hours::contactWindows()),
-    'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Jederzeit');
+    'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Abends (19 – 21 Uhr) · Jederzeit');
 
 App\Core\I18n::use('en');
 check('Zeitfenster englisch', implode(' · ', Hours::contactWindows()),
-    'Mornings (9 am – 12 noon) · Afternoons (12 noon – 6 pm) · Any time');
+    'Mornings (9 am – 12 noon) · Afternoons (12 noon – 6 pm) · Evenings (7 pm – 9 pm) · Any time');
+
+// Das Abendfenster kommt aus der Einstellung, nicht aus den
+// Geschaeftszeiten: ein Rueckruf um halb acht ist etwas anderes als eine
+// besetzte Leitung. Wer es abschaltet, bekommt es nicht angeboten.
+App\Core\I18n::use('de');
+setHours(['evening' => ['enabled' => false, 'from' => '19:00', 'to' => '21:00']]);
+check('Abend abgeschaltet', implode(' · ', Hours::contactWindows()),
+    'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Jederzeit');
+
+setHours(['evening' => ['enabled' => true, 'from' => '18:30', 'to' => '20:30']]);
+check('eigene Abendzeiten', implode(' · ', Hours::contactWindows()),
+    'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Abends (18 – 20 Uhr) · Jederzeit');
+
+// Reicht der Dienst in den Abend hinein, endet der Nachmittag dort, wo
+// das Abendfenster beginnt – sonst ueberlappen sich zwei Angebote.
+setHours(['days' => ['mon'=>['08:00-20:00'],'tue'=>['08:00-20:00'],'wed'=>['08:00-20:00'],
+                     'thu'=>['08:00-20:00'],'fri'=>['08:00-20:00'],'sat'=>[],'sun'=>[]]]);
+check('Nachmittag endet am Abend', implode(' · ', Hours::contactWindows()),
+    'Vormittags (8 – 12 Uhr) · Nachmittags (12 – 19 Uhr) · Abends (19 – 21 Uhr) · Jederzeit');
+
+// Unsinnige Abendzeiten werden verworfen, nicht uebernommen.
+$n = Hours::normalise(['evening' => ['enabled' => true, 'from' => '21:00', 'to' => '19:00']]);
+check('verdrehte Abendzeiten fliegen raus', $n['evening']['from'] . '-' . $n['evening']['to'], '19:00-21:00');
 
 // Die Zusage haengt daran, ob gerade geoeffnet ist – und "gerade" laesst
 // sich Hours::promise() nicht vorgeben. Mit abgeschalteten Zeiten gilt
@@ -117,15 +140,7 @@ App\Core\I18n::use('de');
 check('Zusage deutsch', Hours::promise(15), 'innerhalb von 15 Minuten');
 App\Core\I18n::use('en');
 check('Zusage englisch', Hours::promise(15), 'within 15 minutes');
-
-// Ein spaeter Feierabend bekommt ein eigenes Abendfenster – in beiden Sprachen.
-setHours(['days' => ['mon'=>['08:00-20:00'],'tue'=>['08:00-20:00'],'wed'=>['08:00-20:00'],
-                     'thu'=>['08:00-20:00'],'fri'=>['08:00-20:00'],'sat'=>[],'sun'=>[]]]);
-check('Abendfenster englisch', implode(' · ', Hours::contactWindows()),
-    'Mornings (8 am – 12 noon) · Afternoons (12 noon – 5 pm) · Evenings (5 pm – 8 pm) · Any time');
 App\Core\I18n::use('de');
-check('Abendfenster deutsch', implode(' · ', Hours::contactWindows()),
-    'Vormittags (8 – 12 Uhr) · Nachmittags (12 – 17 Uhr) · Abends (17 – 20 Uhr) · Jederzeit');
 
 echo $fails === 0 ? "\nAlle Proben bestanden.\n" : "\n$fails Probe(n) fehlgeschlagen.\n";
 exit($fails === 0 ? 0 : 1);

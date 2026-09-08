@@ -8,6 +8,7 @@ use App\Core\Config;
 use App\Core\Db;
 use App\Core\Http;
 use App\Core\Validator;
+use App\Domain\Customers;
 use App\Domain\Events;
 use App\Domain\Leads;
 use App\Domain\Notify;
@@ -46,24 +47,88 @@ final class PortalController
         $v->email('email')->text('password', 'das Passwort', 1, 200)->text('token', 'den Zugang', 0, 64, false);
         $clean = $v->orFail();
 
-        $lead = $clean['token'] !== ''
-            ? Db::one('SELECT * FROM leads WHERE portal_token = :t', ['t' => $clean['token']])
-            : Db::one('SELECT * FROM leads WHERE email = :e ORDER BY id DESC LIMIT 1', ['e' => $clean['email']]);
+        /*
+         * Angemeldet wird der Mensch, nicht die Anfrage.
+         *
+         * Vorher hing das Passwort am Lead, und die Anmeldung nahm die
+         * juengste Anfrage zur Adresse. Wer zum zweiten Mal fragte, kam
+         * mit dem alten Passwort nicht mehr hinein und sah seine erste
+         * Anfrage nie wieder. Jetzt gilt ein Zugang fuer alles, was
+         * diesem Kunden gehoert.
+         */
+        $customer = Db::one(
+            'SELECT id, email, portal_password_hash FROM customers WHERE email = :e',
+            ['e' => Customers::normalise($clean['email'])]
+        );
 
-        $ok = $lead !== null
-            && $lead['portal_password_hash'] !== null
-            && mb_strtolower((string) $lead['email']) === mb_strtolower((string) $clean['email'])
-            && Auth::verify($clean['password'], (string) $lead['portal_password_hash']);
+        // Ein Lead, der zu diesem Menschen gehoert – bevorzugt der aus dem
+        // Link in der Bestaetigungsmail, sonst der neueste.
+        $lead = null;
+        if ($customer !== null) {
+            if ($clean['token'] !== '') {
+                $lead = Db::one(
+                    'SELECT * FROM leads WHERE portal_token = :t AND customer_id = :c',
+                    ['t' => $clean['token'], 'c' => (int) $customer['id']]
+                );
+            }
+            $lead ??= Db::one(
+                'SELECT * FROM leads WHERE customer_id = :c ORDER BY created_at DESC, id DESC LIMIT 1',
+                ['c' => (int) $customer['id']]
+            );
+        }
+
+        // Bestandsdaten, die noch vor der Kundentabelle entstanden sind:
+        // dort haengt das Passwort am Lead. Erst der Kunde, dann der Lead.
+        $hash = (string) ($customer['portal_password_hash'] ?? '');
+        if ($hash === '' && $lead !== null) {
+            $hash = (string) ($lead['portal_password_hash'] ?? '');
+        }
+
+        $ok = $lead !== null && $hash !== '' && Auth::verify($clean['password'], $hash);
 
         if (!$ok) {
             Http::error('E-Mail oder Passwort stimmt nicht.', 401);
         }
 
-        Db::run('UPDATE leads SET portal_last_login = NOW() WHERE id = :id', ['id' => (int) $lead['id']]);
-        Auth::loginPortal((int) $lead['id']);
-        Leads::logActivity((int) $lead['id'], 'portal_login', 'Kunde hat sich im Portal angemeldet');
+        $leadId = (int) $lead['id'];
+        Db::run('UPDATE leads SET portal_last_login = NOW() WHERE id = :id', ['id' => $leadId]);
+        if ($customer !== null) {
+            Db::run('UPDATE customers SET portal_last_login = NOW() WHERE id = :id', ['id' => (int) $customer['id']]);
+        }
+        Auth::loginPortal($leadId);
+        Leads::logActivity($leadId, 'portal_login', 'Kunde hat sich im Portal angemeldet');
 
         Http::json(['ok' => true, 'token' => $lead['portal_token'], 'csrf' => Auth::csrfToken()]);
+    }
+
+    /**
+     * Zwischen den eigenen Anfragen wechseln.
+     *
+     * Erlaubt ist nur, was demselben Kunden gehoert – gepruft wird gegen
+     * den Vorgang, mit dem die Sitzung begonnen hat, nicht gegen die
+     * Angabe aus dem Aufruf.
+     */
+    public static function switchLead(): void
+    {
+        $aktuell = Auth::requirePortal();
+        $v = new Validator(Http::body());
+        $v->int('leadId', 1, PHP_INT_MAX, 0, true);
+        $ziel = (int) $v->orFail()['leadId'];
+
+        $erlaubt = Db::one(
+            'SELECT z.id
+               FROM leads z
+               JOIN leads a ON a.customer_id = z.customer_id
+              WHERE z.id = :ziel AND a.id = :aktuell AND z.customer_id IS NOT NULL',
+            ['ziel' => $ziel, 'aktuell' => $aktuell]
+        );
+
+        if ($erlaubt === null) {
+            Http::error('Dieser Vorgang gehört nicht zu deinem Zugang.', 403);
+        }
+
+        Auth::loginPortal($ziel);
+        Http::json(['ok' => true]);
     }
 
     public static function logout(): void
@@ -114,12 +179,36 @@ final class PortalController
             ['id' => $leadId]
         );
 
+        /*
+         * Die anderen Anfragen desselben Menschen.
+         *
+         * Ohne das ist der Kundenbereich ein Fenster auf genau einen
+         * Vorgang – und wer zum dritten Mal gefragt hat, sieht die ersten
+         * beiden nie wieder.
+         */
+        $weitere = [];
+        if ($row['customer_id'] !== null) {
+            foreach (Customers::leads((int) $row['customer_id']) as $eintrag) {
+                $weitere[] = [
+                    'id'         => $eintrag['id'],
+                    'ref'        => $eintrag['ref'],
+                    'assetClass' => $eintrag['assetClass'],
+                    'createdAt'  => $eintrag['createdAt'],
+                    'status'     => $eintrag['status'],
+                    'statusLabel'=> $eintrag['statusLabel'],
+                    'aktiv'      => $eintrag['id'] === $leadId,
+                ];
+            }
+        }
+
         // Der Trichter, den der Kunde sieht – ohne "Verloren".
         $stages = ['new', 'contacted', 'qualified', 'proposal', 'won'];
         $stageIndex = array_search($lead['status'], $stages, true);
 
         Http::json([
             'company' => Config::get('company'),
+            // Alle Anfragen dieses Menschen; die geöffnete ist markiert.
+            'requests' => $weitere,
             'lead' => [
                 'ref'          => $lead['ref'],
                 'firstName'    => $lead['firstName'],

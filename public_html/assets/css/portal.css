@@ -179,3 +179,32 @@ body.page-portal .prose-offer em { font-style: italic; }
 body.page-portal .toast { background: var(--surface); border-color: var(--hairline); color: var(--text); }
 body.page-portal .toast-ok { border-color: rgba(var(--success-rgb), 0.45); color: var(--success-text); }
 body.page-portal .toast-error { border-color: rgba(var(--danger-rgb), 0.45); color: var(--danger-text); }
+
+
+/* ── Die eigenen Anfragen ──
+   Eine Leiste über allem: sie sagt, wovon man gerade eine sieht. Ohne
+   sie war der Kundenbereich ein Fenster auf genau einen Vorgang. */
+.p-anfragen { padding: 18px 20px; }
+.p-anfragen .kicker {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.p-anfragen-liste { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.p-anfrage {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  padding: 10px 14px; min-width: 190px; text-align: left;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: var(--surface); color: var(--text);
+  transition: border-color 0.15s, background 0.15s, transform 0.15s var(--ease);
+}
+.p-anfrage:hover:not(:disabled) {
+  border-color: var(--accent-500); transform: translateY(-1px);
+}
+.p-anfrage.on {
+  border-color: var(--accent-500);
+  background: rgba(var(--accent-rgb), 0.1);
+  cursor: default;
+}
+.p-anfrage .t { font-weight: 600; font-size: 14px; }
+.p-anfrage .s { font-size: 12px; color: var(--text-dim); }
+.p-anfrage .r { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }

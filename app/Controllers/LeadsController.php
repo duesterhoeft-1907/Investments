@@ -8,6 +8,7 @@ use App\Core\Db;
 use App\Core\Http;
 use App\Core\Validator;
 use App\Domain\Events;
+use App\Domain\Customers;
 use App\Domain\Leads;
 use App\Domain\Notify;
 
@@ -96,6 +97,23 @@ final class LeadsController
             ['id' => $leadId]
         );
 
+        /*
+         * Der Mensch hinter der Anfrage – und seine anderen Anfragen.
+         *
+         * Ohne das steht eine Beraterin vor der dritten Anfrage desselben
+         * Interessenten und haelt sie fuer die erste. Die Liste kommt
+         * ohne Verlauf und Anhaenge; wer die will, oeffnet die Anfrage.
+         */
+        $customer = null;
+        $customerId = $lead['customer_id'] ?? null;
+        if ($customerId !== null) {
+            $customer = Customers::find((int) $customerId);
+            if ($customer !== null) {
+                $customer['summary'] = Customers::summary((int) $customerId);
+                $customer['leads'] = Customers::leads((int) $customerId, $leadId);
+            }
+        }
+
         $attachments = Db::all(
             'SELECT a.*, u.name AS uploaded_by_name FROM attachments a
                LEFT JOIN users u ON u.id = a.uploaded_by
@@ -124,6 +142,7 @@ final class LeadsController
 
         Http::json([
             'lead'        => Leads::present($lead),
+            'customer'    => $customer,
             'activities'  => array_map([self::class, 'presentActivity'], $activities),
             'attachments' => array_map([self::class, 'presentAttachment'], $attachments),
             'tasks'       => array_map([TasksController::class, 'present'], $tasks),

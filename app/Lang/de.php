@@ -70,6 +70,7 @@ return [
             'login'    => 'Zugang',
             'password' => 'Passwort',
             'ref'      => 'Referenz',
+            'known'    => 'Deinen Zugang kennst du schon: das Passwort aus deiner ersten Bestätigung gilt weiter.',
             'button'   => 'Zum persönlichen Bereich',
             'change'   => 'Bitte ändere das Passwort nach der ersten Anmeldung.',
             'text'     => "Vielen Dank für deine Anfrage (%s).\nWir melden uns %s.",
