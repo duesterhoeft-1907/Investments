@@ -62,7 +62,15 @@ final class Hours
         if (self::$cache !== null) {
             return self::$cache;
         }
-        $raw = Db::value('SELECT setting_value FROM settings WHERE setting_key = :k', ['k' => self::KEY]);
+        // Die Startseite fragt hier nach den Ruhezeiten. Ist die Datenbank
+        // gerade nicht erreichbar, soll die Seite trotzdem stehen: sie ist
+        // das Schaufenster, und ein Ausfall dahinter darf es nicht schließen.
+        // Ohne gespeicherten Stand gelten die Vorgaben.
+        try {
+            $raw = Db::value('SELECT setting_value FROM settings WHERE setting_key = :k', ['k' => self::KEY]);
+        } catch (\Throwable $e) {
+            return self::$cache = self::defaults();
+        }
         $stored = is_string($raw) ? json_decode($raw, true) : null;
 
         return self::$cache = self::normalise(is_array($stored) ? $stored : []);

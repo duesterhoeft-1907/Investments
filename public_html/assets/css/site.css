@@ -56,7 +56,7 @@
   position: absolute; inset: 0; pointer-events: none;
   background-image:
     linear-gradient(180deg, rgba(6,19,20,0.82) 0%, rgba(6,19,20,0.62) 42%, var(--ink-950) 96%),
-    url("/assets/brand/hero.png");
+    url("/assets/brand/hero.webp");
   background-size: cover, cover;
   background-position: 50% 50%, 50% 50%;
   background-repeat: no-repeat, no-repeat;
