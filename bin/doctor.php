@@ -110,13 +110,25 @@ if (Mailer::isConfigured()) {
 }
 
 head('Reaktionszeit-Wächter');
-$lastRun = Db::value("SELECT setting_value FROM settings WHERE setting_key = 'sla_last_run'");
-if ($lastRun !== null && (time() - (int) $lastRun) < 300) {
-    ok('Der Wächter lief vor ' . (time() - (int) $lastRun) . ' Sekunden.');
+// Ein Selbsttest, der selbst abstürzt, ist keiner: ist die Datenbank nicht
+// erreichbar, steht das oben schon – hier soll er trotzdem zu Ende laufen.
+try {
+    $lastRun = Db::value("SELECT setting_value FROM settings WHERE setting_key = 'sla_last_run'");
+} catch (Throwable $e) {
+    $lastRun = null;
+}
+// Grosszuegig gemessen: Shared Hosting laesst minuetliche Cronjobs oft nicht
+// zu, ein Fuenf-Minuten-Takt ist dort das Uebliche. Bei 300 Sekunden haette
+// genau dieser Takt jedes zweite Mal falschen Alarm ausgeloest.
+if ($lastRun !== null && (time() - (int) $lastRun) < 900) {
+    $vor = time() - (int) $lastRun;
+    ok('Der Wächter lief vor ' . ($vor < 120 ? "$vor Sekunden" : round($vor / 60) . ' Minuten') . '.');
 } else {
     warn('Der Wächter lief noch nicht (oder lange nicht).');
-    echo "    Cron in den Site Tools eintragen (Devs → Cron Jobs), jede Minute:\n";
-    echo '    ' . PHP_BINARY . ' ' . dirname(__DIR__) . "/bin/cron-sla.php\n";
+    echo "    Cron in den Site Tools eintragen (Devs → Cron Jobs), alle 5 Minuten:\n";
+    echo "    */5 * * * *  " . PHP_BINARY . ' ' . dirname(__DIR__) . "/bin/cron-sla.php\n";
+    echo "    Minütlich wäre feiner, wird auf Shared Hosting aber meist abgelehnt;\n";
+    echo "    bei Fristen ab 10 Minuten fällt der Unterschied nicht ins Gewicht.\n";
     echo "    Ohne Cron greift ersatzweise eine Prüfung beim Abruf – dann aber nur,\n";
     echo "    solange jemand im CRM angemeldet ist.\n";
 }
