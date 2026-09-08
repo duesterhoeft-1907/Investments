@@ -1,163 +1,463 @@
-/* Öffentliche Anfrage-Strecke */
+/* Öffentliche Anfrage-Strecke
+ *
+ * Zwei Gedanken tragen die Gestaltung:
+ *
+ * Erstens Tiefe. Die Karten liegen nicht auf der Seite, sie schweben ein
+ * Stück darüber: heller Rand oben, Schatten unten, ein Lichtschein, der
+ * dem Zeiger folgt. Das kostet nichts – es sind Verläufe und Schatten,
+ * keine Bilder.
+ *
+ * Zweitens: das Telefon zuerst. Die Maße hier gelten für ein schmales
+ * Gerät; breitere Fenster bekommen weiter unten mehr Luft. Auf dem
+ * Telefon ist der Hero kurz, damit die erste Karte nicht unter der Falte
+ * liegt, und die Schaltflächen kleben unten im Daumenbereich.
+ */
 
-.wizard-shell { min-height: 100%; display: flex; flex-direction: column; }
+/* Die Hülle füllt mindestens den Bildschirm, und der Schrittbereich
+   dehnt sich. Sonst steht die klebende Steuerleiste bei kurzem Inhalt
+   mitten auf der Seite, mit einem leeren Feld darunter – als wäre die
+   Seite nicht fertig geladen.
+   dvh statt vh, weil die Adressleiste des Telefons mitwandert; vh bleibt
+   als Rückfall für ältere Browser stehen. */
+.wizard-shell { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
 
+/* ── Kopf ── */
 .wizard-head {
   display: flex; align-items: center; justify-content: space-between;
-  max-width: 1100px; width: 100%; margin: 0 auto; padding: 26px 20px;
+  max-width: 1100px; width: 100%; margin: 0 auto;
+  padding: 16px 18px calc(16px + env(safe-area-inset-top, 0px));
 }
 .wizard-brand { display: flex; align-items: center; flex-shrink: 0; }
 .wizard-staff-link {
-  font-size: 12px; color: var(--text-faint); padding: 6px 12px; border-radius: var(--radius-sm);
+  font-size: 12px; color: var(--text-faint); padding: 8px 12px; border-radius: var(--radius-sm);
   transition: background 0.15s, color 0.15s;
 }
 .wizard-staff-link:hover { background: rgba(255,255,255,0.05); color: var(--text-dim); }
 
-.hero { max-width: 720px; margin: 0 auto; padding: 20px 20px 8px; text-align: center; }
+/* ── Fortschrittsfaden ganz oben ──
+   Eine Linie über die volle Breite, die mit jedem Schritt weiterwandert.
+   Sie steht ausserhalb des Inhalts, damit sie auch beim Scrollen bleibt. */
+.wizard-faden {
+  position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 60;
+  background: rgba(255,255,255,0.05);
+}
+.wizard-faden > i {
+  display: block; height: 100%; width: var(--fortschritt, 0%);
+  background: linear-gradient(90deg, var(--accent-500), var(--accent-300));
+  box-shadow: 0 0 12px rgba(33, 221, 211, 0.55);
+  transition: width 0.6s var(--ease);
+}
+
+/* ── Hero ── */
+.hero { max-width: 720px; margin: 0 auto; padding: 8px 18px 4px; text-align: center; }
 .hero .promise {
   display: inline-flex; align-items: center; gap: 8px;
   border: 1px solid rgba(33, 180, 166,0.3); background: rgba(33, 180, 166,0.08);
-  border-radius: 999px; padding: 7px 16px;
+  border-radius: 999px; padding: 7px 15px;
   font-size: 12px; font-weight: 500; color: var(--accent-200);
+  /* Ein ruhiges Atmen, kein Blinken: der einzige Punkt der Seite, der sich
+     von selbst bewegt, und er gehört zur Kernaussage – wir melden uns. */
+  animation: atmen 4.5s ease-in-out infinite;
 }
 .hero h1 {
-  margin-top: 24px; font-family: var(--font-display);
-  font-size: clamp(30px, 6vw, 48px); line-height: 1.08;
+  margin-top: 16px; font-family: var(--font-display);
+  font-size: clamp(26px, 7.6vw, 46px); line-height: 1.1; letter-spacing: -0.01em;
 }
 .hero p.lead {
-  margin: 20px auto 0; max-width: 540px;
-  font-size: 15px; line-height: 1.65; color: var(--text-dim);
+  margin: 12px auto 0; max-width: 540px;
+  font-size: 14px; line-height: 1.6; color: var(--text-dim);
 }
 .hero .trust {
-  margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: center;
-  gap: 8px 24px; font-size: 12px; color: var(--text-faint);
+  margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center;
+  gap: 6px 18px; font-size: 11px; color: var(--text-faint);
 }
 .hero .trust span { display: inline-flex; align-items: center; gap: 6px; }
 .hero .trust .icon { color: rgba(33, 180, 166,0.6); }
 
-.wizard-body { max-width: 720px; width: 100%; margin: 0 auto; padding: 0 20px 96px; }
+/* ── Rumpf ──
+   Unten so viel Luft, wie die klebende Steuerleiste hoch ist. Ohne das
+   liegt die letzte Karte dahinter und man scrollt ins Nichts. */
+.wizard-body {
+  max-width: 720px; width: 100%; margin: 0 auto; padding: 0 18px 20px;
+  flex: 1; display: flex; flex-direction: column;
+}
 
-.stepper { display: flex; gap: 6px; margin-top: 16px; }
+/* ── Schrittanzeige ── */
+.stepper { display: flex; gap: 6px; margin-top: 20px; }
 .stepper .step { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.stepper .bar { height: 3px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
-.stepper .bar > i { display: block; height: 100%; width: 0; border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent-400), var(--accent-600));
-  transition: width 0.5s var(--ease); }
+.stepper .bar {
+  position: relative; height: 3px; border-radius: 999px;
+  background: rgba(255,255,255,0.07); overflow: hidden;
+}
+.stepper .bar > i {
+  display: block; height: 100%; width: 0; border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-500), var(--accent-300));
+  transition: width 0.55s var(--ease);
+}
+/* Der laufende Schritt bekommt ein Licht an der Spitze – man sieht auf
+   einen Blick, wo man steht, auch wenn die Beschriftung fehlt. */
+.stepper .step.active .bar { box-shadow: 0 0 14px -2px rgba(33, 221, 211, 0.5); }
+.stepper .step.active .bar > i { animation: schimmer 2.2s ease-in-out infinite; }
 .stepper .name {
-  font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase;
   color: var(--text-faint); transition: color 0.3s;
 }
 .stepper .step.active .name, .stepper .step.done .name { color: rgba(33, 221, 211,0.85); }
 @media (max-width: 640px) { .stepper .name { display: none; } }
 
-.step-panel { min-height: 380px; margin-top: 30px; }
-.step-panel.enter { animation: slide-in 0.38s var(--ease) both; }
-.step-panel.leave { animation: slide-out 0.28s var(--ease) both; }
+/* ── Bühne und Schrittwechsel ──
+   perspective auf dem Elternteil, damit rotateX/rotateY der Karten
+   überhaupt Tiefe erzeugen; ohne sie kippt nichts, es verzerrt nur. */
+.step-panel {
+  flex: 1 0 auto; min-height: 300px; margin-top: 22px; padding-bottom: 8px;
+  perspective: 1000px; perspective-origin: 50% 30%;
+}
+.step-panel.enter { animation: schritt-rein 0.42s var(--ease) both; }
+.step-panel.leave { animation: schritt-raus 0.26s var(--ease) both; }
+/* Rückwärts kommt der Inhalt von der anderen Seite. Ohne das fühlt sich
+   "Zurück" an wie ein weiterer Schritt nach vorn. */
+.step-panel.rueck.enter { animation-name: schritt-rein-rueck; }
+.step-panel.rueck.leave { animation-name: schritt-raus-rueck; }
 
-.step-heading { margin-bottom: 26px; }
-.step-heading h2 { font-family: var(--font-display); font-size: clamp(22px, 4vw, 30px); }
-.step-heading p { margin-top: 8px; font-size: 14px; color: var(--text-dim); }
+.step-heading { margin-bottom: 20px; }
+.step-heading h2 { font-family: var(--font-display); font-size: clamp(21px, 5.6vw, 30px); line-height: 1.2; }
+.step-heading p { margin-top: 7px; font-size: 14px; color: var(--text-dim); }
 
-.asset-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+/* ── Fachgebiete ── */
+.asset-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+
 .asset-card {
   position: relative; overflow: hidden; text-align: left;
-  border: 1px solid var(--hairline); background: rgba(16,22,29,0.6);
-  border-radius: var(--radius); padding: 18px;
-  transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s;
-  animation: rise 0.45s var(--ease) both;
+  border: 1px solid var(--hairline);
+  border-radius: 14px; padding: 15px;
+  /* Der Verlauf macht die Fläche zu einem Körper: oben etwas heller,
+     unten dunkler, so wie Licht von oben fällt. */
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.055), rgba(255,255,255,0) 42%),
+    rgba(16,22,29,0.72);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.06) inset,
+    0 10px 26px -18px rgba(0,0,0,0.9);
+  /* Kein transform-style: preserve-3d hier. Es sieht harmlos aus, schaltet
+     aber das overflow: hidden dieser Karte ab – ein Element, das einen
+     3D-Raum aufspannt, kann seine Kinder nicht mehr beschneiden. Der
+     Lichtfleck oben rechts ragte dadurch aus der Seite heraus und machte
+     sie auf dem Telefon seitlich verschiebbar. Die Neigung braucht das
+     ohnehin nicht: perspective() steht in der Transform selbst. */
+  transform:
+    perspective(900px)
+    rotateX(var(--neig-x, 0deg)) rotateY(var(--neig-y, 0deg))
+    translate3d(0, 0, 0);
+  transition:
+    transform 0.35s var(--ease),
+    border-color 0.25s, box-shadow 0.35s, background 0.25s;
 }
-.asset-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.18); }
-.asset-card.selected { border-color: rgba(33, 180, 166,0.7); background: rgba(33, 180, 166,0.08); }
+
+/* Der Lichtschein unter dem Zeiger. Liegt über der Fläche, aber unter dem
+   Text – deshalb ein eigenes Element statt eines background-image. */
+.asset-card::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(
+    240px circle at var(--schein-x, 50%) var(--schein-y, 0%),
+    rgba(255,255,255,0.10), transparent 62%);
+  opacity: 0; transition: opacity 0.35s;
+}
+.asset-card:hover {
+  border-color: rgba(255,255,255,0.2);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.09) inset,
+    0 26px 50px -26px rgba(0,0,0,0.95),
+    0 0 0 1px rgba(33, 180, 166, 0.10);
+}
+.asset-card:hover::after { opacity: 1; }
+
+/* Der Finger hat keinen Hover. Er hat Druck: die Karte gibt nach. */
+.asset-card:active {
+  transform: perspective(900px) scale(0.982);
+  transition-duration: 0.09s;
+}
+
+.asset-card.selected {
+  border-color: rgba(33, 180, 166,0.75);
+  background:
+    linear-gradient(160deg, rgba(33, 221, 211,0.14), rgba(255,255,255,0) 55%),
+    rgba(16,22,29,0.72);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.10) inset,
+    0 22px 46px -24px rgba(0,0,0,0.9),
+    0 0 0 1px rgba(33, 180, 166, 0.35);
+}
+/* Der Moment der Wahl. Ein Ring läuft einmal nach aussen – kurz genug,
+   dass er den Sprung zum nächsten Schritt nicht aufhält. */
+.asset-card.gewaehlt { animation: wahl 0.45s var(--ease); }
+
 .asset-card .glow {
   position: absolute; right: -32px; top: -32px; width: 112px; height: 112px;
-  border-radius: 50%; filter: blur(40px); opacity: 0; transition: opacity 0.5s;
+  border-radius: 50%; filter: blur(40px); opacity: 0.28;
+  transition: opacity 0.5s, transform 0.5s var(--ease);
 }
-.asset-card:hover .glow { opacity: 0.7; }
-.asset-card .inner { position: relative; display: flex; gap: 14px; align-items: flex-start; }
+.asset-card:hover .glow,
+.asset-card.selected .glow { opacity: 0.75; transform: scale(1.25); }
+
+.asset-card .inner { position: relative; display: flex; gap: 13px; align-items: flex-start; z-index: 1; }
 .asset-card .badge-icon {
   display: flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  transition: transform 0.35s var(--ease);
 }
-.asset-card h3 { font-family: var(--font-display); font-size: 17px; }
+.asset-card:hover .badge-icon { transform: scale(1.1); }
+.asset-card.selected .badge-icon { transform: scale(1.06); }
+.asset-card h3 { font-family: var(--font-display); font-size: 16px; }
 /* Diese drei sind <span> – ohne display:block bleiben sie inline, stehen in
    einer Zeile und ignorieren jedes margin-top. */
 .asset-card .inner > .grow { display: block; min-width: 0; }
 .asset-card .tagline {
-  display: block; margin-top: 4px; font-size: 14px; line-height: 1.5;
+  display: block; margin-top: 3px; font-size: 13px; line-height: 1.5;
   color: var(--text-dim);
 }
 .asset-card .team {
-  display: block; margin-top: 10px; font-size: 11px;
+  display: block; margin-top: 8px; font-size: 10px;
   letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--text-faint);
 }
 
-.option-grid { display: grid; gap: 10px; }
-.option-grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.option-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+/* ── Auswahlfelder ── */
+.option-grid { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.option-grid.cols-3 { grid-template-columns: repeat(auto-fit, minmax(102px, 1fr)); }
+/* Ausgeglichener Zeilenumbruch: "mittelfristig (2 – 5 Jahre)" soll nicht
+   ein Wort allein in die zweite Zeile schicken. */
 .option {
-  border: 1px solid var(--hairline); background: rgba(16,22,29,0.6);
-  border-radius: 12px; padding: 13px 16px; font-size: 14px; color: var(--text-dim);
-  text-align: center; transition: border-color 0.15s, background 0.15s, color 0.15s;
-  animation: rise 0.4s var(--ease) both;
+  position: relative; overflow: hidden; text-wrap: balance;
+  border: 1px solid var(--hairline);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 50%),
+    rgba(16,22,29,0.62);
+  border-radius: 12px; padding: 12px 12px; font-size: 13.5px; line-height: 1.35;
+  color: var(--text-dim);
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; min-height: 50px;
+  box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset;
+  transition: border-color 0.18s, background 0.18s, color 0.18s, transform 0.18s var(--ease), box-shadow 0.25s;
 }
-.option:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
-.option.selected { border-color: rgba(33, 180, 166,0.7); background: rgba(33, 180, 166,0.1); color: var(--accent-100); }
+.option:hover {
+  border-color: rgba(255,255,255,0.22); color: var(--text);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -18px rgba(0,0,0,0.9);
+}
+.option:active { transform: scale(0.975); transition-duration: 0.08s; }
+.option.selected {
+  border-color: rgba(33, 180, 166,0.7);
+  background:
+    linear-gradient(160deg, rgba(33, 221, 211,0.16), rgba(255,255,255,0) 60%),
+    rgba(16,22,29,0.62);
+  color: var(--accent-100);
+  box-shadow: 0 0 0 1px rgba(33, 180, 166, 0.28), 0 12px 26px -20px rgba(0,0,0,0.9);
+}
 
-.form-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+/* ── Formular ── */
+.form-grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
 .form-grid .full { grid-column: 1 / -1; }
 
+/* Vor- und Nachname passen nebeneinander, alles danach braucht die volle
+   Breite. Spart auf dem Telefon eine gute Bildschirmhöhe Scrollweg. */
+.form-grid.kontakt { grid-template-columns: 1fr 1fr; column-gap: 10px; }
+.form-grid.kontakt > *:nth-child(n+3) { grid-column: 1 / -1; }
+
+/* Eingabefelder bekommen dieselbe Tiefe wie die Karten: eine Kante oben,
+   ein Schatten nach innen. Und einen Fokus, den man auch im Sonnenlicht
+   auf einem Telefon sieht – der Standardring des Browsers ist hier
+   praktisch unsichtbar. */
+.page-wizard .input {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0) 40%),
+    rgba(11,15,20,0.7);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset;
+  min-height: 48px;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.25s;
+}
+.page-wizard .input:focus {
+  border-color: rgba(33, 180, 166,0.7);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,0.06) inset,
+    0 0 0 3px rgba(33, 180, 166, 0.16);
+}
+.page-wizard .input.invalid {
+  border-color: rgba(217,83,79,0.6);
+  box-shadow: 0 0 0 3px rgba(217,83,79,0.14);
+}
+
 .consent-box {
-  border: 1px solid var(--hairline); background: rgba(16,22,29,0.5);
-  border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+  border: 1px solid var(--hairline);
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.035), rgba(255,255,255,0) 50%),
+    rgba(16,22,29,0.55);
+  border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 12px;
 }
 .consent { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
 .consent .box {
-  width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px;
-  border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+  width: 22px; height: 22px; flex-shrink: 0; margin-top: 1px;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s var(--ease);
 }
-.consent.on .box { background: var(--accent-500); border-color: var(--accent-500); color: var(--ink-950); }
-.consent .box .icon { opacity: 0; transform: scale(0.6); transition: opacity 0.15s, transform 0.15s; }
-.consent.on .box .icon { opacity: 1; transform: scale(1); }
+.consent:active .box { transform: scale(0.9); }
+.consent.on .box {
+  background: var(--accent-500); border-color: var(--accent-500); color: var(--ink-950);
+  box-shadow: 0 0 0 4px rgba(33, 180, 166, 0.16);
+}
+.consent .box .icon { opacity: 0; transform: scale(0.5) rotate(-12deg); transition: opacity 0.18s, transform 0.25s var(--ease); }
+.consent.on .box .icon { opacity: 1; transform: scale(1) rotate(0); }
 .consent .text { font-size: 12px; line-height: 1.6; color: var(--text-dim); }
 
 .honeypot { position: absolute; left: -9999px; width: 0; height: 0; opacity: 0; pointer-events: none; }
 
-.wizard-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 36px; }
+/* ── Steuerleiste ──
+   Auf dem Telefon klebt sie unten: "Weiter" gehört in den Daumenbereich,
+   nicht ans Ende einer Liste, zu der man erst scrollen muss. */
+.wizard-nav {
+  position: sticky; bottom: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 22px -18px 0; padding: 14px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+/* Der Verlauf steht als eigene Schicht darunter und ragt nach oben über
+   die Leiste hinaus. So verschwindet der Inhalt weich dahinter, statt an
+   einer Kante abgeschnitten neben der Schaltfläche zu stehen. */
+.wizard-nav::before {
+  content: ''; position: absolute; inset: -44px 0 0 0; z-index: -1;
+  background: linear-gradient(to top,
+    var(--ink-950) 0%, var(--ink-950) 52%, rgba(6,19,20,0.82) 76%, rgba(6,19,20,0));
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to top, #000 62%, transparent);
+  mask-image: linear-gradient(to top, #000 62%, transparent);
+  pointer-events: none;
+}
 .wizard-nav .err { font-size: 13px; color: #f0a5a2; }
+.wizard-nav .btn { min-height: 46px; }
 
-/* Bestätigung */
+/* ── Bestätigung ── */
 .done { text-align: center; }
 .done .seal {
-  width: 80px; height: 80px; margin: 0 auto;
-  border-radius: 50%; border: 1px solid rgba(33, 180, 166,0.4); background: rgba(33, 180, 166,0.12);
+  position: relative;
+  width: 84px; height: 84px; margin: 0 auto;
+  border-radius: 50%; border: 1px solid rgba(33, 180, 166,0.45); background: rgba(33, 180, 166,0.12);
   display: flex; align-items: center; justify-content: center; color: var(--accent-300);
   animation: pop 0.5s var(--ease) both;
 }
-.done h2 { margin-top: 26px; font-family: var(--font-display); font-size: clamp(24px, 5vw, 32px); }
+/* Zwei Ringe laufen einmal nach aussen. Danach ist Ruhe – eine Dauerschleife
+   an dieser Stelle wäre Nervosität, wo gerade Erleichterung sein soll. */
+.done .seal::before,
+.done .seal::after {
+  content: ''; position: absolute; inset: -1px; border-radius: 50%;
+  border: 1px solid rgba(33, 221, 211, 0.5);
+  animation: ring 1.5s var(--ease) 0.2s both;
+}
+.done .seal::after { animation-delay: 0.55s; }
+.done h2 { margin-top: 22px; font-family: var(--font-display); font-size: clamp(23px, 6vw, 32px); }
 .done p.sub { margin: 12px auto 0; max-width: 520px; font-size: 14px; line-height: 1.65; color: var(--text-dim); }
-.done-grid { display: grid; gap: 16px; margin-top: 34px; text-align: left; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.done-card { padding: 20px; }
+.done-grid { display: grid; gap: 14px; margin-top: 28px; text-align: left; grid-template-columns: 1fr; }
+.done-card { padding: 18px; }
 .done-card .kicker { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-faint); }
 .done-card .who { margin-top: 10px; font-family: var(--font-display); font-size: 18px; }
+/* Die Zugangsdaten sind so lang, wie die E-Mail des Interessenten lang
+   ist – und die kennt niemand vorher. Ohne min-width:0 wächst die Zeile
+   über die Karte hinaus und die ganze Seite lässt sich seitlich schieben. */
 .credential {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  background: rgba(6,9,13,0.6); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12px;
+  background: rgba(6,9,13,0.6); border-radius: var(--radius-sm); padding: 9px 12px; font-size: 12px;
+  min-width: 0;
 }
-.credential .value { font-family: var(--font-mono); font-size: 11px; color: var(--accent-200); }
-.credential button { background: none; border: none; color: var(--text-faint); padding: 2px; }
+.credential > .row { min-width: 0; }
+.credential .value {
+  font-family: var(--font-mono); font-size: 11px; color: var(--accent-200);
+  min-width: 0; overflow-wrap: anywhere;
+}
+.credential button { background: none; border: none; color: var(--text-faint); padding: 4px; }
 .credential button:hover { color: var(--accent-300); }
 
-/* Hinweise unten rechts */
-.toast-host { position: fixed; right: 20px; bottom: 20px; z-index: 90; display: flex; flex-direction: column; gap: 10px; }
+/* ── Hinweise unten ── */
+.toast-host {
+  position: fixed; left: 16px; right: 16px; z-index: 90;
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 10px; align-items: center;
+}
 .toast {
   padding: 12px 18px; border-radius: 12px; font-size: 13px; max-width: 340px;
   background: rgba(16,22,29,0.95); border: 1px solid var(--hairline);
   backdrop-filter: blur(14px); box-shadow: 0 12px 40px -12px rgba(0,0,0,0.7);
   transition: opacity 0.3s, transform 0.3s;
-  animation: slide-in 0.3s var(--ease) both;
+  animation: rein-von-unten 0.32s var(--ease) both;
 }
 .toast-ok { border-color: rgba(78,168,123,0.4); color: #a8e2c4; }
 .toast-error { border-color: rgba(217,83,79,0.4); color: #f0a5a2; }
+
+/* ── Einblenden beim Hereinscrollen ──
+   Vergibt core/motion.js. Ohne JavaScript bleibt nichts unsichtbar: die
+   Klasse "kommt" setzt erst das Skript. */
+.kommt { opacity: 0; transform: translate3d(0, 18px, 0); }
+.kommt.ist-da {
+  opacity: 1; transform: none;
+  transition: opacity 0.5s var(--ease) var(--verzug, 0ms),
+              transform 0.55s var(--ease) var(--verzug, 0ms);
+}
+
+/* ── Grössere Fenster ──
+   Erst ab hier gibt es Platz für zwei Spalten, einen luftigen Hero und
+   eine Steuerleiste, die nicht mehr kleben muss. */
+@media (min-width: 700px) {
+  .wizard-head { padding: 24px 20px; }
+  .hero { padding: 18px 20px 6px; }
+  .hero h1 { margin-top: 22px; }
+  .hero p.lead { margin-top: 18px; font-size: 15px; }
+  .hero .trust { margin-top: 26px; gap: 8px 24px; font-size: 12px; }
+  .wizard-body { padding: 0 20px 80px; }
+  .step-panel { min-height: 380px; margin-top: 28px; }
+  .option { padding: 13px 16px; font-size: 14px; }
+  .asset-grid { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .asset-card { padding: 18px; }
+  .form-grid { gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .form-grid.kontakt { column-gap: 16px; }
+  .form-grid.kontakt > *:nth-child(n+3) { grid-column: auto; }
+  .form-grid.kontakt > *:nth-child(3) { grid-column: 1 / -1; }
+  .done-grid { gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .wizard-nav { position: static; margin: 34px 0 0; padding: 0; }
+  .wizard-nav::before { content: none; }
+  .toast-host { left: auto; right: 20px; bottom: 20px; align-items: flex-end; }
+}
+
+/* ── Bewegungen ── */
+@keyframes schritt-rein {
+  from { opacity: 0; transform: translate3d(26px, 8px, 0) scale(0.985); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes schritt-raus {
+  from { opacity: 1; transform: none; filter: blur(0); }
+  to   { opacity: 0; transform: translate3d(-22px, 0, 0) scale(0.99); filter: blur(4px); }
+}
+@keyframes schritt-rein-rueck {
+  from { opacity: 0; transform: translate3d(-26px, 8px, 0) scale(0.985); filter: blur(4px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes schritt-raus-rueck {
+  from { opacity: 1; transform: none; filter: blur(0); }
+  to   { opacity: 0; transform: translate3d(22px, 0, 0) scale(0.99); filter: blur(4px); }
+}
+@keyframes wahl {
+  0%   { box-shadow: 0 0 0 0 rgba(33, 221, 211, 0.45), 0 22px 46px -24px rgba(0,0,0,0.9); }
+  100% { box-shadow: 0 0 0 16px rgba(33, 221, 211, 0), 0 22px 46px -24px rgba(0,0,0,0.9); }
+}
+@keyframes ring {
+  from { transform: scale(1); opacity: 0.7; }
+  to   { transform: scale(1.9); opacity: 0; }
+}
+@keyframes atmen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(33, 180, 166, 0); }
+  50%      { box-shadow: 0 0 18px -4px rgba(33, 180, 166, 0.45); }
+}
+@keyframes schimmer {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.45); }
+}
+@keyframes rein-von-unten {
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
+  to   { opacity: 1; transform: none; }
+}

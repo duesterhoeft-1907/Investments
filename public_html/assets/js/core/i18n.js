@@ -22,6 +22,9 @@ const DICT = {
     tomorrow: (t) => `morgen früh ab ${t}`,
     onWeekday: (d, t) => `am ${d} ab ${t}`,
     time: (t) => `${t} Uhr`,
+    // Deutsch zählt bis 24, Englisch bis 12 mit am/pm. Steht hier und nicht
+    // im Aufruf, damit Browser und Server dieselbe Uhrzeit gleich schreiben.
+    zeitFormat: { hour: '2-digit', minute: '2-digit' },
 
     heroPromise: 'Rückmeldung ',
     heroH1a: 'Dein Vermögen verdient',
@@ -107,6 +110,7 @@ const DICT = {
     tomorrow: (t) => `tomorrow morning from ${t}`,
     onWeekday: (d, t) => `on ${d} from ${t}`,
     time: (t) => t,
+    zeitFormat: { hour: 'numeric', minute: '2-digit', hour12: true },
 
     heroPromise: 'A reply ',
     heroH1a: 'Your wealth deserves',

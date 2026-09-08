@@ -323,6 +323,28 @@ Drosselung je IP, Doppel-Einwilligung (Kontakt verpflichtend, Marketing
 optional). Am Ende sieht der Interessent seinen Ansprechpartner und seine
 Portal-Zugangsdaten.
 
+#### Bewegung und Tiefe
+Der Wizard ist für das Telefon gebaut und wächst nach oben, nicht umgekehrt:
+kurzer Hero, damit die erste Karte nicht unter der Falte liegt, Vor- und
+Nachname nebeneinander, und die Steuerleiste klebt unten im Daumenbereich –
+mit einem Verlauf, hinter dem der Inhalt weich verschwindet statt an einer
+Kante abgeschnitten zu werden.
+
+Die Tiefe kommt aus Verläufen und Schatten, nicht aus Bildern: helle Kante
+oben, Schatten unten, ein Lichtschein, der auf dem Rechner dem Zeiger folgt,
+und eine Neigung von wenigen Grad in dessen Richtung. Beim Scrollen wandert
+der Hintergrund langsamer mit als der Inhalt. Karten blenden ein, sobald sie
+ins Bild kommen, versetzt; der Schrittwechsel kommt von rechts und geht nach
+links, rückwärts andersherum. Ein Fortschrittsfaden am oberen Rand bleibt
+auch dann sichtbar, wenn die Schrittanzeige längst weggescrollt ist.
+
+Alles davon steckt in `assets/js/core/motion.js` und hält sich an drei
+Regeln: nur `transform`, `opacity` und `filter` – alles andere lässt den
+Browser das Layout neu rechnen, und das sieht man auf einem älteren Telefon
+sofort. Wer *Bewegung reduzieren* eingestellt hat, bekommt keine, nicht
+weniger. Und Zeigergesteuertes gibt es nur, wo ein Zeiger ist; auf dem
+Telefon übernehmen Druck und Scrollen.
+
 ### CRM
 - **Dashboard** – Ø- und Median-Reaktionszeit, SLA-Quote, Pipeline-Wert,
   Abschlussquote, Verlauf, Leistung pro Fachgruppe gegen deren SLA,

@@ -5,17 +5,21 @@
  * springt selbst weiter – das erspart einen Klick und macht den Einstieg
  * schnell, worum es hier ja geht.
  */
-import { h, mount, $ } from './core/dom.js';
+import { h, mount, $, $$ } from './core/dom.js';
 import { icon } from './core/icons.js';
 import { api, ApiError } from './core/api.js';
 import { aurora, button, field, logo, spinner, toast } from './core/ui.js';
 import { lang, locale, t } from './core/i18n.js';
+import { hintergrundBewegen, neigen, tippen, zeigen } from './core/motion.js';
 
 const STEPS = t('steps');
 
 const state = {
   config: null,
   step: 0,
+  // Woher der Schritt kam: vorwärts oder zurück. Das entscheidet, aus
+  // welcher Richtung der neue Inhalt hereinkommt.
+  rueck: false,
   result: null,
   errors: {},
   busy: false,
@@ -28,6 +32,11 @@ const state = {
 };
 
 const root = $('#app');
+
+// Der Hintergrund hängt an einem Scroll-Beobachter. mount() wirft ihn bei
+// jedem Aufbau weg, also merken wir uns das Abmelden – sonst sammeln sich
+// mit jedem Schritt weitere Beobachter an, die auf tote Elemente zeigen.
+let hintergrundAus = null;
 
 init();
 
@@ -72,7 +81,7 @@ function slaPromise(hours = state.config?.hours) {
   }
 
   const next = new Date(hours.nextOpening);
-  const time = t('time', next.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }));
+  const time = t('time', next.toLocaleTimeString(locale, t('zeitFormat')));
   const days = Math.round((startOfDay(next) - startOfDay(new Date())) / 86400000);
 
   if (days <= 0) return t('today', time);
@@ -115,8 +124,12 @@ function go(delta, skipValidation = false) {
     render();
     return;
   }
+  state.rueck = delta < 0;
   const panel = $('.step-panel');
-  if (panel) panel.classList.add('leave');
+  if (panel) {
+    panel.classList.toggle('rueck', state.rueck);
+    panel.classList.add('leave');
+  }
   state.step = Math.max(0, Math.min(STEPS.length - 1, state.step + delta));
   setTimeout(() => {
     render();
@@ -152,6 +165,7 @@ function render() {
   mount(
     root,
     aurora(),
+    faden(),
     h(
       'div.wizard-shell',
       renderHead(),
@@ -159,11 +173,37 @@ function render() {
       h(
         'div.wizard-body',
         !state.result ? renderStepper() : null,
-        h('div.step-panel.enter', renderStep()),
+        h('div.step-panel.enter' + (state.rueck ? '.rueck' : ''), renderStep()),
         !state.result ? renderNav() : null,
       ),
     ),
   );
+  beleben();
+}
+
+/**
+ * Der Fortschrittsfaden am oberen Rand.
+ *
+ * Die Schrittanzeige darunter sagt, wo man ist; dieser Faden sagt, wie
+ * weit es noch ist – und er bleibt beim Scrollen stehen, wenn die
+ * Anzeige längst weggescrollt ist.
+ */
+function faden() {
+  const anteil = state.result ? 100 : (state.step / (STEPS.length - 1)) * 100;
+  return h('div.wizard-faden', h('i', { style: { '--fortschritt': anteil + '%' } }));
+}
+
+/**
+ * Was nach jedem Aufbau lebendig gemacht wird.
+ *
+ * mount() ersetzt den ganzen Inhalt, also müssen die Beobachter danach
+ * neu gesetzt werden – die alten Elemente gibt es nicht mehr.
+ */
+function beleben() {
+  zeigen($$('.asset-card, .option, .done-card, .form-grid > *'));
+  $$('.asset-card').forEach((el) => neigen(el));
+  hintergrundAus?.();
+  hintergrundAus = hintergrundBewegen();
 }
 
 function renderHead() {
@@ -231,10 +271,13 @@ function stepAsset() {
           {
             type: 'button',
             style: { animationDelay: Math.min(i * 45, 400) + 'ms' },
-            onclick: () => {
+            onclick: (e) => {
               set('assetClassSlug', asset.slug);
-              render();
-              setTimeout(() => go(1, true), 240);
+              // Erst der Moment der Wahl, dann der Sprung. Ohne die kurze
+              // Pause sieht niemand, was er gerade gewählt hat.
+              e.currentTarget.classList.add('selected', 'gewaehlt');
+              tippen();
+              setTimeout(() => go(1, true), 320);
             },
           },
           h('span.glow', { style: { background: accent } }),
@@ -338,7 +381,9 @@ function stepContact() {
     'div',
     heading(t('stepContactH'), t('stepContactP', slaPromise())),
     h(
-      'div.form-grid',
+      // "kontakt" stellt Vor- und Nachname auch auf dem Telefon
+      // nebeneinander – der Schritt ist sonst sehr lang zu scrollen.
+      'div.form-grid.kontakt',
       field(t('firstName'), textInput('firstName', { autocomplete: 'given-name' }), { required: true, error: state.errors.firstName }),
       field(t('lastName'), textInput('lastName', { autocomplete: 'family-name' }), { required: true, error: state.errors.lastName }),
       field(t('email'), textInput('email', { type: 'email', autocomplete: 'email' }), { required: true, error: state.errors.email }),
@@ -352,7 +397,7 @@ function stepContact() {
         field(t('city'), textInput('city', { autocomplete: 'address-level2' }), { hint: t('optional') }),
       ),
     ),
-    h('div.form-grid', { style: { marginTop: '20px' } },
+    h('div.form-grid.waehler', { style: { marginTop: '20px' } },
       h('div',
         h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, t('channel')),
         optionGrid(state.config.contactPrefs, f.contactPref, (v) => set('contactPref', v), 3),

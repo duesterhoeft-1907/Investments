@@ -192,7 +192,13 @@ input, textarea, select { font: inherit; }
 
 /* ───────────────────────────── Hintergrund ───────────────────────────── */
 
-.aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+/* Der Hintergrund wandert beim Scrollen ein Stück mit, langsamer als der
+   Inhalt – daher der Eindruck von Tiefe. Den Wert setzt core/motion.js;
+   ohne Skript und bei "Bewegung reduzieren" bleibt er auf 0. */
+.aurora {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  transform: translate3d(0, calc(var(--scroll, 0px) * -1), 0);
+}
 .aurora span {
   position: absolute; border-radius: 50%; filter: blur(120px);
   animation: float 10s ease-in-out infinite;
