@@ -125,10 +125,13 @@ if ($lastRun !== null && (time() - (int) $lastRun) < 900) {
     ok('Der Wächter lief vor ' . ($vor < 120 ? "$vor Sekunden" : round($vor / 60) . ' Minuten') . '.');
 } else {
     warn('Der Wächter lief noch nicht (oder lange nicht).');
-    echo "    Cron in den Site Tools eintragen (Devs → Cron Jobs), alle 5 Minuten:\n";
-    echo "    */5 * * * *  " . PHP_BINARY . ' ' . dirname(__DIR__) . "/bin/cron-sla.php\n";
-    echo "    Minütlich wäre feiner, wird auf Shared Hosting aber meist abgelehnt;\n";
-    echo "    bei Fristen ab 10 Minuten fällt der Unterschied nicht ins Gewicht.\n";
+    echo "    Cron in den Site Tools eintragen (Devs → Cron Jobs). Nimm den\n";
+    echo "    kleinsten Takt, den dein Tarif zulässt, und gib ihn dem Befehl mit –\n";
+    echo "    er prüft dann bis zum nächsten Start jede Minute weiter:\n";
+    echo '      alle 30 Min.:  ' . PHP_BINARY . ' ' . dirname(__DIR__) . "/bin/cron-sla.php --loop=30\n";
+    echo '      alle 15 Min.:  ' . PHP_BINARY . ' ' . dirname(__DIR__) . "/bin/cron-sla.php --loop=15\n";
+    echo "    Ins Befehlsfeld gehört nur der Befehl – der Zeitplan wird daneben\n";
+    echo "    ausgewählt, nicht mit eingetippt.\n";
     echo "    Ohne Cron greift ersatzweise eine Prüfung beim Abruf – dann aber nur,\n";
     echo "    solange jemand im CRM angemeldet ist.\n";
 }

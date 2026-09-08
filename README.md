@@ -129,7 +129,7 @@ und eine Woche Beispiel-Historie.
 
 ### 5. Reaktionszeit-Wächter einhängen
 
-Site Tools → Devs → **Cron Jobs**, alle 5 Minuten (minütlich lässt Shared Hosting meist nicht zu):
+Site Tools → Devs → **Cron Jobs**, im kleinsten Takt, den der Tarif zulässt – mit `--loop=<Takt>`, damit das Skript bis zum nächsten Start jede Minute weiterprüft:
 
 ```
 /usr/local/bin/php /home/DEIN_KONTO/www/DEINE_DOMAIN/bin/cron-sla.php
