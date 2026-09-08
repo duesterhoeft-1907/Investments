@@ -153,10 +153,11 @@ tun ist. Mailversand einzeln testen:
 php bin/test-mail.php deine@adresse.de
 ```
 
-### Variante: Der Server holt sich den Stand selbst
+### Weg A: Der Server holt sich den Stand selbst (in Betrieb)
 
-Oft der einfachere Weg — es braucht keinen SSH-Zugang von aussen und keine
-Secrets in GitHub, nur Netz vom Server zu GitHub.
+Der einfachere Weg, und der hier benutzte — es braucht keinen SSH-Zugang von
+aussen und keinen privaten Schlüssel in GitHub, nur Netz vom Server zu GitHub.
+Für ein CRM ist das ein Schlüssel weniger, der an einer Stelle mehr liegt.
 
 **Einmalig einrichten** (per SSH auf dem Server):
 
@@ -189,14 +190,14 @@ z. B. stündlich:
 cd /home/customer/www/deine-domain.de && bin/pull-deploy.sh >/dev/null 2>&1
 ```
 
-### Automatisch deployen (empfohlen)
+### Weg B: GitHub schiebt den Stand hinüber (nicht nötig)
 
-Statt jedes Mal von Hand hochzuladen: `.github/workflows/deploy.yml` überträgt
-bei jedem Push auf den Branch. Der GitHub-Runner hat Netzzugang zu SiteGround.
+`.github/workflows/deploy.yml` überträgt bei jedem Push auf den Branch. Der
+GitHub-Runner hat Netzzugang zu SiteGround.
 
-**Das ist der zweite von zwei Wegen – man braucht ihn nicht.** Holt sich der
-Server den Stand selbst (siehe *Der Server holt sich den Stand selbst*), sind
-die folgenden Secrets überflüssig. Der Workflow läuft dann trotzdem, prüft die
+**Man braucht diesen Weg nicht, wenn Weg A läuft** – beide tun dasselbe, und
+zweimal ausrollen ist nicht besser als einmal. Wer Weg A nutzt, legt die
+folgenden Secrets gar nicht erst an. Der Workflow läuft dann trotzdem, prüft die
 PHP-Syntax und überspringt das Ausrollen; der Lauf bleibt grün, es kommt keine
 Fehlermail. Die Syntaxprüfung ist gerade beim Cron-Weg nützlich: dort zieht
 sich der Server den Stand blind, eine kaputte Datei fiele erst an der weißen
