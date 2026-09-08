@@ -146,9 +146,9 @@ export function barChart(rows, { height = 200, color = 'var(--accent-500)' } = {
       return svg(
         'g',
         {},
-        svg('text', { x: labelWidth - 10, y: y + 15, 'text-anchor': 'end', fill: 'rgba(232,237,243,0.45)', 'font-size': '11' }, row.label),
+        svg('text', { x: labelWidth - 10, y: y + 15, 'text-anchor': 'end', fill: 'var(--text-dim)', 'font-size': '11' }, row.label),
         svg('rect', { x: labelWidth, y, width: w, height: barHeight, rx: 6, fill: row.color || color, opacity: '0.85' }),
-        svg('text', { x: labelWidth + w + 8, y: y + 15, fill: 'rgba(232,237,243,0.5)', 'font-size': '11' }, String(row.value)),
+        svg('text', { x: labelWidth + w + 8, y: y + 15, fill: 'var(--text-dim)', 'font-size': '11' }, String(row.value)),
       );
     }),
   );
@@ -173,7 +173,7 @@ export function areaChart(points, { height = 220, width = 700 } = {}) {
     svg('line', {
       x1: padding.left, x2: width - padding.right,
       y1: padding.top + innerH * f, y2: padding.top + innerH * f,
-      stroke: 'rgba(255,255,255,0.05)',
+      stroke: 'rgba(var(--auf), 0.05)',
     }),
   );
 
@@ -196,10 +196,10 @@ export function areaChart(points, { height = 220, width = 700 } = {}) {
     points.some((p) => p.second) ? svg('path', { d: line('second'), fill: 'none', stroke: '#3fae86', 'stroke-width': '2' }) : null,
     points.map((p, i) =>
       i % Math.ceil(points.length / 6) === 0
-        ? svg('text', { x: x(i), y: height - 6, 'text-anchor': 'middle', fill: 'rgba(232,237,243,0.3)', 'font-size': '10' }, p.label)
+        ? svg('text', { x: x(i), y: height - 6, 'text-anchor': 'middle', fill: 'var(--text-dim)', 'font-size': '10' }, p.label)
         : null,
     ),
-    svg('text', { x: 4, y: padding.top + 4, fill: 'rgba(232,237,243,0.3)', 'font-size': '10' }, String(max)),
+    svg('text', { x: 4, y: padding.top + 4, fill: 'var(--text-dim)', 'font-size': '10' }, String(max)),
   );
 }
 

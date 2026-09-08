@@ -11,6 +11,7 @@ import { api, ApiError } from './core/api.js';
 import { aurora, button, field, logo, spinner, toast } from './core/ui.js';
 import { lang, locale, t } from './core/i18n.js';
 import { hintergrundBewegen, neigen, tippen, zeigen } from './core/motion.js';
+import { umschalter } from './core/theme.js';
 
 const STEPS = t('steps');
 
@@ -210,7 +211,9 @@ function renderHead() {
   return h(
     'header.wizard-head',
     h('a.wizard-brand', { href: lang === 'en' ? '/en' : '/', title: t('backHome') }, logo(36)),
-    h('a.wizard-staff-link', { href: '/app' }, t('staffLogin')),
+    h('div.row', { style: { gap: '10px' } },
+      h('a.wizard-staff-link', { href: '/app' }, t('staffLogin')),
+      umschalter()),
   );
 }
 
@@ -294,7 +297,7 @@ function stepAsset() {
         );
       }),
     ),
-    state.errors.assetClassSlug ? h('p.error', { style: { marginTop: '12px', color: '#f0a5a2' } }, state.errors.assetClassSlug) : null,
+    state.errors.assetClassSlug ? h('p.error', { style: { marginTop: '12px', color: 'var(--danger-text)' } }, state.errors.assetClassSlug) : null,
   );
 }
 
@@ -323,12 +326,12 @@ function stepVolume() {
     h('div', { style: { marginBottom: '32px' } },
       heading(t('stepVolumeH'), t('stepVolumeP')),
       optionGrid(state.config.volumeBands, state.form.volumeBand, (v) => set('volumeBand', v), 2),
-      state.errors.volumeBand ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: '#f0a5a2' } }, state.errors.volumeBand) : null,
+      state.errors.volumeBand ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: 'var(--danger-text)' } }, state.errors.volumeBand) : null,
     ),
     h('div',
-      h('h3', { style: { marginBottom: '12px', fontSize: '14px', color: 'rgba(232,237,243,0.75)' } }, t('stepVolumeH2')),
+      h('h3', { style: { marginBottom: '12px', fontSize: '14px', color: 'var(--text-dim)' } }, t('stepVolumeH2')),
       optionGrid(state.config.horizons, state.form.horizon, (v) => set('horizon', v), 2),
-      state.errors.horizon ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: '#f0a5a2' } }, state.errors.horizon) : null,
+      state.errors.horizon ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: 'var(--danger-text)' } }, state.errors.horizon) : null,
     ),
   );
 }
@@ -435,7 +438,7 @@ function consent(key, error, text) {
       h('span.box', icon('check', 13)),
       h('span.text', text),
     ),
-    error ? h('p', { style: { margin: '6px 0 0 32px', fontSize: '12px', color: '#f0a5a2' } }, error) : null,
+    error ? h('p', { style: { margin: '6px 0 0 32px', fontSize: '12px', color: 'var(--danger-text)' } }, error) : null,
   );
 }
 
@@ -472,7 +475,7 @@ function stepDone() {
     h('p.sub',
       r.team ? h('span', t('doneTeam'), h('strong', r.team), t('doneTeamAfter')) : t('doneTeamless'),
       t('doneHearA'),
-      h('strong', { style: { color: 'var(--accent-300)' } },
+      h('strong', { style: { color: 'var(--akzent-text)' } },
         slaPromise({ open: r.open, nextOpening: r.nextOpening })),
       t('doneHearB')),
     h('div.done-grid',
@@ -486,7 +489,7 @@ function stepDone() {
               h('a.row', { href: 'mailto:' + r.contact.email, style: { gap: '8px', color: 'var(--text-dim)' } }, icon('mail', 13), r.contact.email),
             ))
         : null,
-      h('div.glass.done-card', { style: { borderColor: 'rgba(33, 180, 166,0.25)' } },
+      h('div.glass.done-card', { style: { borderColor: 'rgba(var(--accent-rgb), 0.25)' } },
         h('p.kicker', t('donePortalKicker')),
         h('p.faint', { style: { fontSize: '12px', lineHeight: '1.6', marginTop: '10px' } },
           t('donePortalText')),

@@ -414,7 +414,7 @@ export function render(view, { session }) {
   function assetCard(asset) {
     return card(
       [
-        h('span.dnd-stripe', { style: { background: asset.teamColor || 'rgba(255,255,255,0.15)' } }),
+        h('span.dnd-stripe', { style: { background: asset.teamColor || 'rgba(var(--auf), 0.15)' } }),
         h('div', { style: { minWidth: 0 } },
           h('p.truncate', { style: { fontSize: '13px' } }, asset.name),
           h('p.truncate.faint', { style: { fontSize: '10.5px' } }, asset.tagline || '—')),
@@ -520,7 +520,7 @@ export function render(view, { session }) {
   function assetRow(asset) {
     const team = state.teams.find((t) => t.id === asset.teamId);
     return h('div.staff-row' + (asset.isActive ? '' : '.is-off'),
-      h('span.dnd-stripe', { style: { background: team?.color || 'rgba(255,255,255,0.15)', height: '32px' } }),
+      h('span.dnd-stripe', { style: { background: team?.color || 'rgba(var(--auf), 0.15)', height: '32px' } }),
       h('div', { style: { minWidth: 0, flex: '1' } },
         h('div.row', { style: { gap: '8px', alignItems: 'baseline' } },
           h('strong', asset.name),

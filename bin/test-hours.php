@@ -103,11 +103,19 @@ setHours();
 App\Core\I18n::use('de');
 check('Zeitfenster deutsch', implode(' · ', Hours::contactWindows()),
     'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Jederzeit');
-check('Zusage deutsch', Hours::promise(15), 'innerhalb von 15 Minuten');
 
 App\Core\I18n::use('en');
 check('Zeitfenster englisch', implode(' · ', Hours::contactWindows()),
     'Mornings (9 am – 12 noon) · Afternoons (12 noon – 6 pm) · Any time');
+
+// Die Zusage haengt daran, ob gerade geoeffnet ist – und "gerade" laesst
+// sich Hours::promise() nicht vorgeben. Mit abgeschalteten Zeiten gilt
+// rund um die Uhr geoeffnet, und die Probe misst die Sprache statt die
+// Tageszeit ihres Laufs. (Sie tat das vorher nicht und schlug abends fehl.)
+setHours(['enabled' => false]);
+App\Core\I18n::use('de');
+check('Zusage deutsch', Hours::promise(15), 'innerhalb von 15 Minuten');
+App\Core\I18n::use('en');
 check('Zusage englisch', Hours::promise(15), 'within 15 minutes');
 
 // Ein spaeter Feierabend bekommt ein eigenes Abendfenster – in beiden Sprachen.

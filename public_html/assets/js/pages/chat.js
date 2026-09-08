@@ -96,7 +96,7 @@ export function render(view, { params, session, navigate }) {
   }
 
   function peopleList() {
-    return h('div', { style: { borderBottom: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.5)' } },
+    return h('div', { style: { borderBottom: '1px solid var(--hairline)', background: 'var(--surface-tief)' } },
       h('p.faint', { style: { padding: '10px 16px 0', fontSize: '10px', letterSpacing: '0.06em', textTransform: 'uppercase' } }, 'Direktnachricht'),
       h('div', { style: { maxHeight: '13rem', overflowY: 'auto', padding: '6px 0' } },
         state.users.filter((u) => u.id !== session.user.id).map((u) =>
@@ -123,12 +123,12 @@ export function render(view, { params, session, navigate }) {
     },
       channel.type === 'dm' && channel.partner
         ? avatar(channel.partner.name, channel.partner.accent, 22, partnerOnline)
-        : h('span', { style: { color: channel.teamColor || 'rgba(255,255,255,0.3)', display: 'flex' } },
+        : h('span', { style: { color: channel.teamColor || 'rgba(var(--auf), 0.3)', display: 'flex' } },
             icon(channel.type === 'company' ? 'building' : 'hash', 16)),
       h('span.grow',
         h('span.name.truncate', { style: { display: 'block', color: on ? 'var(--text)' : 'var(--text-dim)' } }, channel.name),
         channel.lastBody ? h('span.last.truncate', { style: { display: 'block' } }, channel.lastBody) : null),
-      channel.unread > 0 ? h('span.count', { style: { background: 'var(--accent-500)', color: 'var(--ink-950)', borderRadius: '999px', padding: '0 6px', fontSize: '10px', fontWeight: '700' } }, String(channel.unread)) : null,
+      channel.unread > 0 ? h('span.count', { style: { background: 'var(--accent-500)', color: 'var(--auf-akzent)', borderRadius: 'var(--radius)', padding: '0 6px', fontSize: '10px', fontWeight: '700' } }, String(channel.unread)) : null,
     );
   }
 
@@ -156,7 +156,7 @@ export function render(view, { params, session, navigate }) {
           h('h2.truncate', { style: { fontFamily: 'var(--font-display)', fontSize: '16px' } }, channel.name),
           h('p.truncate.faint', { style: { fontSize: '12px' } }, channel.type === 'dm' ? 'Direktnachricht' : channel.topic || 'Interner Kanal')),
         channel.type === 'team'
-          ? h('span.row.faint', { style: { gap: '6px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', fontSize: '11px' } }, icon('users', 12), 'Fachgruppe')
+          ? h('span.row.faint', { style: { gap: '6px', borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.05)', padding: '4px 10px', fontSize: '11px' } }, icon('users', 12), 'Fachgruppe')
           : null),
       messagesEl,
       h('div.composer',
@@ -171,7 +171,7 @@ export function render(view, { params, session, navigate }) {
         icon('sparkles', 16, 'faint'),
         h('span.grow',
           h('span', { style: { display: 'block', fontSize: '14px', color: 'var(--accent-100)' } }, message.body),
-          message.leadRef ? h('span.mono', { style: { display: 'block', fontSize: '10px', color: 'rgba(33, 221, 211,0.6)' } }, message.leadRef) : null),
+          message.leadRef ? h('span.mono', { style: { display: 'block', fontSize: '10px', color: 'rgba(var(--accent-rgb), 0.6)' } }, message.leadRef) : null),
         h('span.faint', { style: { fontSize: '11px' } }, formatTime(message.createdAt)));
     }
 

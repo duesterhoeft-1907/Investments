@@ -57,7 +57,29 @@
   unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
+/*
+ * Farben in zwei Fassungen.
+ *
+ * Unten stehen zwei Schichten. Die erste ist die Palette der Marke – die
+ * Türkis- und Dunkeltöne der Unternehmensseite. Sie ändert sich nie.
+ * Die zweite sind Merkmale: "Grundfläche", "Karte", "Haupttext". Nur die
+ * werden umgeschaltet, und nur sie stehen in den Regeln weiter unten.
+ *
+ * Der Grund für den Umweg: eine Regel wie "color: #edf6f3" ist auf hellem
+ * Grund unlesbar, und man sieht ihr nicht an, was sie bedeuten sollte.
+ * "color: var(--text)" gilt in beiden Fassungen.
+ *
+ * Zwei Tripel tragen die Arbeit:
+ *   --auf  ist die Farbe, mit der aufgehellt wird – auf Dunkel weiß,
+ *          auf Hell dasselbe Tintenblau wie der Text. Jeder Trennstrich,
+ *          jede Kante, jedes Überfahren benutzt sie.
+ *   --ab   ist die Schattenfarbe, --schatten ihr Faktor: auf hellem Grund
+ *          muss ein Schatten viel schwächer sein, sonst wirkt er wie
+ *          Schmutz.
+ */
 :root {
+  /* ───────── Palette der Marke ───────── */
+
   /* Grundflächen – die drei Dunkeltöne der Unternehmensseite, nach unten
      und oben um je einen Schritt ergänzt, damit sich Karten voneinander
      abheben können. */
@@ -76,20 +98,61 @@
   --accent-400: #21b4a6;   /* ast-global-color-0 – der Leitton */
   --accent-500: #0faf9f;   /* ast-global-color-1 – Hover */
   --accent-600: #0b8479;
+  --accent-700: #0a7268;   /* dunkel genug, um auf Weiß Text zu sein */
+  --accent-rgb: 33, 180, 166;
 
-  /* Sekundärakzente der Fachgruppen – aus dem kühlen Umfeld abgeleitet */
+  /* Sekundärakzente der Fachgruppen – aus dem kühlen Umfeld abgeleitet.
+     Als Schrift taugen sie nur auf Dunkel: #7f9fb8 kommt auf Weiß auf
+     2.6:1 und ist damit unlesbar. Für die helle Fassung gibt es deshalb
+     je einen dunkleren Zwilling – gemessen, nicht geschätzt. */
   --steel-400: #7f9fb8;
   --orchid-400: #9b8bc4;
+  --steel-rgb: 127, 168, 184;
+  --orchid-rgb: 168, 139, 196;
+  --sky-rgb: 120, 160, 255;
+  --steel-text: #7f9fb8;
+  --orchid-text: #9b8bc4;
+  --sky-text: #9db6ff;
 
   /* Signalfarben */
   --success: #3fae86;
+  --success-rgb: 78, 168, 123;
   --warning: #e0a33c;
+  --warning-rgb: 224, 163, 60;
   --danger: #d9534f;
+  --danger-rgb: 217, 83, 79;
 
-  /* Helle Fläche für das Kundenportal – das Mint der Seite */
+  /* Helle Fläche – das Mint der Seite */
   --paper-50: #f7fbfa;
   --paper-100: #edf6f3;   /* ast-global-color-3 */
   --paper-200: #d5ddea;
+
+  /* ───────── Merkmale: dunkle Fassung ───────── */
+
+  --bg: #061314;
+  --bg-2: #0a1620;
+  --bg-kopf: rgba(6, 19, 20, 0.82);
+
+  --surface: rgba(16, 22, 29, 0.72);      /* Karten */
+  --surface-fest: #101619;                /* dasselbe ohne Durchsicht */
+  --surface-2: rgba(6, 9, 13, 0.6);       /* Karte auf Karte */
+  --surface-tief: rgba(11, 15, 20, 0.7);  /* Eingabefelder, Vertiefungen */
+  --surface-hover: rgba(21, 29, 38, 0.85); /* Karte unter dem Zeiger */
+  --scrim: rgba(4, 7, 11, 0.68);          /* Schleier hinter einem Dialog */
+  --paper-warm: rgba(var(--auf), 0.04); /* leicht abgesetztes Feld */
+
+  --auf: 255, 255, 255;
+  --ab: 0, 0, 0;
+  --schatten: 1;
+  /* Der Lichtsaum an der Oberkante einer Fläche. Auf Dunkel ist das
+     Aufhellen; auf Weiß gibt es nichts mehr aufzuhellen, dort ist es ein
+     Hauch Grau, damit die Kante trotzdem als Körper liest. */
+  --glanz: rgba(255, 255, 255, 0.055);
+  --glanz-stark: rgba(255, 255, 255, 0.09);
+  /* Der Nebelfleck auf einer Karte. Auf Weiß liest er sich schnell als
+     Fleck statt als Licht – dort deutlich zurückgenommen. */
+  --glow-ruhe: 0.28;
+  --glow-wach: 0.75;
 
   /* Text – die kühle Grauleiter der Seite.
      Die Deckkraft ist gemessen, nicht geschätzt: auf #061314 ergibt 0.78
@@ -101,17 +164,133 @@
   --text-faint: rgba(237, 246, 243, 0.62);
   --hairline: rgba(255, 255, 255, 0.11);
 
+  --akzent-text: var(--accent-300);   /* Akzent als Schrift */
+  /* Die drei Töne der Schmuckschrift. Auf Weiß kämen die hellen Marken-
+     töne auf 1.3:1 – die Zeile wäre da, aber nicht lesbar. */
+  --verlauf-a: var(--accent-200);
+  --verlauf-b: var(--accent-500);
+  --verlauf-c: var(--accent-300);
+  --auf-akzent: var(--ink-950);       /* Schrift auf Akzentfläche */
+  --danger-text: #f0a5a2;
+  --success-text: #7fd3a6;
+  --warning-text: #e8c37a;
+
   --font-display: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Inter Tight", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
 
-  /* Die Seite rundet mit 6px – für Karten etwas großzügiger. */
-  --radius: 10px;
-  --radius-sm: 6px;
+  /* Eckig. Nur Schaltflächen bekommen 2px – das nimmt der Ecke die
+     Schärfe, ohne dass die Form rund wird, und hält sie als bedienbar
+     erkennbar von den Flächen unterschieden. */
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-btn: 2px;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: dark;
 }
+
+/*
+ * Helle Fassung.
+ *
+ * Sie steht zweimal da: einmal für die ausdrückliche Wahl über den
+ * Umschalter, einmal für den Fall, dass niemand gewählt hat und das
+ * Betriebssystem hell eingestellt ist. CSS kennt keine Bausteine, die man
+ * an zwei Stellen einsetzen könnte – und die Alternative wäre, sich ganz
+ * auf JavaScript zu verlassen. Dann bliebe die Seite ohne Skript dunkel,
+ * obwohl das Gerät hell steht.
+ *
+ * Die Werte sind gerechnet: #111a28 auf #f4f7f6 ergibt 16.2:1, #35485e
+ * noch 8.7:1, #4a545f 7.2:1. Der Akzent musste dafür dunkler werden –
+ * das Marken-Türkis #21b4a6 kommt auf Weiß nur auf 2.6:1 und ist als
+ * Schrift damit unbrauchbar; #0a7268 erreicht 5.4:1.
+ */
+:root[data-theme="light"] {
+  --bg: #f4f7f6;
+  --bg-2: #ffffff;
+  --bg-kopf: rgba(255, 255, 255, 0.88);
+
+  --surface: #ffffff;
+  --surface-fest: #ffffff;
+  --surface-2: #eef2f1;
+  --surface-tief: #eef2f1;
+  --surface-hover: #e7ecea;
+  --scrim: rgba(17, 26, 40, 0.4);
+  --paper-warm: rgba(242, 237, 227, 0.6);
+
+  --auf: 17, 26, 40;
+  --ab: 17, 26, 40;
+  --schatten: 0.16;
+  --glanz: rgba(17, 26, 40, 0.022);
+  --glanz-stark: rgba(17, 26, 40, 0.045);
+  --glow-ruhe: 0.1;
+  --glow-wach: 0.28;
+
+  --text: #111a28;
+  --text-dim: #35485e;
+  --text-faint: #4a545f;
+  --hairline: rgba(17, 26, 40, 0.14);
+
+  --akzent-text: var(--accent-700);
+  --verlauf-a: #0a7268;
+  --verlauf-b: #06564e;
+  --verlauf-c: #0a7268;
+  /* Bleibt dunkel: die Akzentfläche ist in beiden Fassungen dasselbe
+     Türkis, und Weiß darauf käme auf 2.6:1. Tinte erreicht 7.3:1. */
+  --auf-akzent: var(--ink-950);
+  --danger-text: #a53b37;
+  --success-text: #1f7a4d;
+  --warning-text: #8a6114;
+  --steel-text: #46617a;
+  --orchid-text: #5f4d86;
+  --sky-text: #2f56b8;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f7f6;
+    --bg-2: #ffffff;
+    --bg-kopf: rgba(255, 255, 255, 0.88);
+
+    --surface: #ffffff;
+    --surface-fest: #ffffff;
+    --surface-2: #eef2f1;
+    --surface-tief: #eef2f1;
+  --surface-hover: #e7ecea;
+  --scrim: rgba(17, 26, 40, 0.4);
+  --paper-warm: rgba(242, 237, 227, 0.6);
+
+    --auf: 17, 26, 40;
+    --ab: 17, 26, 40;
+    --schatten: 0.16;
+    --glanz: rgba(17, 26, 40, 0.022);
+    --glanz-stark: rgba(17, 26, 40, 0.045);
+    --glow-ruhe: 0.1;
+    --glow-wach: 0.28;
+
+    --text: #111a28;
+    --text-dim: #35485e;
+    --text-faint: #4a545f;
+    --hairline: rgba(17, 26, 40, 0.14);
+
+    --akzent-text: var(--accent-700);
+    --verlauf-a: #0a7268;
+    --verlauf-b: #06564e;
+    --verlauf-c: #0a7268;
+    --auf-akzent: var(--ink-950);
+    --danger-text: #a53b37;
+    --success-text: #1f7a4d;
+    --warning-text: #8a6114;
+    --steel-text: #46617a;
+    --orchid-text: #5f4d86;
+    --sky-text: #2f56b8;
+
+    color-scheme: light;
+  }
+}
+
 
 /* ───────────────────────────── Grundlagen ───────────────────────────── */
 
@@ -123,7 +302,7 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  background: var(--ink-950);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   /* 15px – die Grundgröße der Unternehmensseite. */
@@ -139,19 +318,19 @@ button { font: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 input, textarea, select { font: inherit; }
 
-::selection { background: var(--accent-500); color: var(--ink-950); }
+::selection { background: var(--accent-500); color: var(--auf-akzent); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(61, 75, 89, 0.7);
-  border-radius: 999px;
+  background: rgba(var(--auf), 0.25);
+  border-radius: var(--radius);
   border: 2px solid transparent;
   background-clip: padding-box;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--ink-500); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(var(--auf), 0.4); background-clip: padding-box; }
 
-:focus-visible { outline: 2px solid var(--accent-400); outline-offset: 2px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--accent-400); outline-offset: 2px; border-radius: var(--radius); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -172,9 +351,9 @@ input, textarea, select { font: inherit; }
 @keyframes float     { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(0,-18px,0) scale(1.04); } }
 @keyframes spin      { to { transform: rotate(360deg); } }
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.55); }
-  70%  { box-shadow: 0 0 0 12px rgba(217, 83, 79, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(var(--danger-rgb), 0.55); }
+  70%  { box-shadow: 0 0 0 12px rgba(var(--danger-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--danger-rgb), 0); }
 }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
@@ -205,22 +384,24 @@ input, textarea, select { font: inherit; }
 }
 .aurora span:nth-child(1) {
   left: -10%; top: -20%; width: 55vw; height: 55vw;
-  background: radial-gradient(circle, rgba(33, 180, 166,0.16), transparent 68%);
+  background: radial-gradient(circle, rgba(var(--accent-rgb), 0.16), transparent 68%);
 }
 .aurora span:nth-child(2) {
   right: -15%; top: 10%; width: 48vw; height: 48vw; animation-duration: 12s; animation-direction: reverse;
-  background: radial-gradient(circle, rgba(127,168,184,0.12), transparent 68%);
+  background: radial-gradient(circle, rgba(var(--steel-rgb), 0.12), transparent 68%);
 }
 .aurora span:nth-child(3) {
   bottom: -25%; left: 25%; width: 52vw; height: 52vw; animation-duration: 14s;
-  background: radial-gradient(circle, rgba(168,139,196,0.10), transparent 68%);
+  background: radial-gradient(circle, rgba(var(--orchid-rgb), 0.10), transparent 68%);
 }
 .aurora .grid {
   position: absolute; inset: 0; border-radius: 0; filter: none; animation: none;
   background-image:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    linear-gradient(rgba(var(--auf), 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--auf), 0.018) 1px, transparent 1px);
   background-size: 56px 56px;
+  /* Schwarz ist hier keine Farbe, sondern "hier undurchsichtig" – eine
+     Maske. Sie bleibt in beiden Fassungen gleich. */
   -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000, transparent 75%);
   mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000, transparent 75%);
 }
@@ -228,7 +409,7 @@ input, textarea, select { font: inherit; }
 /* ───────────────────────────── Bausteine ───────────────────────────── */
 
 .glass {
-  background: rgba(16, 22, 29, 0.82);
+  background: var(--surface);
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   border: 1px solid var(--hairline);
@@ -250,7 +431,7 @@ input, textarea, select { font: inherit; }
 .brand-logo { max-height: 100%; object-fit: contain; }
 
 .brand-text {
-  background: linear-gradient(101deg, var(--accent-200), var(--accent-500) 45%, var(--accent-300));
+  background: linear-gradient(101deg, var(--verlauf-a), var(--verlauf-b) 45%, var(--verlauf-c));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -264,7 +445,7 @@ input, textarea, select { font: inherit; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: 1px solid transparent; border-radius: 12px;
+  border: 1px solid transparent; border-radius: var(--radius-btn);
   padding: 10px 18px; font-size: 14px; font-weight: 500;
   transition: transform 0.15s var(--ease), background 0.15s, border-color 0.15s, opacity 0.15s;
 }
@@ -273,22 +454,26 @@ input, textarea, select { font: inherit; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-300), var(--accent-600));
-  color: var(--ink-950); font-weight: 600;
-  box-shadow: 0 8px 28px -10px rgba(33, 180, 166, 0.75);
+  /* Das dunkle Ende war accent-600: die Beschriftung kam dort auf 4.13:1
+     und lag damit unter den 4.5:1, die normaler Text braucht – am linken
+     Rand der Fläche gut lesbar, am rechten nicht mehr. accent-500 bringt
+     6.9:1 und sieht praktisch gleich aus. */
+  background: linear-gradient(135deg, var(--accent-300), var(--accent-500));
+  color: var(--auf-akzent); font-weight: 600;
+  box-shadow: 0 8px 28px -10px rgba(var(--accent-rgb), 0.75);
 }
 .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-200), var(--accent-500)); }
 
-.btn-outline { border-color: rgba(33, 180, 166,0.45); color: var(--accent-200); background: transparent; }
-.btn-outline:hover:not(:disabled) { background: rgba(33, 180, 166,0.1); }
+.btn-outline { border-color: rgba(var(--accent-rgb), 0.45); color: var(--akzent-text); background: transparent; }
+.btn-outline:hover:not(:disabled) { background: rgba(var(--accent-rgb), 0.1); }
 
-.btn-subtle { background: rgba(255,255,255,0.06); color: rgba(232,237,243,0.85); }
-.btn-subtle:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+.btn-subtle { background: rgba(var(--auf), 0.06); color: var(--text-dim); }
+.btn-subtle:hover:not(:disabled) { background: rgba(var(--auf), 0.1); }
 
 .btn-ghost { background: transparent; color: var(--text-dim); }
-.btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.06); color: var(--text); }
+.btn-ghost:hover:not(:disabled) { background: rgba(var(--auf), 0.06); color: var(--text); }
 
-.btn-danger { background: rgba(217,83,79,0.15); color: #f0a5a2; border-color: rgba(217,83,79,0.35); }
+.btn-danger { background: rgba(var(--danger-rgb), 0.15); color: var(--danger-text); border-color: rgba(var(--danger-rgb), 0.35); }
 
 .btn-sm { padding: 6px 12px; font-size: 12px; gap: 6px; }
 .btn-lg { padding: 14px 28px; font-size: 16px; gap: 10px; }
@@ -296,18 +481,62 @@ input, textarea, select { font: inherit; }
 
 .input {
   width: 100%;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(11,15,20,0.7);
-  border-radius: 12px;
+  border: 1px solid rgba(var(--auf), 0.1);
+  background: var(--surface-tief);
+  border-radius: var(--radius);
   padding: 12px 16px;
   font-size: 14px;
   color: var(--text);
   transition: border-color 0.15s, background 0.15s;
 }
-.input::placeholder { color: rgba(237,246,243,0.45); }
-.input:focus { outline: none; border-color: rgba(33, 180, 166,0.6); background: var(--ink-900); }
+.input::placeholder { color: var(--text-faint); }
+.input:focus { outline: none; border-color: rgba(var(--accent-rgb), 0.6); background: var(--bg-2); }
 textarea.input { resize: vertical; min-height: 80px; }
 select.input { cursor: pointer; }
+
+/*
+ * Das Markenzeichen in der hellen Fassung.
+ *
+ * Die Wortmarke ist weiß gezeichnet – auf weißem Grund verschwindet sie
+ * einfach. logo-hell.png ist dieselbe Datei mit der Wortmarke in
+ * Textfarbe; das Türkis der Bildmarke bleibt, das ist die Marke.
+ *
+ * Über content: getauscht und nicht über zwei img-Elemente, weil das
+ * Logo an fünf Stellen steht – teils aus PHP, teils aus JavaScript – und
+ * eine Regel dort überall greift, ohne dass jede Stelle davon weiß.
+ */
+:root[data-theme="light"] img.brand-logo,
+:root[data-theme="light"] .s-logo img,
+:root[data-theme="light"] .s-foot-top > img {
+  content: url('/assets/brand/logo-hell.png');
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) img.brand-logo,
+  :root:not([data-theme="dark"]) .s-logo img,
+  :root:not([data-theme="dark"]) .s-foot-top > img {
+    content: url('/assets/brand/logo-hell.png');
+  }
+}
+/* Im Kundenbereich steht es auf einem dunklen Schild – dort bleibt es,
+   wie es ist. */
+:root[data-theme="light"] .brand-plate img.brand-logo,
+:root:not([data-theme="dark"]) .brand-plate img.brand-logo {
+  content: normal;
+}
+
+/* Umschalter hell/dunkel. Unauffällig, aber überall an derselben Stelle:
+   oben rechts, neben dem, was der Bereich sonst dort anbietet. */
+.theme-knopf {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; flex-shrink: 0;
+  border: 1px solid var(--hairline); border-radius: var(--radius-btn);
+  background: transparent; color: var(--text-faint);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.theme-knopf:hover {
+  color: var(--text); border-color: rgba(var(--accent-rgb), 0.5);
+  background: rgba(var(--auf), 0.05);
+}
 
 .field { display: block; }
 .field > .label {
@@ -316,48 +545,50 @@ select.input { cursor: pointer; }
   font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--text-dim);
 }
-.field .required { color: var(--accent-400); }
+.field .required { color: var(--akzent-text); }
 .field .hint { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 11px; color: var(--text-faint); }
-.field .error { display: block; margin-top: 6px; font-size: 12px; color: #f0a5a2; }
-.input.invalid { border-color: rgba(217,83,79,0.6); }
+.field .error { display: block; margin-top: 6px; font-size: 12px; color: var(--danger-text); }
+.input.invalid { border-color: rgba(var(--danger-rgb), 0.6); }
 
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  border-radius: 999px; padding: 4px 10px;
+  border-radius: var(--radius); padding: 4px 10px;
   font-size: 11px; font-weight: 500; white-space: nowrap;
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-.badge-new       { background: rgba(33, 180, 166,0.12); color: var(--accent-300); }
-.badge-contacted { background: rgba(127,168,184,0.12); color: var(--steel-400); }
-.badge-qualified { background: rgba(168,139,196,0.12); color: var(--orchid-400); }
-.badge-proposal  { background: rgba(120,160,255,0.12); color: #9db6ff; }
-.badge-won       { background: rgba(78,168,123,0.12); color: #7fd3a6; }
-.badge-lost      { background: rgba(255,255,255,0.06); color: var(--text-faint); }
+.badge-new       { background: rgba(var(--accent-rgb), 0.12); color: var(--akzent-text); }
+.badge-contacted { background: rgba(var(--steel-rgb), 0.14); color: var(--steel-text); }
+.badge-qualified { background: rgba(var(--orchid-rgb), 0.14); color: var(--orchid-text); }
+.badge-proposal  { background: rgba(var(--sky-rgb), 0.14); color: var(--sky-text); }
+.badge-won       { background: rgba(var(--success-rgb), 0.12); color: var(--success-text); }
+.badge-lost      { background: rgba(var(--auf), 0.06); color: var(--text-faint); }
 
 .avatar {
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 50%; font-weight: 600; flex-shrink: 0; position: relative;
+  /* Eckig wie alles andere. Der Anwesenheitspunkt darauf bleibt rund –
+     ein Punkt ist ein Zeichen, keine Fläche. */
+  border-radius: var(--radius-btn); font-weight: 600; flex-shrink: 0; position: relative;
 }
 .avatar .presence {
   position: absolute; right: -1px; bottom: -1px;
-  border-radius: 50%; border: 2px solid var(--ink-900);
+  border-radius: 50%; border: 2px solid var(--bg-2);
 }
-.avatar .presence.on { background: #3fae86; }
-.avatar .presence.off { background: rgba(255,255,255,0.25); }
+.avatar .presence.on { background: var(--success); }
+.avatar .presence.off { background: rgba(var(--auf), 0.25); }
 
 .spinner {
   display: inline-block; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.15);
-  border-top-color: var(--accent-400);
+  border: 2px solid rgba(var(--auf), 0.15);
+  border-top-color: var(--akzent-text);
   animation: spin 0.7s linear infinite;
 }
 
-.progress { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
-.progress > i { display: block; height: 100%; border-radius: 999px; transition: width 0.7s var(--ease); }
+.progress { height: 6px; border-radius: var(--radius); background: rgba(var(--auf), 0.08); overflow: hidden; }
+.progress > i { display: block; height: 100%; border-radius: var(--radius); transition: width 0.7s var(--ease); }
 .progress.accent > i    { background: linear-gradient(90deg, var(--accent-400), var(--accent-600)); }
-.progress.danger > i  { background: linear-gradient(90deg, #e8807c, var(--danger)); }
-.progress.success > i { background: linear-gradient(90deg, #7fd3a6, var(--success)); }
+.progress.danger > i  { background: linear-gradient(90deg, var(--danger-text), var(--danger)); }
+.progress.success > i { background: linear-gradient(90deg, var(--success-text), var(--success)); }
 
 .empty { padding: 56px 24px; text-align: center; }
 .empty .title { font-size: 14px; font-weight: 500; color: var(--text-dim); }
@@ -382,9 +613,9 @@ select.input { cursor: pointer; }
 
 .sla { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .sla .dot { width: 6px; height: 6px; border-radius: 50%; }
-.sla.ok       { color: #7fd3a6; } .sla.ok .dot       { background: var(--success); }
-.sla.running  { color: var(--text-dim); } .sla.running .dot  { background: rgba(255,255,255,0.4); }
-.sla.urgent   { color: var(--accent-300); } .sla.urgent .dot   { background: var(--accent-400); }
-.sla.overdue  { color: #f0a5a2; animation: blink 1.6s infinite; } .sla.overdue .dot { background: var(--danger); }
+.sla.ok       { color: var(--success-text); } .sla.ok .dot       { background: var(--success); }
+.sla.running  { color: var(--text-dim); } .sla.running .dot  { background: rgba(var(--auf), 0.4); }
+.sla.urgent   { color: var(--akzent-text); } .sla.urgent .dot   { background: var(--accent-400); }
+.sla.overdue  { color: var(--danger-text); animation: blink 1.6s infinite; } .sla.overdue .dot { background: var(--danger); }
 .sla.lg { font-size: 30px; font-family: var(--font-display); font-weight: 600; }
 .sla.sm { font-size: 12px; }

@@ -74,7 +74,7 @@ export function render(view) {
       h('div.grow',
         h('p.title', task.title),
         h('p.sub',
-          h('span', { style: { color: overdue ? '#f0a5a2' : undefined } }, formatDateTime(task.dueAt)),
+          h('span', { style: { color: overdue ? 'var(--danger-text)' : undefined } }, formatDateTime(task.dueAt)),
           h('span', '·'),
           h('span', formatRelative(task.dueAt)),
           task.leadId ? h('a', { href: `/app/leads/${task.leadId}`, style: { color: 'var(--steel-400)' } }, '· ' + task.leadName) : null,

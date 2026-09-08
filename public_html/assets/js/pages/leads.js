@@ -8,7 +8,7 @@ import { avatar, empty, slaClock, spinner, statusBadge } from '../core/ui.js';
 
 const STAGES = ['new', 'contacted', 'qualified', 'proposal', 'won', 'lost'];
 const STAGE_LABEL = { new: 'Neu', contacted: 'Kontaktiert', qualified: 'Qualifiziert', proposal: 'Angebot', won: 'Gewonnen', lost: 'Verloren' };
-const STAGE_DOT = { new: 'var(--accent-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)', proposal: '#9db6ff', won: '#7fd3a6', lost: 'rgba(255,255,255,0.35)' };
+const STAGE_DOT = { new: 'var(--accent-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)', proposal: '#9db6ff', won: 'var(--success-text)', lost: 'rgba(var(--auf), 0.35)' };
 
 const SCOPES = [
   ['all', 'Alle'], ['mine', 'Meine'], ['my-teams', 'Meine Gruppen'],
@@ -75,7 +75,7 @@ export function render(view, { session }) {
         h('div',
           h('h1', 'Leads'),
           h('p', `${state.leads.length} Vorgänge`,
-            awaiting > 0 ? h('span', ' · ', h('span', { style: { color: 'var(--accent-300)' } }, `${awaiting} ohne Erstkontakt`)) : null)),
+            awaiting > 0 ? h('span', ' · ', h('span', { style: { color: 'var(--akzent-text)' } }, `${awaiting} ohne Erstkontakt`)) : null)),
         h('div.row', { style: { gap: '8px', flexWrap: 'wrap' } }, searchBox(), viewToggle()),
       ),
       filterBar(),
@@ -98,15 +98,15 @@ export function render(view, { session }) {
       },
     });
     return h('div', { style: { position: 'relative' } },
-      h('span', { style: { position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' } }, icon('search', 15)),
+      h('span', { style: { position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(var(--auf), 0.25)', pointerEvents: 'none' } }, icon('search', 15)),
       input);
   }
 
   function viewToggle() {
-    return h('div.row', { style: { gap: '4px', padding: '4px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.6)', borderRadius: '12px' } },
+    return h('div.row', { style: { gap: '4px', padding: '4px', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)' } },
       [['board', 'grid'], ['list', 'list']].map(([mode, iconName]) =>
         h('button.icon-btn' + (state.view === mode ? '.on' : ''), {
-          style: { padding: '6px', background: state.view === mode ? 'rgba(255,255,255,0.1)' : 'none', color: state.view === mode ? 'var(--text)' : 'var(--text-faint)' },
+          style: { padding: '6px', background: state.view === mode ? 'rgba(var(--auf), 0.1)' : 'none', color: state.view === mode ? 'var(--text)' : 'var(--text-faint)' },
           'aria-label': mode === 'board' ? 'Board-Ansicht' : 'Listen-Ansicht',
           onclick: () => { state.view = mode; localStorage.setItem('leadsView', mode); paint(); },
         }, icon(iconName, 16))));

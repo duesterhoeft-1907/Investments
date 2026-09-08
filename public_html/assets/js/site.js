@@ -3,8 +3,18 @@
  *
  * Die Seite steht vollständig ohne JavaScript: der Text kommt vom Server,
  * jeder Weg ist ein Link. Hier wird nur eingeblendet, was ins Bild kommt,
- * und sanft zu den Ankern gescrollt.
+ * sanft zu den Ankern gescrollt – und der Umschalter hell/dunkel gesetzt.
+ * Der steht bewusst nicht im PHP: ohne Skript kann er nichts tun, und ein
+ * Knopf, der nichts tut, ist schlimmer als keiner.
  */
+import { umschalter } from './core/theme.js';
+
+const navigation = document.querySelector('.s-nav');
+if (navigation) {
+  const knopf = umschalter();
+  const ziel = navigation.querySelector('.s-btn');
+  navigation.insertBefore(knopf, ziel || null);
+}
 
 const reveals = document.querySelectorAll('.reveal');
 
@@ -18,7 +28,10 @@ if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'Intersect
       entry.target.classList.add('is-in');
       seen.unobserve(entry.target);
     });
-  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    // Nach unten aufgeweitet statt verkleinert: ein negativer Rand hat
+    // eine tote Zone am unteren Bildschirmrand, und was dort liegt, bliebe
+    // dauerhaft unsichtbar.
+  }, { rootMargin: '0px 0px 10% 0px', threshold: 0 });
 
   reveals.forEach((el) => seen.observe(el));
 } else {

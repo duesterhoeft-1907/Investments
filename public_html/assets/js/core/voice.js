@@ -128,11 +128,11 @@ export function voiceRecorder(leadId, onUploaded) {
     if (state.mode === 'idle') {
       mount(wrap,
         h('button.row', { style: { gap: '12px', width: '100%', background: 'none', border: 'none', textAlign: 'left', padding: '0' }, onclick: start },
-          h('span', { style: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(33, 180, 166,0.3)', background: 'rgba(33, 180, 166,0.1)', color: 'var(--accent-300)' } }, icon('mic', 17)),
+          h('span', { style: { width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(var(--accent-rgb), 0.3)', background: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--akzent-text)' } }, icon('mic', 17)),
           h('span',
             h('span', { style: { display: 'block', fontSize: '14px', fontWeight: '500' } }, 'Sprachnotiz aufnehmen'),
             h('span.faint', { style: { display: 'block', fontSize: '12px' } }, 'Gesprächsnotiz diktieren statt tippen'))),
-        state.error ? h('p', { style: { marginTop: '8px', fontSize: '12px', color: '#f0a5a2' } }, state.error) : null);
+        state.error ? h('p', { style: { marginTop: '8px', fontSize: '12px', color: 'var(--danger-text)' } }, state.error) : null);
       return;
     }
 
@@ -142,7 +142,7 @@ export function voiceRecorder(leadId, onUploaded) {
         levelBars.push(bar);
         return bar;
       });
-      timerEl = h('span.mono', { style: { fontSize: '14px', color: '#f0a5a2' } }, formatDuration(state.seconds));
+      timerEl = h('span.mono', { style: { fontSize: '14px', color: 'var(--danger-text)' } }, formatDuration(state.seconds));
       mount(wrap, h('div.row', { style: { gap: '12px' } },
         h('button.rec-btn.live', { 'aria-label': 'Aufnahme beenden', onclick: () => recorder?.stop() }, icon('square', 14)),
         h('div.levels', bars),
@@ -159,7 +159,7 @@ export function voiceRecorder(leadId, onUploaded) {
           state.mode === 'uploading' ? spinner(14) : icon('upload', 13),
           state.mode === 'uploading' ? 'Wird gespeichert …' : `Anhängen (${formatDuration(state.seconds)})`),
         h('button.btn.btn-ghost.btn-sm', { disabled: state.mode === 'uploading', onclick: discard }, icon('trash', 13), 'Verwerfen')),
-      state.error ? h('p', { style: { fontSize: '12px', color: '#f0a5a2' } }, state.error) : null));
+      state.error ? h('p', { style: { fontSize: '12px', color: 'var(--danger-text)' } }, state.error) : null));
   }
 
   draw();

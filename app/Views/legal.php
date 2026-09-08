@@ -49,5 +49,9 @@ require __DIR__ . '/partials/head.php';
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
+<?php /* Dieselbe Datei wie auf der Startseite. Sie setzt hier vor allem
+         den Umschalter hell/dunkel; ohne sie fehlte er ausgerechnet auf
+         der Seite, auf der man am längsten liest. */ ?>
+<script type="module" src="<?= $asset('/assets/js/site.js') ?>"></script>
 </body>
 </html>

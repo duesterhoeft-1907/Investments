@@ -63,7 +63,7 @@ export function render(view, { session, navigate }) {
         h('div', { style: { display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' } },
           state.assets.map((asset, i) =>
             h('div.route-card', { style: { animationDelay: Math.min(i * 30, 300) + 'ms' } },
-              h('span.stripe', { style: { background: asset.teamColor || 'rgba(255,255,255,0.15)' } }),
+              h('span.stripe', { style: { background: asset.teamColor || 'rgba(var(--auf), 0.15)' } }),
               h('div.grow',
                 h('p.truncate', { style: { fontSize: '14px', fontWeight: '500' } }, asset.name),
                 h('p.truncate.faint', { style: { fontSize: '11px' } }, asset.tagline)),
@@ -85,7 +85,7 @@ export function render(view, { session, navigate }) {
           h('span.hint', `${state.users.filter((u) => u.online).length} online`)),
         h('div', { style: { display: 'grid', gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' } },
           state.users.map((u) =>
-            h('div.row', { style: { gap: '12px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.4)', borderRadius: '12px', padding: '12px' } },
+            h('div.row', { style: { gap: '12px', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)', padding: '12px' } },
               avatar(u.name, u.accent, 36, u.online),
               h('div.grow',
                 h('p.truncate', { style: { fontSize: '14px' } }, u.name),
@@ -99,14 +99,14 @@ export function render(view, { session, navigate }) {
 
   function teamCard(team) {
     return h('div.glass', { style: { overflow: 'hidden' } },
-      h('div', { style: { padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: team.color + '0d' } },
+      h('div', { style: { padding: '20px', borderBottom: '1px solid rgba(var(--auf), 0.06)', background: team.color + '0d' } },
         h('h2.row', { style: { gap: '8px', fontFamily: 'var(--font-display)', fontSize: '18px' } },
           h('span', { style: { width: '10px', height: '10px', borderRadius: '50%', background: team.color } }), team.name),
         h('p.faint', { style: { marginTop: '4px', fontSize: '12px', lineHeight: '1.6' } }, team.description),
         h('div.row', { style: { gap: '16px', marginTop: '16px', fontSize: '12px', flexWrap: 'wrap' } },
           h('span.row.muted', { style: { gap: '6px' } }, icon('users', 13), String(team.members.length)),
           h('span.muted', `${team.leadCount} Leads`),
-          team.awaiting > 0 ? h('span', { style: { color: 'var(--accent-300)' } }, `${team.awaiting} offen`) : null,
+          team.awaiting > 0 ? h('span', { style: { color: 'var(--akzent-text)' } }, `${team.awaiting} offen`) : null,
           h('span.row', { style: { marginLeft: 'auto', gap: '6px' } },
             icon('timer', 13, 'faint'),
             canEdit
@@ -120,7 +120,7 @@ export function render(view, { session, navigate }) {
           : h('div.stack', { style: { gap: '2px' } },
               team.members.map((member) => {
                 const full = state.users.find((u) => u.id === member.id);
-                return h('div.row', { style: { gap: '10px', padding: '6px 8px', borderRadius: '10px' } },
+                return h('div.row', { style: { gap: '10px', padding: '6px 8px', borderRadius: 'var(--radius)' } },
                   avatar(member.name, member.accent, 30, full?.online),
                   h('div.grow',
                     h('p.truncate', { style: { fontSize: '14px' } }, member.name),
@@ -130,9 +130,9 @@ export function render(view, { session, navigate }) {
                     ? h('button.icon-btn', { style: { padding: '4px' }, 'aria-label': `Nachricht an ${member.name}`, onclick: () => openDirect(member.id) }, icon('message', 15))
                     : null);
               })),
-        h('div.row', { style: { flexWrap: 'wrap', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' } },
+        h('div.row', { style: { flexWrap: 'wrap', gap: '6px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(var(--auf), 0.06)' } },
           team.assetClasses.map((a) =>
-            h('span.faint', { style: { borderRadius: '6px', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', fontSize: '10px' } }, a.name)))),
+            h('span.faint', { style: { borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.05)', padding: '4px 8px', fontSize: '10px' } }, a.name)))),
     );
   }
 }

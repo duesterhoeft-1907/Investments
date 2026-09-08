@@ -10,6 +10,7 @@ import { pulse } from './core/pulse.js';
 import { playAlert } from './core/sound.js';
 import { formatRelative } from './core/format.js';
 import { aurora, avatar, button, field, logo, spinner, toast } from './core/ui.js';
+import { umschalter } from './core/theme.js';
 
 export const session = {
   user: null,
@@ -106,16 +107,20 @@ function renderLogin() {
         },
       },
       h('div.row', { style: { gap: '12px' } },
-        h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(33, 180, 166,0.3)', background: 'rgba(33, 180, 166,0.1)', color: 'var(--accent-300)' } }, icon('lock', 19)),
-        h('div', h('h1', { style: { fontSize: '18px', fontFamily: 'var(--font-display)' } }, 'Anmelden'),
+        h('span', { style: { width: '40px', height: '40px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(var(--accent-rgb), 0.3)', background: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--akzent-text)' } }, icon('lock', 19)),
+        h('div', { style: { flex: '1' } },
+          h('h1', { style: { fontSize: '18px', fontFamily: 'var(--font-display)' } }, 'Anmelden'),
           h('p.faint', { style: { fontSize: '12px' } }, 'Interner Zugang für Berater')),
+        // Auch hier schon: wer hell arbeitet, soll sich nicht erst im
+        // Dunkeln anmelden müssen.
+        umschalter(),
       ),
       field('E-Mail', h('input.input', { type: 'email', required: true, autocomplete: 'username', value: state.email, oninput: (e) => { state.email = e.target.value; } }), { required: true }),
       field('Passwort', h('input.input', { type: 'password', required: true, autocomplete: 'current-password', value: state.password, oninput: (e) => { state.password = e.target.value; } }), { required: true }),
-      state.error ? h('p', { style: { borderRadius: '10px', border: '1px solid rgba(217,83,79,0.3)', background: 'rgba(217,83,79,0.1)', padding: '9px 12px', fontSize: '14px', color: '#f0a5a2' } }, state.error) : null,
+      state.error ? h('p', { style: { borderRadius: 'var(--radius)', border: '1px solid rgba(var(--danger-rgb), 0.3)', background: 'rgba(var(--danger-rgb), 0.1)', padding: '9px 12px', fontSize: '14px', color: 'var(--danger-text)' } }, state.error) : null,
       h('button.btn.btn-primary.btn-lg.btn-block', { type: 'submit', disabled: state.busy },
         state.busy ? spinner(16) : null, state.busy ? 'Wird geprüft …' : 'Anmelden'),
-      h('div', { style: { borderRadius: '12px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.5)', padding: '14px', fontSize: '11px', lineHeight: '1.7', color: 'var(--text-faint)' } },
+      h('div', { style: { borderRadius: 'var(--radius)', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', padding: '14px', fontSize: '11px', lineHeight: '1.7', color: 'var(--text-faint)' } },
         h('p', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', color: 'var(--text-dim)', fontWeight: '500' } }, icon('shield', 13), 'Demo-Zugänge'),
         h('p', { html: '<code>admin@21capitalinvest.de</code> · Geschäftsführung<br><code>j.ahrens@21capitalinvest.de</code> · Berater Edelmetalle<br>Passwort für alle: <code>Invest2026!</code>' }),
       ),
@@ -156,6 +161,7 @@ function headerBar() {
     h('nav.crm-nav', NAV.filter(visibleTo(session.user)).map(navLink)),
     h('div.crm-actions',
       h('a.icon-btn', { href: '/', target: '_blank', title: 'Öffentliche Seite ansehen' }, icon('external', 17)),
+      umschalter(),
       bellButton(),
       h('div.crm-user',
         avatar(session.user.name, session.user.accent, 30),
@@ -216,7 +222,7 @@ function toggleBell() {
   const panel = h('div.glass.bell-panel',
     h('div.head', h('h3', 'Benachrichtigungen'),
       session.unread > 0
-        ? h('button', { style: { background: 'none', border: 'none', fontSize: '12px', color: 'var(--accent-300)' },
+        ? h('button', { style: { background: 'none', border: 'none', fontSize: '12px', color: 'var(--akzent-text)' },
             onclick: async () => { await api.post('/notifications/read-all').catch(() => {}); await refreshNotifications(); toggleBell(); toggleBell(); } },
             'Alle als gelesen')
         : null),

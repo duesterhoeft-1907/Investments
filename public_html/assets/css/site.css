@@ -6,7 +6,7 @@
    Seite: zoom-in, 400 ms, ease.
    ═══════════════════════════════════════════════════════════════════════ */
 
-.page-site { background: var(--ink-950); }
+.page-site { background: var(--bg); }
 
 .s-wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
@@ -15,7 +15,7 @@
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 14px 24px;
-  background: rgba(6, 19, 20, 0.82);
+  background: var(--bg-kopf);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--hairline);
 }
@@ -26,7 +26,7 @@
   font-size: 14px; color: var(--text-dim);
   transition: color 0.15s, background 0.15s;
 }
-.s-nav > a:not(.s-btn):hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.s-nav > a:not(.s-btn):hover { color: var(--text); background: rgba(var(--auf), 0.05); }
 
 /* Sprachumschalter. Ein Rahmen statt eines Fahnensymbols: Flaggen stehen
    für Länder, nicht für Sprachen – und "EN" versteht auch, wer die Fahne
@@ -34,17 +34,17 @@
    übrige Navigation dort verschwindet; wer die Seite in der falschen
    Sprache öffnet, braucht ihn dort am dringendsten. */
 .s-nav > a.s-lang {
-  padding: 7px 11px; border: 1px solid rgba(255,255,255,0.16);
+  padding: 7px 11px; border: 1px solid rgba(var(--auf), 0.16);
   font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
   color: var(--text-dim);
 }
-.s-nav > a.s-lang:hover { color: var(--text); border-color: rgba(33, 180, 166, 0.55); }
+.s-nav > a.s-lang:hover { color: var(--text); border-color: rgba(var(--accent-rgb), 0.55); }
 
 /* ── Schaltflächen ── */
 .s-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 13px 26px; border-radius: var(--radius-sm);
-  background: var(--accent-400); color: var(--ink-950);
+  padding: 13px 26px; border-radius: var(--radius-btn);
+  background: var(--accent-400); color: var(--auf-akzent);
   font-size: 15px; font-weight: 600; white-space: nowrap;
   transition: background 0.2s, transform 0.2s var(--ease);
 }
@@ -52,10 +52,10 @@
 .s-btn-sm { padding: 9px 18px; font-size: 14px; }
 .s-btn-lg { padding: 16px 34px; font-size: 16px; }
 .s-btn-ghost {
-  background: transparent; color: var(--accent-300);
-  border: 1px solid rgba(33, 180, 166, 0.45);
+  background: transparent; color: var(--akzent-text);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
 }
-.s-btn-ghost:hover { background: rgba(33, 180, 166, 0.1); color: var(--accent-200); }
+.s-btn-ghost:hover { background: rgba(var(--accent-rgb), 0.1); color: var(--akzent-text); }
 
 /* ── Hero ── */
 .s-hero { position: relative; overflow: hidden; padding: 96px 0 88px; text-align: center; }
@@ -67,7 +67,7 @@
 .s-hero-bild {
   position: absolute; inset: 0; pointer-events: none;
   background-image:
-    linear-gradient(180deg, rgba(6,19,20,0.82) 0%, rgba(6,19,20,0.62) 42%, var(--ink-950) 96%),
+    linear-gradient(180deg, var(--bg-kopf) 0%, rgba(var(--ab), calc(0.62 * var(--schatten))) 42%, var(--bg) 96%),
     url("/assets/brand/hero.webp");
   background-size: cover, cover;
   background-position: 50% 50%, 50% 50%;
@@ -76,22 +76,22 @@
 .s-hero-glow {
   position: absolute; left: 50%; top: -220px; transform: translateX(-50%);
   width: 900px; height: 620px; pointer-events: none;
-  background: radial-gradient(closest-side, rgba(33,180,166,0.22), transparent 70%);
+  background: radial-gradient(closest-side, rgba(var(--accent-rgb), 0.22), transparent 70%);
   filter: blur(20px);
 }
 .s-hero .s-wrap { position: relative; }
 .s-kicker {
   display: inline-block; margin: 0 0 22px;
-  padding: 7px 16px; border-radius: 999px;
-  border: 1px solid rgba(33, 180, 166, 0.35); background: rgba(33, 180, 166, 0.09);
+  padding: 7px 16px; border-radius: var(--radius);
+  border: 1px solid rgba(var(--accent-rgb), 0.35); background: rgba(var(--accent-rgb), 0.09);
   font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--accent-300);
+  color: var(--akzent-text);
 }
 .s-hero h1 {
   margin: 0; font-family: var(--font-display); font-weight: 600;
   font-size: clamp(38px, 6vw, 60px); line-height: 1.14; letter-spacing: -0.02em;
 }
-.s-accent { color: var(--accent-400); }
+.s-accent { color: var(--akzent-text); }
 .s-lead {
   max-width: 640px; margin: 22px auto 0;
   font-size: 18px; line-height: 1.65; color: var(--text-dim);
@@ -104,7 +104,7 @@
 .s-split { display: grid; gap: 44px; grid-template-columns: 1fr 1fr; align-items: center; }
 .s-eyebrow {
   margin: 0 0 10px; font-size: 12px; font-weight: 600;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-400);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--akzent-text);
 }
 .s-section h2, .s-band h2, .s-final h2 {
   margin: 0; font-family: var(--font-display); font-weight: 600;
@@ -123,7 +123,7 @@
 }
 .s-result {
   margin-top: 24px; padding: 16px 18px; border-radius: var(--radius-sm);
-  border-left: 3px solid var(--accent-400); background: rgba(33, 180, 166, 0.07);
+  border-left: 3px solid var(--accent-400); background: rgba(var(--accent-rgb), 0.07);
 }
 .s-result strong { color: var(--text); }
 .s-figure img {
@@ -149,7 +149,7 @@
 /* ── Weckruf ── */
 .s-band {
   padding: 74px 0; text-align: center;
-  background: linear-gradient(180deg, var(--ink-850), var(--ink-900));
+  background: var(--surface);
   border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
 }
 .s-band p { max-width: 720px; margin: 20px auto 30px; font-size: 17px; line-height: 1.7; color: var(--text-dim); }
@@ -161,7 +161,7 @@
 .s-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .s-card {
   overflow: hidden; border-radius: var(--radius);
-  border: 1px solid var(--hairline); background: rgba(17, 26, 40, 0.55);
+  border: 1px solid var(--hairline); background: var(--surface);
   transition: border-color 0.2s, transform 0.2s var(--ease);
 }
 .s-card > *:not(.s-card-bild) { padding-left: 22px; padding-right: 22px; }
@@ -173,11 +173,11 @@
 }
 /* Ohne Bild bleibt der Abstand oben erhalten. */
 .s-card > .s-num:first-child { margin-top: 26px; }
-.s-card:hover { border-color: rgba(33, 180, 166, 0.4); transform: translateY(-3px); }
+.s-card:hover { border-color: rgba(var(--accent-rgb), 0.4); transform: translateY(-3px); }
 .s-num {
   display: block; margin-bottom: 14px;
   font-family: var(--font-display); font-size: 26px; font-weight: 600;
-  color: var(--accent-400);
+  color: var(--akzent-text);
 }
 .s-card p { margin: 0; color: var(--text-dim); line-height: 1.65; font-size: 15px; }
 
@@ -187,7 +187,7 @@
 .s-fineprint { margin-top: 26px !important; font-size: 12.5px; color: var(--text-faint); }
 
 /* ── Fuß ── */
-.s-foot { padding: 46px 0 34px; border-top: 1px solid var(--hairline); background: var(--ink-900); }
+.s-foot { padding: 46px 0 34px; border-top: 1px solid var(--hairline); background: var(--bg-2); }
 .s-foot-top {
   display: flex; flex-wrap: wrap; gap: 20px;
   align-items: center; justify-content: space-between;
@@ -196,7 +196,7 @@
 .s-foot-top img { height: 30px; width: auto; }
 .s-foot-nav { display: flex; flex-wrap: wrap; gap: 18px; }
 .s-foot-nav a { font-size: 13.5px; color: var(--text-dim); transition: color 0.15s; }
-.s-foot-nav a:hover { color: var(--accent-300); }
+.s-foot-nav a:hover { color: var(--akzent-text); }
 .s-risk { margin: 22px 0 0; font-size: 11.5px; line-height: 1.7; color: var(--text-faint); }
 .s-copy { margin: 18px 0 0; font-size: 12px; color: var(--text-faint); }
 
@@ -206,7 +206,7 @@
 .s-legal-grid { display: grid; gap: 26px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .s-legal-grid h2, .s-legal-h {
   font-family: var(--font-display); font-size: 15px; font-weight: 600;
-  letter-spacing: 0.04em; color: var(--accent-300); margin: 0 0 8px;
+  letter-spacing: 0.04em; color: var(--akzent-text); margin: 0 0 8px;
 }
 .s-legal-h { margin-top: 44px; font-size: 22px; }
 .s-legal p { color: var(--text-dim); line-height: 1.75; margin: 0 0 12px; }

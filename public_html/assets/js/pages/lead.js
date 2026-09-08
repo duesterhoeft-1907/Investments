@@ -44,7 +44,7 @@ export function render(view, { params, session, navigate }) {
 
     mount(view, h('div.stack', { style: { gap: '18px' } },
       h('a.row.faint', { href: '/app/leads', style: { gap: '6px', fontSize: '14px', width: 'fit-content' } }, icon('arrowLeft', 15), 'Alle Leads'),
-      h('div.glass', { style: { overflow: 'hidden', borderColor: awaiting ? 'rgba(33, 180, 166,0.35)' : undefined } },
+      h('div.glass', { style: { overflow: 'hidden', borderColor: awaiting ? 'rgba(var(--accent-rgb), 0.35)' : undefined } },
         headBlock(lead, awaiting), stageBar(lead)),
       h('div.grid-3.rev',
         h('div.stack', { style: { gap: '18px' } }, tabsBar(), tabContent()),
@@ -119,7 +119,7 @@ export function render(view, { params, session, navigate }) {
           icon('zap', 16), 'Erstkontakt erfassen', icon('chevron', 13)),
         open ? h('div.glass', {
           style: { position: 'absolute', right: '0', top: '48px', zIndex: '30', width: '320px', padding: '16px',
-                   display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 24px 60px -16px rgba(0,0,0,0.8)' },
+                   display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 24px 60px -16px rgba(var(--ab), calc(0.8 * var(--schatten)))' },
         },
           h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '6px' } },
             [['call', 'Anruf'], ['email', 'Mail'], ['whatsapp', 'WA'], ['meeting', 'Termin']].map(([v, l]) =>
@@ -260,11 +260,11 @@ export function render(view, { params, session, navigate }) {
         h('div.row', { style: { gap: '10px', flexWrap: 'wrap' } },
           h('span.kind', { style: { color: meta.color } }, meta.label),
           h('span.title', activity.title),
-          activity.outcome ? h('span', { style: { borderRadius: '6px', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', fontSize: '10px', color: 'var(--text-dim)' } }, activity.outcome) : null,
+          activity.outcome ? h('span', { style: { borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.06)', padding: '1px 6px', fontSize: '10px', color: 'var(--text-dim)' } }, activity.outcome) : null,
           activity.durationS > 0 ? h('span.row.faint', { style: { gap: '4px', fontSize: '10px' } }, icon('timer', 11), formatDuration(activity.durationS)) : null,
           h('span.row', { style: { marginLeft: 'auto', gap: '10px' } },
             h('button', {
-              style: { background: 'none', border: 'none', padding: '0', color: activity.isPinned ? 'var(--accent-400)' : 'rgba(255,255,255,0.15)' },
+              style: { background: 'none', border: 'none', padding: '0', color: activity.isPinned ? 'var(--accent-400)' : 'rgba(var(--auf), 0.15)' },
               'aria-label': 'Anheften',
               onclick: async () => { await api.patch(`/activities/${activity.id}/pin`).catch(() => {}); await load(); },
             }, icon('pin', 14)),
@@ -281,7 +281,7 @@ export function render(view, { params, session, navigate }) {
 
   function attachment(att) {
     if (att.kind === 'voice') {
-      return h('div', { style: { marginTop: '10px', border: '1px solid var(--hairline)', background: 'rgba(6,9,13,0.5)', borderRadius: '10px', padding: '10px' } },
+      return h('div', { style: { marginTop: '10px', border: '1px solid var(--hairline)', background: 'var(--surface-2)', borderRadius: 'var(--radius)', padding: '10px' } },
         h('p.row.faint', { style: { gap: '6px', marginBottom: '6px', fontSize: '11px' } },
           icon('mic', 12), `Sprachnotiz · ${formatDuration(att.durationS)}`),
         h('audio', { src: att.url, controls: true, preload: 'none', style: { width: '100%' } }),
@@ -289,7 +289,7 @@ export function render(view, { params, session, navigate }) {
     }
     return h('a.row', {
       href: att.url, target: '_blank', rel: 'noreferrer',
-      style: { marginTop: '10px', gap: '6px', width: 'fit-content', border: '1px solid var(--hairline)', background: 'rgba(6,9,13,0.5)', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: 'var(--text-dim)' },
+      style: { marginTop: '10px', gap: '6px', width: 'fit-content', border: '1px solid var(--hairline)', background: 'var(--surface-2)', borderRadius: 'var(--radius)', padding: '6px 10px', fontSize: '12px', color: 'var(--text-dim)' },
     }, icon('paperclip', 12), att.filename, h('span.faint', `${Math.round(att.sizeBytes / 1024)} KB`));
   }
 
@@ -322,7 +322,7 @@ export function render(view, { params, session, navigate }) {
               await load();
             } catch (error) { toast(error.message, 'error'); draft.busy = false; drawDraft(); }
           } }, draft.busy ? spinner(14) : icon('sparkles', 14), draft.busy ? 'Wird erstellt …' : 'Entwurf erzeugen'),
-          draft.note ? h('span', { style: { fontSize: '12px', color: 'rgba(33, 221, 211,0.8)' } }, draft.note) : null),
+          draft.note ? h('span', { style: { fontSize: '12px', color: 'rgba(var(--accent-rgb), 0.8)' } }, draft.note) : null),
       );
       mount(box, panel, ...(state.data.offers.length
         ? state.data.offers.map(offerCard)
@@ -351,16 +351,16 @@ export function render(view, { params, session, navigate }) {
           h('span', { style: { fontSize: '14px', fontWeight: '500' } }, formatCurrency(offer.amount)),
           h('span.offer-status.' + offer.status, labels[offer.status]),
           offer.generatedBy !== 'human'
-            ? h('span.faint', { style: { borderRadius: '6px', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', fontSize: '10px' } },
+            ? h('span.faint', { style: { borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.06)', padding: '1px 6px', fontSize: '10px' } },
                 offer.generatedBy === 'ai' ? 'KI' : 'Vorlage')
             : null,
           icon('chevron', 15, 'faint')),
-        open ? h('div', { style: { borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px' } },
+        open ? h('div', { style: { borderTop: '1px solid rgba(var(--auf), 0.06)', padding: '20px' } },
           editing
             ? h('textarea.input', { rows: 18, style: { fontFamily: 'var(--font-mono)', fontSize: '12px', lineHeight: '1.7' },
                 value: body, oninput: (e) => { body = e.target.value; } })
-            : h('div.prose-offer', { html: renderMarkdown(offer.body), style: { fontSize: '14px', color: 'rgba(232,237,243,0.72)' } }),
-          h('div.row', { style: { gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap' } },
+            : h('div.prose-offer', { html: renderMarkdown(offer.body), style: { fontSize: '14px', color: 'var(--text-dim)' } }),
+          h('div.row', { style: { gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(var(--auf), 0.06)', flexWrap: 'wrap' } },
             editing
               ? [button('Speichern', { size: 'sm', iconName: 'check', onclick: async () => {
                   await api.patch(`/offers/${offer.id}`, { body }).catch((e) => toast(e.message, 'error'));
@@ -390,13 +390,13 @@ export function render(view, { params, session, navigate }) {
       state.data.emails.length === 0
         ? empty('Noch keine Mails versendet.')
         : h('div.stack', { style: { gap: '10px' } }, state.data.emails.map((mail) =>
-            h('div', { style: { border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(11,15,20,0.4)', borderRadius: '12px', padding: '14px' } },
+            h('div', { style: { border: '1px solid rgba(var(--auf), 0.06)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)', padding: '14px' } },
               h('div.row', { style: { gap: '8px', flexWrap: 'wrap' } },
                 icon('mail', 14, 'faint'),
                 h('span', { style: { fontSize: '14px', fontWeight: '500' } }, mail.subject),
-                h('span', { style: { borderRadius: '999px', padding: '1px 8px', fontSize: '10px',
-                  background: mail.status === 'sent' ? 'rgba(78,168,123,0.12)' : mail.status === 'failed' ? 'rgba(217,83,79,0.12)' : 'rgba(255,255,255,0.06)',
-                  color: mail.status === 'sent' ? '#7fd3a6' : mail.status === 'failed' ? '#f0a5a2' : 'var(--text-faint)' } },
+                h('span', { style: { borderRadius: 'var(--radius)', padding: '1px 8px', fontSize: '10px',
+                  background: mail.status === 'sent' ? 'rgba(var(--success-rgb), 0.12)' : mail.status === 'failed' ? 'rgba(var(--danger-rgb), 0.12)' : 'rgba(var(--auf), 0.06)',
+                  color: mail.status === 'sent' ? 'var(--success-text)' : mail.status === 'failed' ? 'var(--danger-text)' : 'var(--text-faint)' } },
                   mail.status === 'logged' ? 'protokolliert' : mail.status === 'sent' ? 'versendet' : 'fehlgeschlagen'),
                 h('span.faint', { style: { marginLeft: 'auto', fontSize: '11px' } }, formatRelative(mail.createdAt))),
               h('p.faint', { style: { marginTop: '4px', fontSize: '12px' } }, 'an ' + mail.to),
@@ -418,7 +418,7 @@ export function render(view, { params, session, navigate }) {
           h('h2', 'Aufgaben & Termine'),
           h('button.hint.row', { style: { gap: '4px', background: 'none', border: 'none' }, onclick: () => { open = !open; draw(); } },
             icon('plus', 13), 'neu')),
-        open ? h('div', { style: { marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.5)', borderRadius: '12px', padding: '14px' } },
+        open ? h('div', { style: { marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)', padding: '14px' } },
           h('input.input', { placeholder: 'Titel', style: { padding: '9px 12px', fontSize: '14px' }, value: form.title, oninput: (e) => { form.title = e.target.value; } }),
           h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' } },
             h('select.input', { style: { padding: '9px 12px', fontSize: '14px' }, onchange: (e) => { form.kind = e.target.value; } },
@@ -466,7 +466,7 @@ export function render(view, { params, session, navigate }) {
       h('div.grow',
         h('p.title', task.title),
         h('p.sub',
-          h('span', { style: { color: overdue ? '#f0a5a2' : undefined } }, formatRelative(task.dueAt)),
+          h('span', { style: { color: overdue ? 'var(--danger-text)' : undefined } }, formatRelative(task.dueAt)),
           task.recurrence !== 'none' ? h('span', '· wiederkehrend') : null,
           task.visibleToClient ? h('span', '· im Portal sichtbar') : null)),
       task.assignee ? avatar(task.assignee.name, task.assignee.accent, 20) : null,
@@ -499,7 +499,7 @@ export function render(view, { params, session, navigate }) {
         h('p.muted', { style: { marginTop: '4px', fontSize: '14px' } }, lead.goal)) : null,
       lead.message ? h('div',
         h('p.faint', { style: { fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase' } }, 'Nachricht'),
-        h('p.muted', { style: { marginTop: '4px', paddingLeft: '12px', borderLeft: '2px solid rgba(33, 180, 166,0.4)', fontSize: '14px', lineHeight: '1.6', fontStyle: 'italic' } }, lead.message)) : null,
+        h('p.muted', { style: { marginTop: '4px', paddingLeft: '12px', borderLeft: '2px solid rgba(var(--accent-rgb), 0.4)', fontSize: '14px', lineHeight: '1.6', fontStyle: 'italic' } }, lead.message)) : null,
     );
   }
 

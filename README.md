@@ -345,6 +345,36 @@ sofort. Wer *Bewegung reduzieren* eingestellt hat, bekommt keine, nicht
 weniger. Und Zeigergesteuertes gibt es nur, wo ein Zeiger ist; auf dem
 Telefon übernehmen Druck und Scrollen.
 
+#### Hell oder dunkel, eckig
+Alle vier Bereiche gibt es in beiden Fassungen. Oben rechts steht überall
+derselbe Umschalter – auch auf den beiden Anmeldemasken, damit sich niemand
+erst im Dunkeln anmelden muss, der hell arbeitet.
+
+Wer nichts wählt, bekommt, was sein Gerät sagt: das entscheidet eine
+`@media (prefers-color-scheme)`-Regel, also auch ohne JavaScript. Wer wählt,
+dessen Wahl steht als `data-theme` am `<html>` und in `localStorage`, gilt
+über alle Bereiche hinweg und überlebt das Neuladen. Ein kurzes Skript im
+Kopf jeder Seite setzt sie, **bevor** das erste Bild gezeichnet wird – sonst
+blitzte die falsche Fassung auf.
+
+Die Farben stehen in zwei Schichten: unten die Palette der Marke, die sich
+nie ändert, darüber Merkmale wie `--bg`, `--surface`, `--text`, `--hairline`.
+Nur die werden umgeschaltet, und nur sie stehen in den Regeln. Zwei Tripel
+tragen die Arbeit: `--auf` ist die Farbe zum Aufhellen (auf Dunkel weiß, auf
+Hell dasselbe Tintenblau wie der Text), `--ab` die Schattenfarbe mit einem
+Faktor `--schatten` – auf hellem Grund muss ein Schatten viel schwächer sein,
+sonst wirkt er wie Schmutz.
+
+Die Kanten sind eckig: Flächen mit 0, Schaltflächen mit 2 px, damit sie als
+bedienbar von den Flächen unterschieden bleiben. Rund bleibt, was ein Zeichen
+ist und keine Fläche – Statuspunkte, Ringe, der Nebel im Hintergrund.
+
+Was sich nicht mit umschaltet, tut das mit Absicht und mit Begründung im
+Quelltext: Weiß auf Rot, die Maske über dem Raster, das Markenschild im
+Kundenbereich. Die Wortmarke ist weiß gezeichnet und würde auf Weiß
+verschwinden – für die helle Fassung liegt sie als `logo-hell.png` daneben,
+mit der Wortmarke in Textfarbe und unverändertem Türkis.
+
 ### CRM
 - **Dashboard** – Ø- und Median-Reaktionszeit, SLA-Quote, Pipeline-Wert,
   Abschlussquote, Verlauf, Leistung pro Fachgruppe gegen deren SLA,

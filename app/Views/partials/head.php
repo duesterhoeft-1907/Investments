@@ -38,6 +38,18 @@ $basisUrl = rtrim((string) Config::get('base_url', ''), '/');
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
+<?php /* Die Wahl hell/dunkel muss stehen, bevor das erste Bild gezeichnet
+         wird – sonst blitzt eine Fassung auf und wird sofort ersetzt. Ein
+         Skript hier oben ist der einzige Weg dahin; alles Spätere kommt zu
+         spät. Wer nichts gewählt hat, bekommt gar kein Attribut, und dann
+         entscheidet die @media-Regel in app.css nach der Einstellung des
+         Geräts. */ ?>
+<script>
+  try {
+    var w = localStorage.getItem('21ci-theme');
+    if (w === 'light' || w === 'dark') document.documentElement.dataset.theme = w;
+  } catch (e) { /* privater Modus: dann eben die Vorgabe des Geräts */ }
+</script>
 <meta name="description" content="<?= htmlspecialchars($description ?? 'Anfrage stellen, Fachberatung erhalten – Investments in Edelmetalle, Sachwerte und Beteiligungen.', ENT_QUOTES) ?>">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?></title>
 <?php foreach ($sprachen as $sprache => $adresse): ?>

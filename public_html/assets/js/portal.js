@@ -8,6 +8,7 @@ import { icon } from './core/icons.js';
 import { api, ApiError, setCsrf } from './core/api.js';
 import { formatCurrency, formatDate, formatDateTime, initials, renderMarkdown } from './core/format.js';
 import { logo, spinner, toast } from './core/ui.js';
+import { umschalter } from './core/theme.js';
 
 const root = $('#app');
 const token = (/^\/portal\/([a-f0-9]{8,})/.exec(location.pathname) || [])[1] || '';
@@ -50,8 +51,8 @@ function renderLogin(error = '') {
         state.preview
           ? h('div.greet',
               h('p', { style: { fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600' } }, `Willkommen, ${state.preview.firstName}.`),
-              h('p', { style: { marginTop: '6px', fontSize: '14px', color: '#4a545f' } },
-                'Ihre Anfrage ', h('span', { style: { fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--accent-600)' } }, state.preview.ref),
+              h('p', { style: { marginTop: '6px', fontSize: '14px', color: 'var(--text-dim)' } },
+                'Ihre Anfrage ', h('span', { style: { fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--akzent-text)' } }, state.preview.ref),
                 state.preview.assetClass ? ` zu ${state.preview.assetClass}` : '', ' wird bearbeitet',
                 state.preview.advisor ? ` von ${state.preview.advisor}` : '', '.'))
           : null,
@@ -74,10 +75,11 @@ function renderLogin(error = '') {
           },
         },
           h('div.row', { style: { gap: '12px' } },
-            h('span', { style: { width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(33, 180, 166,0.12)', color: 'var(--accent-600)' } }, icon('lock', 19)),
-            h('div',
+            h('span', { style: { width: '40px', height: '40px', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(var(--accent-rgb), 0.12)', color: 'var(--akzent-text)' } }, icon('lock', 19)),
+            h('div', { style: { flex: '1' } },
               h('h1', { style: { fontFamily: 'var(--font-display)', fontSize: '16px' } }, 'Anmelden'),
-              h('p', { style: { fontSize: '12px', color: '#6b7683' } }, 'Zugangsdaten aus Ihrer Bestätigungs-E-Mail'))),
+              h('p', { style: { fontSize: '12px', color: 'var(--text-faint)' } }, 'Zugangsdaten aus Ihrer Bestätigungs-E-Mail')),
+            umschalter()),
           h('label', h('span', 'E-Mail'),
             h('input.p-input', { type: 'email', required: true, autocomplete: 'username', value: form.email, oninput: (e) => { form.email = e.target.value; } })),
           h('label', h('span', 'Passwort'),
@@ -101,7 +103,9 @@ function renderPortal() {
   mount(root,
     h('header.p-header', h('div.bar',
       h('span.p-brand', h('span.brand-plate.is-small', logo(22))),
-      h('button.p-logout', { onclick: async () => { await api.post('/portal/logout').catch(() => {}); location.reload(); } }, 'Abmelden'))),
+      h('div.row', { style: { gap: '10px' } },
+        umschalter(),
+        h('button.p-logout', { onclick: async () => { await api.post('/portal/logout').catch(() => {}); location.reload(); } }, 'Abmelden')))),
     h('main.p-main',
       heroSection(lead),
       h('div.p-grid',
@@ -159,11 +163,11 @@ function offersSection() {
         open ? h('div.body',
           h('div.prose-offer', { html: renderMarkdown(offer.body), style: { fontSize: '14px', color: '#33404d' } }),
           offer.validUntil
-            ? h('p', { style: { marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6b7683' } },
+            ? h('p', { style: { marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-faint)' } },
                 icon('clock', 13), `Gültig bis ${formatDate(offer.validUntil)}`)
             : null,
           offer.status === 'sent'
-            ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--paper-200)' } },
+            ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--hairline)' } },
                 h('button.p-btn', { style: { width: 'auto' }, onclick: () => respond(offer.id, 'accepted') }, icon('check', 15), 'Angebot annehmen'),
                 h('button.p-btn.p-btn-ghost', { style: { width: 'auto' }, onclick: () => respond(offer.id, 'declined') }, 'Nicht passend'))
             : null,
@@ -204,7 +208,7 @@ function documentsSection() {
         h('a.p-doc', { href: doc.url, target: '_blank', rel: 'noreferrer' },
           icon('file', 15),
           h('span', { style: { flex: '1', minWidth: '0', fontSize: '14px' }, class: 'truncate' }, doc.filename),
-          h('span', { style: { fontSize: '12px', color: '#6b7683' } }, `${Math.round(doc.sizeBytes / 1024)} KB`)))));
+          h('span', { style: { fontSize: '12px', color: 'var(--text-faint)' } }, `${Math.round(doc.sizeBytes / 1024)} KB`)))));
 }
 
 function historySection() {
@@ -224,7 +228,7 @@ function advisorCard(advisor) {
   if (!advisor) {
     return h('div.p-card', { style: { padding: '20px', textAlign: 'center' } },
       icon('users', 22),
-      h('p', { style: { marginTop: '8px', fontSize: '14px', color: '#4a545f' } }, 'Ihr Ansprechpartner wird gerade zugewiesen.'));
+      h('p', { style: { marginTop: '8px', fontSize: '14px', color: 'var(--text-dim)' } }, 'Ihr Ansprechpartner wird gerade zugewiesen.'));
   }
   return h('div.p-card.p-advisor',
     h('p.kicker', 'Ihr Ansprechpartner'),
@@ -279,12 +283,12 @@ function factsCard(lead) {
     ['Status', lead.statusLabel],
   ];
   return h('div.p-facts',
-    h('p', { style: { fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b7683' } }, 'Ihre Angaben'),
+    h('p', { style: { fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-faint)' } }, 'Ihre Angaben'),
     h('dl', rows.map(([k, v]) => h('div.line', h('dt', k), h('dd', v)))),
     lead.goal ? h('p.goal', `„${lead.goal}"`) : null);
 }
 
 function footerNote(company) {
-  return h('p', { style: { textAlign: 'center', fontSize: '11px', lineHeight: '1.7', color: '#6b7683' } },
+  return h('p', { style: { textAlign: 'center', fontSize: '11px', lineHeight: '1.7', color: 'var(--text-faint)' } },
     company?.name || '', h('br'), `${company?.phone || ''} · ${company?.email || ''}`);
 }

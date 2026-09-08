@@ -73,20 +73,20 @@ export function initials(name) {
 }
 
 export const ACTIVITY_META = {
-  lead_created:   { label: 'Anfrage',         color: 'var(--accent-300)' },
+  lead_created:   { label: 'Anfrage',         color: 'var(--akzent-text)' },
   assignment:     { label: 'Zuweisung',       color: 'var(--steel-400)' },
-  first_contact:  { label: 'Erstkontakt',     color: '#7fd3a6' },
+  first_contact:  { label: 'Erstkontakt',     color: 'var(--success-text)' },
   call:           { label: 'Anruf',           color: 'var(--steel-400)' },
   email:          { label: 'E-Mail',          color: 'var(--orchid-400)' },
-  whatsapp:       { label: 'WhatsApp',        color: '#7fd3a6' },
-  meeting:        { label: 'Termin',          color: '#9db6ff' },
-  note:           { label: 'Notiz',           color: 'rgba(232,237,243,0.7)' },
-  voice_note:     { label: 'Sprachnotiz',     color: 'var(--accent-300)' },
-  status_change:  { label: 'Status',          color: 'rgba(232,237,243,0.7)' },
+  whatsapp:       { label: 'WhatsApp',        color: 'var(--success-text)' },
+  meeting:        { label: 'Termin',          color: 'var(--sky-text)' },
+  note:           { label: 'Notiz',           color: 'var(--text-dim)' },
+  voice_note:     { label: 'Sprachnotiz',     color: 'var(--akzent-text)' },
+  status_change:  { label: 'Status',          color: 'var(--text-dim)' },
   portal_login:   { label: 'Portal',          color: 'var(--steel-400)' },
-  client_message: { label: 'Kundennachricht', color: 'var(--accent-300)' },
-  offer_sent:     { label: 'Angebot',         color: '#7fd3a6' },
-  system:         { label: 'System',          color: 'rgba(232,237,243,0.5)' },
+  client_message: { label: 'Kundennachricht', color: 'var(--akzent-text)' },
+  offer_sent:     { label: 'Angebot',         color: 'var(--success-text)' },
+  system:         { label: 'System',          color: 'var(--text-dim)' },
 };
 
 /**

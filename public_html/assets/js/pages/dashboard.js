@@ -8,7 +8,7 @@ import { areaChart, avatar, barChart, empty, progress, slaClock, spinner, status
 
 const STATUS_COLOR = {
   new: 'var(--accent-400)', contacted: 'var(--steel-400)', qualified: 'var(--orchid-400)',
-  proposal: '#9db6ff', won: '#7fd3a6', lost: 'rgba(255,255,255,0.35)',
+  proposal: 'var(--sky-text)', won: 'var(--success-text)', lost: 'rgba(var(--auf), 0.35)',
 };
 
 export function render(view, { session, navigate }) {
@@ -49,10 +49,10 @@ export function render(view, { session, navigate }) {
           h('div',
             h('h1', `Guten Tag, ${session.user.name.split(' ')[0]}.`),
             h('p', t.awaiting > 0
-              ? h('span', h('strong', { style: { color: 'var(--accent-300)' } }, `${t.awaiting} Anfragen`), ' warten auf den Erstkontakt.')
+              ? h('span', h('strong', { style: { color: 'var(--akzent-text)' } }, `${t.awaiting} Anfragen`), ' warten auf den Erstkontakt.')
               : 'Alle Anfragen sind kontaktiert. Sauber.'),
           ),
-          h('div.row', { style: { gap: '4px', padding: '4px', border: '1px solid var(--hairline)', background: 'rgba(11,15,20,0.6)', borderRadius: '12px' } },
+          h('div.row', { style: { gap: '4px', padding: '4px', border: '1px solid var(--hairline)', background: 'var(--surface-tief)', borderRadius: 'var(--radius)' } },
             [7, 30, 90].map((d) =>
               h('button.chip' + (days === d ? '.on' : ''), { onclick: () => { days = d; void load(); } }, `${d} Tage`)),
           ),
@@ -105,7 +105,7 @@ export function render(view, { session, navigate }) {
 
   function legend(color, label) {
     return h('span.row', { style: { gap: '6px' } },
-      h('span', { style: { width: '10px', height: '2px', background: color, borderRadius: '2px' } }), label);
+      h('span', { style: { width: '10px', height: '2px', background: color, borderRadius: 'var(--radius)' } }), label);
   }
 
   function metric(name, label, value, sub, tone, bar) {
@@ -122,9 +122,9 @@ export function render(view, { session, navigate }) {
 
   function urgentCard() {
     return h('div.glass', { style: { overflow: 'hidden' } },
-      h('div.row', { style: { justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' } },
+      h('div.row', { style: { justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid rgba(var(--auf), 0.06)' } },
         h('h2.row', { style: { gap: '8px', fontFamily: 'var(--font-display)', fontSize: '16px' } }, icon('flame', 16), 'Wartet auf Erstkontakt'),
-        stats.urgent.length ? h('span', { style: { borderRadius: '999px', background: 'rgba(217,83,79,0.15)', color: '#f0a5a2', padding: '1px 8px', fontSize: '11px', fontWeight: '600' } }, String(stats.urgent.length)) : null),
+        stats.urgent.length ? h('span', { style: { borderRadius: 'var(--radius)', background: 'rgba(var(--danger-rgb), 0.15)', color: 'var(--danger-text)', padding: '1px 8px', fontSize: '11px', fontWeight: '600' } }, String(stats.urgent.length)) : null),
       h('div', { style: { maxHeight: '26rem', overflowY: 'auto' } },
         stats.urgent.length === 0
           ? empty('Nichts offen.', 'Jede eingegangene Anfrage wurde bereits kontaktiert.')
@@ -148,11 +148,11 @@ export function render(view, { session, navigate }) {
           h('span', { style: { width: '8px', height: '8px', borderRadius: '50%', background: team.color } }), team.name),
         h('span.faint', { style: { fontSize: '12px' } },
           `${team.leads} Leads · `,
-          h('span', { style: { color: ratio > 100 ? '#f0a5a2' : '#7fd3a6' } }, team.avgResponseLabel ?? 'keine Messung'),
+          h('span', { style: { color: ratio > 100 ? 'var(--danger-text)' : 'var(--success-text)' } }, team.avgResponseLabel ?? 'keine Messung'),
           ` / Ziel ${team.slaMinutes} Min.`)),
       progress(ratio, ratio > 100 ? 'danger' : ratio > 70 ? 'accent' : 'success'),
       team.awaiting > 0
-        ? h('p.row', { style: { gap: '4px', marginTop: '4px', fontSize: '11px', color: 'rgba(33, 221, 211,0.8)' } }, icon('alert', 11), `${team.awaiting} offen`)
+        ? h('p.row', { style: { gap: '4px', marginTop: '4px', fontSize: '11px', color: 'rgba(var(--accent-rgb), 0.8)' } }, icon('alert', 11), `${team.awaiting} offen`)
         : null,
     );
   }
@@ -167,12 +167,12 @@ export function render(view, { session, navigate }) {
         : h('ol.stack', { style: { gap: '10px', listStyle: 'none', padding: '0', margin: '0' } },
             stats.leaderboard.slice(0, 8).map((agent, i) =>
               h('li.row', { style: { gap: '12px' } },
-                h('span', { style: { width: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? 'var(--accent-300)' : 'rgba(255,255,255,0.25)' } }, String(i + 1)),
+                h('span', { style: { width: '16px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: i === 0 ? 'var(--accent-300)' : 'rgba(var(--auf), 0.25)' } }, String(i + 1)),
                 avatar(agent.name, agent.accent, 30, stats.onlineUserIds.includes(agent.id)),
                 h('div.grow',
                   h('p.truncate', { style: { fontSize: '14px' } }, agent.name),
                   h('p.faint', { style: { fontSize: '11px' } }, `${agent.leads} Leads · ${agent.won} gewonnen`)),
-                h('span.mono', { style: { fontSize: '12px', color: agent.breached > 0 ? 'var(--accent-300)' : '#7fd3a6' } }, agent.avgResponseLabel ?? '–')))),
+                h('span.mono', { style: { fontSize: '12px', color: agent.breached > 0 ? 'var(--accent-300)' : 'var(--success-text)' } }, agent.avgResponseLabel ?? '–')))),
     );
   }
 
@@ -182,11 +182,11 @@ export function render(view, { session, navigate }) {
       h('div.section-title', h('h2', 'Pipeline')),
       h('div.stack', { style: { gap: '8px' } },
         stats.byStatus.map((s) =>
-          h('a', { href: `/app/leads?status=${s.status}`, style: { display: 'block', padding: '6px 8px', borderRadius: '10px' } },
+          h('a', { href: `/app/leads?status=${s.status}`, style: { display: 'block', padding: '6px 8px', borderRadius: 'var(--radius)' } },
             h('div.row', { style: { justifyContent: 'space-between', gap: '12px', fontSize: '12px' } },
               statusBadge(s.status, s.label),
               h('span.faint', `${s.count} · ${formatCompact(s.value)}`)),
-            h('div', { style: { marginTop: '6px', height: '4px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' } },
+            h('div', { style: { marginTop: '6px', height: '4px', borderRadius: 'var(--radius)', background: 'rgba(var(--auf), 0.06)', overflow: 'hidden' } },
               h('i', { style: { display: 'block', height: '100%', width: `${(s.count / total) * 100}%`, background: STATUS_COLOR[s.status], transition: 'width 0.7s var(--ease)' } }))))),
     );
   }
@@ -201,7 +201,7 @@ export function render(view, { session, navigate }) {
           ? empty('Keine offenen Leads.', 'Alles abgearbeitet oder noch nichts zugewiesen.')
           : h('div.stack', { style: { gap: '2px' } },
               myDay.leads.slice(0, 8).map((lead) =>
-                h('a.row', { href: `/app/leads/${lead.id}`, style: { gap: '12px', padding: '8px', borderRadius: '10px' } },
+                h('a.row', { href: `/app/leads/${lead.id}`, style: { gap: '12px', padding: '8px', borderRadius: 'var(--radius)' } },
                   h('div.grow',
                     h('p.truncate', { style: { fontSize: '14px' } }, lead.name),
                     h('p.truncate.faint', { style: { fontSize: '12px' } }, lead.assetClass ?? '')),
@@ -217,13 +217,13 @@ export function render(view, { session, navigate }) {
           : h('div.stack', { style: { gap: '2px' } },
               myDay.tasks.slice(0, 8).map((task) => {
                 const overdue = task.dueAt && new Date(task.dueAt) < new Date();
-                return h('a.row', { href: task.leadId ? `/app/leads/${task.leadId}` : '/app/tasks', style: { gap: '12px', padding: '8px', borderRadius: '10px' } },
-                  h('span', { style: { width: '6px', height: '6px', borderRadius: '50%', flexShrink: '0', background: overdue ? 'var(--danger)' : 'rgba(255,255,255,0.25)' } }),
+                return h('a.row', { href: task.leadId ? `/app/leads/${task.leadId}` : '/app/tasks', style: { gap: '12px', padding: '8px', borderRadius: 'var(--radius)' } },
+                  h('span', { style: { width: '6px', height: '6px', borderRadius: '50%', flexShrink: '0', background: overdue ? 'var(--danger)' : 'rgba(var(--auf), 0.25)' } }),
                   h('div.grow',
                     h('p.truncate', { style: { fontSize: '14px' } }, task.title),
                     h('p.truncate.faint', { style: { fontSize: '12px' } },
                       (task.leadName ?? 'ohne Lead') + (task.recurrence !== 'none' ? ' · wiederkehrend' : ''))),
-                  h('span', { style: { fontSize: '12px', color: overdue ? '#f0a5a2' : 'var(--text-faint)' } }, formatRelative(task.dueAt)));
+                  h('span', { style: { fontSize: '12px', color: overdue ? 'var(--danger-text)' : 'var(--text-faint)' } }, formatRelative(task.dueAt)));
               })),
       ),
     );
