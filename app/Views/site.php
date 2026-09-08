@@ -20,6 +20,18 @@ $extraCss = 'site.css';
 // Was wir zusagen dürfen, hängt an den Geschäftszeiten.
 $promise = Hours::promise((int) Config::get('sla_minutes', 15));
 
+/**
+ * Gibt die Adresse eines Markenbildes zurück – oder null, wenn es fehlt.
+ *
+ * Die Themenbilder holt bin/fetch-images.php von der Unternehmensseite
+ * nach. Fehlen sie, soll die Seite nicht mit Platzhaltern aufwarten,
+ * sondern den Abschnitt schlicht ohne Bild zeigen.
+ */
+$bild = static function (string $datei): ?string {
+    $pfad = __DIR__ . '/../../public_html/assets/brand/' . $datei;
+    return is_file($pfad) ? '/assets/brand/' . $datei . '?v=' . filemtime($pfad) : null;
+};
+
 require __DIR__ . '/partials/head.php';
 ?>
 <header class="s-top">
@@ -36,6 +48,11 @@ require __DIR__ . '/partials/head.php';
 <main>
   <!-- ── Hero ── -->
   <section class="s-hero">
+    <?php /* Dasselbe Bild wie auf der Unternehmensseite, gleich gesetzt
+             (cover, mittig). Darüber ein dunkler Verlauf – ohne ihn stünde
+             heller Text auf hellem Himmel, und die Aussage wäre nicht mehr
+             zu lesen. */ ?>
+    <div class="s-hero-bild" aria-hidden="true"></div>
     <div class="s-hero-glow" aria-hidden="true"></div>
     <div class="s-wrap">
       <p class="s-kicker reveal">EU-Geld-Diktat steht bevor</p>
@@ -68,6 +85,19 @@ require __DIR__ . '/partials/head.php';
           <li>Während der Staat über Vermögensabgaben nachdenkt, wirst du durch die Teuerungsrate
               schleichend enteignet.</li>
         </ul>
+        <?php if ($bild('thema-euro.png')): ?>
+        <div class="s-thumbs">
+          <?php foreach ([
+              'thema-euro.png'      => 'Der digitale Euro',
+              'thema-inflation.png' => 'Inflation',
+              'thema-steuern.png'   => 'Vermögensabgaben',
+          ] as $datei => $titel): ?>
+            <?php if ($bild($datei)): ?>
+              <figure><img src="<?= $bild($datei) ?>" alt="" loading="lazy"><figcaption><?= $titel ?></figcaption></figure>
+            <?php endif; ?>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <p class="s-result">
           <strong>Das Ergebnis:</strong> Wer sein Geld im klassischen EU-Banksystem liegen lässt,
           verliert doppelt – an Kontrolle und an Kaufkraft.
@@ -109,21 +139,19 @@ require __DIR__ . '/partials/head.php';
 
       <p class="s-sub reveal">In deinem kostenlosen und absolut vertraulichen Erstgespräch zeigen wir dir:</p>
       <div class="s-cards">
-        <article class="s-card reveal">
-          <span class="s-num">01</span>
-          <p>Welche Sachwerte dein Vermögen unsichtbar für die EU machen und gleichzeitig
-             historische Spitzen-Renditen abwerfen.</p>
-        </article>
-        <article class="s-card reveal">
-          <span class="s-num">02</span>
-          <p>Wie du legale Schlupflöcher nutzt, um von den Wachstums-Märkten außerhalb Europas
-             zu profitieren – weit weg von der Euro-Krise.</p>
-        </article>
-        <article class="s-card reveal">
-          <span class="s-num">03</span>
-          <p>Wie du dein Kapital innerhalb von 48 Stunden so umschichtest, dass es geschützt ist
-             und sofort für dich arbeitet.</p>
-        </article>
+        <?php foreach ([
+            ['01', 'thema-schutz.png',  'Welche Sachwerte dein Vermögen unsichtbar für die EU machen und gleichzeitig historische Spitzen-Renditen abwerfen.'],
+            ['02', 'thema-wege.png',    'Wie du legale Schlupflöcher nutzt, um von den Wachstums-Märkten außerhalb Europas zu profitieren – weit weg von der Euro-Krise.'],
+            ['03', 'thema-rendite.png', 'Wie du dein Kapital innerhalb von 48 Stunden so umschichtest, dass es geschützt ist und sofort für dich arbeitet.'],
+        ] as [$nummer, $datei, $text]): ?>
+          <article class="s-card reveal">
+            <?php if ($bild($datei)): ?>
+              <img class="s-card-bild" src="<?= $bild($datei) ?>" alt="" loading="lazy">
+            <?php endif; ?>
+            <span class="s-num"><?= $nummer ?></span>
+            <p><?= $text ?></p>
+          </article>
+        <?php endforeach; ?>
       </div>
     </div>
   </section>

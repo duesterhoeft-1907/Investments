@@ -47,6 +47,20 @@
 
 /* ── Hero ── */
 .s-hero { position: relative; overflow: hidden; padding: 96px 0 88px; text-align: center; }
+
+/* Das Bild der Unternehmensseite, gleich gesetzt wie dort. Darüber zwei
+   Verläufe: einer dunkelt die obere Hälfte für den Text ab, der zweite
+   blendet nach unten in die Seitenfarbe aus, damit keine harte Kante
+   entsteht. Ohne die Abdunklung stünde heller Text auf hellem Himmel. */
+.s-hero-bild {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(180deg, rgba(6,19,20,0.82) 0%, rgba(6,19,20,0.62) 42%, var(--ink-950) 96%),
+    url("/assets/brand/hero.png");
+  background-size: cover, cover;
+  background-position: 50% 50%, 50% 50%;
+  background-repeat: no-repeat, no-repeat;
+}
 .s-hero-glow {
   position: absolute; left: 50%; top: -220px; transform: translateX(-50%);
   width: 900px; height: 620px; pointer-events: none;
@@ -105,6 +119,21 @@
   border-radius: var(--radius); border: 1px solid var(--hairline);
 }
 
+/* Die drei Themenbilder unter dem Problem-Abschnitt */
+.s-thumbs {
+  display: grid; gap: 12px; margin-top: 26px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.s-thumbs figure { margin: 0; }
+.s-thumbs img {
+  width: 100%; aspect-ratio: 3 / 2; object-fit: cover; display: block;
+  border-radius: var(--radius-sm); border: 1px solid var(--hairline);
+}
+.s-thumbs figcaption {
+  margin-top: 7px; font-size: 11.5px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+
 /* ── Weckruf ── */
 .s-band {
   padding: 74px 0; text-align: center;
@@ -119,10 +148,19 @@
 .s-sub { margin: 40px 0 20px; font-size: 15px; color: var(--text); }
 .s-cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .s-card {
-  padding: 26px 22px; border-radius: var(--radius);
+  overflow: hidden; border-radius: var(--radius);
   border: 1px solid var(--hairline); background: rgba(17, 26, 40, 0.55);
   transition: border-color 0.2s, transform 0.2s var(--ease);
 }
+.s-card > *:not(.s-card-bild) { padding-left: 22px; padding-right: 22px; }
+.s-card .s-num { margin-top: 22px; }
+.s-card p { padding-bottom: 24px; }
+.s-card-bild {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;
+  border-bottom: 1px solid var(--hairline);
+}
+/* Ohne Bild bleibt der Abstand oben erhalten. */
+.s-card > .s-num:first-child { margin-top: 26px; }
 .s-card:hover { border-color: rgba(33, 180, 166, 0.4); transform: translateY(-3px); }
 .s-num {
   display: block; margin-bottom: 14px;
@@ -174,6 +212,7 @@
 
 @media (max-width: 860px) {
   .s-split { grid-template-columns: 1fr; }
+  .s-thumbs { grid-template-columns: 1fr 1fr; }
   .s-figure { order: -1; }
   .s-hero { padding: 66px 0 60px; }
   .s-section, .s-final { padding: 60px 0; }
