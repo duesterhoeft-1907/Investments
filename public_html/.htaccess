@@ -52,8 +52,24 @@ Options -Indexes
     </FilesMatch>
 </IfModule>
 
+# Der Typ, mit dem JavaScript ausgeliefert wird.
+#
+# Ein Browser lehnt ein Modul ab, wenn der Server es nicht als JavaScript
+# ausweist – und zwar wortlos: die Seite bleibt leer, in der Konsole steht
+# etwas von "Expected a JavaScript module script". Auf dem eigenen Rechner
+# faellt das nie auf, weil der eingebaute Server es richtig macht. Also
+# sagen wir es hier selbst, statt uns auf die Voreinstellung zu verlassen.
+<IfModule mod_mime.c>
+    AddType text/javascript              .js .mjs
+    AddType text/css                     .css
+    AddType application/json             .json
+    AddType image/webp                   .webp
+    AddType image/svg+xml                .svg
+    AddType font/woff2                   .woff2
+</IfModule>
+
 <IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
 </IfModule>
 
 # Punktdateien nie ausliefern

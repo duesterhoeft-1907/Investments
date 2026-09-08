@@ -54,6 +54,13 @@ return [
         ],
     ],
 
+    'wizard' => [
+        'notfall'      => 'The enquiry form could not be loaded.',
+        'notfallHilfe' => 'Please reload the page once (Ctrl+F5 or Cmd+Shift+R). If it stays this way, just call us – we will take the enquiry on the phone.',
+        'notfallGrund' => 'Technical detail:',
+        'ohneJs'       => 'The enquiry form needs JavaScript. Without it, the phone is just as quick:',
+    ],
+
     'intake' => [
         'consent'   => 'Without your consent we are not allowed to contact you.',
         'phone'     => 'We need a phone number in order to call you back.',

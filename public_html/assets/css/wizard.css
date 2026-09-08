@@ -501,3 +501,30 @@
   from { opacity: 0; transform: translate3d(0, 14px, 0); }
   to   { opacity: 1; transform: none; }
 }
+
+/* Notfallkasten: sichtbar nur, wenn das Skript nicht angekommen ist.
+   Bewusst mit eigenen Werten statt mit den Bausteinen aus app.css – wenn
+   hier etwas fehlt, kann auch dort etwas fehlen. Die Merkmale werden
+   genutzt, wo es sie gibt, mit einem Rueckfallwert daneben. */
+.wizard-notfall {
+  max-width: 520px;
+  margin: 22vh auto 0;
+  padding: 26px 28px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  background: rgba(128, 128, 128, 0.08);
+  color: var(--text, #edf6f3);
+  text-align: center;
+  line-height: 1.6;
+}
+.wizard-notfall p { margin: 0 0 12px; }
+.wizard-notfall p:last-child { margin-bottom: 0; }
+.wizard-notfall .notfall-titel { font-size: 19px; font-weight: 650; }
+.wizard-notfall .notfall-tel a {
+  font-size: 22px; font-weight: 650; letter-spacing: 0.01em;
+  color: var(--akzent-text, #21b4a6); text-decoration: none;
+}
+.wizard-notfall .notfall-grund {
+  margin: 16px 0 0; font-size: 12px; opacity: 0.65;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  word-break: break-all;
+}

@@ -53,6 +53,18 @@ return [
         ],
     ],
 
+    /*
+     * Notfalltexte, wenn das Skript der Anfrage-Strecke nicht lädt. Sie
+     * stehen im HTML, nicht im JS-Wörterbuch – genau dann, wenn sie
+     * gebraucht werden, ist von dort nichts angekommen.
+     */
+    'wizard' => [
+        'notfall'      => 'Das Anfrage-Formular konnte nicht geladen werden.',
+        'notfallHilfe' => 'Bitte die Seite einmal neu laden (Strg+F5 bzw. Cmd+Shift+R). Bleibt es dabei, ruf uns gern direkt an – wir nehmen die Anfrage am Telefon auf.',
+        'notfallGrund' => 'Technischer Hinweis:',
+        'ohneJs'       => 'Für das Anfrage-Formular wird JavaScript gebraucht. Ohne geht es telefonisch genauso schnell:',
+    ],
+
     'intake' => [
         'consent'   => 'Ohne Einwilligung dürfen wir dich nicht kontaktieren.',
         'phone'     => 'Für den Rückruf brauchen wir eine Telefonnummer.',

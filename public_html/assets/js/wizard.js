@@ -13,6 +13,15 @@ import { lang, locale, t } from './core/i18n.js';
 import { hintergrundBewegen, neigen, ruhig, tippen, zeigen } from './core/motion.js';
 import { umschalter } from './core/theme.js';
 
+// Zeichen für den Wächter im HTML: die Module sind da und laufen. Bleibt es
+// aus, deckt er nach fünf Sekunden den Notfallkasten auf, statt die Seite
+// leer stehen zu lassen.
+window.__WIZARD_LAEUFT__ = true;
+// Bei einer langsamen Verbindung kann der Wächter schon zugeschlagen haben,
+// bevor das Modul da war. Dann gehört der Kasten weg, nicht neben das
+// Formular.
+document.getElementById('wizard-notfall')?.remove();
+
 const STEPS = t('steps');
 
 const state = {

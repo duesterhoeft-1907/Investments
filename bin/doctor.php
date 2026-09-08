@@ -136,6 +136,52 @@ if ($lastRun !== null && (time() - (int) $lastRun) < 900) {
     echo "    solange jemand im CRM angemeldet ist.\n";
 }
 
+/*
+ * Die Oberfläche besteht aus ES-Modulen, die einander laden. Fehlt eine
+ * einzige Datei, bricht der Browser den ganzen Baum ab – wortlos. Auf dem
+ * Bildschirm bleibt dann nur der Hintergrund, und in der Anwendung sieht
+ * alles heil aus. Deshalb hier: jeden import verfolgen und nachsehen, ob
+ * die Datei wirklich da ist.
+ */
+head('Oberfläche');
+$jsWurzel = dirname(__DIR__) . '/public_html/assets/js';
+$einstiege = glob($jsWurzel . '/*.js') ?: [];
+$gesehen = [];
+$fehlend = [];
+
+$verfolgen = static function (string $datei) use (&$verfolgen, &$gesehen, &$fehlend): void {
+    $echt = realpath($datei);
+    if ($echt === false || isset($gesehen[$echt])) {
+        return;
+    }
+    $gesehen[$echt] = true;
+    $inhalt = (string) file_get_contents($echt);
+    preg_match_all("#\bfrom\s+['\"](\.[^'\"]+)['\"]#", $inhalt, $treffer);
+    foreach ($treffer[1] as $ziel) {
+        $pfad = dirname($echt) . '/' . $ziel;
+        if (is_file($pfad)) {
+            $verfolgen($pfad);
+        } else {
+            $fehlend[] = basename($echt) . ' → ' . $ziel;
+        }
+    }
+};
+
+foreach ($einstiege as $einstieg) {
+    $verfolgen($einstieg);
+}
+
+if ($einstiege === []) {
+    fail('Unter public_html/assets/js liegt keine einzige Datei – ist alles hochgeladen?');
+} elseif ($fehlend !== []) {
+    fail('Diese Module fehlen; die Seite bleibt im Browser leer:');
+    foreach (array_unique($fehlend) as $eintrag) {
+        echo "      $eintrag\n";
+    }
+} else {
+    ok(count($gesehen) . ' Module vollständig, alle Verweise lösen auf');
+}
+
 head('Verzeichnisse');
 $docRootHint = dirname(__DIR__) . '/public_html';
 echo "    DocumentRoot muss zeigen auf: $docRootHint\n";
