@@ -28,6 +28,18 @@
 }
 .s-nav > a:not(.s-btn):hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
+/* Sprachumschalter. Ein Rahmen statt eines Fahnensymbols: Flaggen stehen
+   für Länder, nicht für Sprachen – und "EN" versteht auch, wer die Fahne
+   nicht zuordnen kann. Er bleibt auf dem Telefon sichtbar, während die
+   übrige Navigation dort verschwindet; wer die Seite in der falschen
+   Sprache öffnet, braucht ihn dort am dringendsten. */
+.s-nav > a.s-lang {
+  padding: 7px 11px; border: 1px solid rgba(255,255,255,0.16);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.s-nav > a.s-lang:hover { color: var(--text); border-color: rgba(33, 180, 166, 0.55); }
+
 /* ── Schaltflächen ── */
 .s-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -216,5 +228,5 @@
   .s-figure { order: -1; }
   .s-hero { padding: 66px 0 60px; }
   .s-section, .s-final { padding: 60px 0; }
-  .s-nav > a:not(.s-btn) { display: none; }
+  .s-nav > a:not(.s-btn):not(.s-lang) { display: none; }
 }

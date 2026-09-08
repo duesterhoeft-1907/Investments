@@ -1,8 +1,9 @@
 <?php
-/** Öffentliche Anfrage-Strecke. */
+/** Öffentliche Anfrage-Strecke – deutsch unter /anfrage, englisch unter /en/contact. */
 use App\Core\Config;
+use App\Core\I18n;
 
-$title = Config::get('company.name') . ' · Anfrage stellen';
+$title = Config::get('company.name') . ' · ' . I18n::t('nav.contact');
 $bodyClass = 'page-wizard';
 $extraCss = 'wizard.css';
 require __DIR__ . '/partials/head.php';

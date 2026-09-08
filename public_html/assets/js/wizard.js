@@ -9,8 +9,9 @@ import { h, mount, $ } from './core/dom.js';
 import { icon } from './core/icons.js';
 import { api, ApiError } from './core/api.js';
 import { aurora, button, field, logo, spinner, toast } from './core/ui.js';
+import { lang, locale, t } from './core/i18n.js';
 
-const STEPS = ['Fachgebiet', 'Volumen', 'Profil', 'Kontakt', 'Bestätigung'];
+const STEPS = t('steps');
 
 const state = {
   config: null,
@@ -33,14 +34,16 @@ init();
 async function init() {
   mount(root, aurora(), h('div.wizard-shell', h('div.row', { style: { minHeight: '60vh', justifyContent: 'center' } }, spinner(30))));
   try {
-    state.config = await api.get('/public/wizard-config');
+    // Die Sprache steht im Pfad der Seite, nicht im Pfad der Schnittstelle –
+    // also muss sie mitgeschickt werden.
+    state.config = await api.get('/public/wizard-config?lang=' + lang);
     render();
   } catch {
     mount(
       root,
       aurora(),
       h('div.wizard-shell', h('div', { style: { maxWidth: '440px', margin: '120px auto', textAlign: 'center' } },
-        h('p.muted', 'Die Anfrage-Strecke ist gerade nicht erreichbar. Bitte später erneut versuchen.'))),
+        h('p.muted', t('offline')))),
     );
   }
 }
@@ -65,16 +68,16 @@ function slaMinutes() {
 function slaPromise(hours = state.config?.hours) {
   const minutes = slaMinutes();
   if (!hours || hours.open || !hours.nextOpening) {
-    return `innerhalb von ${minutes} Minuten`;
+    return t('withinMinutes', minutes);
   }
 
   const next = new Date(hours.nextOpening);
-  const time = next.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+  const time = t('time', next.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }));
   const days = Math.round((startOfDay(next) - startOfDay(new Date())) / 86400000);
 
-  if (days <= 0) return `heute ab ${time}`;
-  if (days === 1) return `morgen früh ab ${time}`;
-  return `am ${next.toLocaleDateString('de-DE', { weekday: 'long' })} ab ${time}`;
+  if (days <= 0) return t('today', time);
+  if (days === 1) return t('tomorrow', time);
+  return t('onWeekday', next.toLocaleDateString(locale, { weekday: 'long' }), time);
 }
 
 function startOfDay(date) {
@@ -86,19 +89,19 @@ function validate(step) {
   const errors = {};
   const f = state.form;
 
-  if (step === 0 && !f.assetClassSlug) errors.assetClassSlug = 'Bitte ein Fachgebiet wählen.';
+  if (step === 0 && !f.assetClassSlug) errors.assetClassSlug = t('errAsset');
   if (step === 1) {
-    if (!f.volumeBand) errors.volumeBand = 'Bitte ein Anlagevolumen wählen.';
-    if (!f.horizon) errors.horizon = 'Bitte einen Anlagehorizont wählen.';
+    if (!f.volumeBand) errors.volumeBand = t('errVolume');
+    if (!f.horizon) errors.horizon = t('errHorizon');
   }
   if (step === 3) {
-    if (f.firstName.trim().length < 2) errors.firstName = 'Bitte Vornamen angeben.';
-    if (f.lastName.trim().length < 2) errors.lastName = 'Bitte Nachnamen angeben.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())) errors.email = 'Bitte gültige E-Mail-Adresse angeben.';
+    if (f.firstName.trim().length < 2) errors.firstName = t('errFirstName');
+    if (f.lastName.trim().length < 2) errors.lastName = t('errLastName');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())) errors.email = t('errEmail');
     if (f.contactPref !== 'email' && f.phone.trim().length < 6) {
-      errors.phone = 'Für den Rückruf brauchen wir eine Telefonnummer.';
+      errors.phone = t('errPhone');
     }
-    if (!f.consentContact) errors.consentContact = 'Ohne Einwilligung dürfen wir nicht anrufen.';
+    if (!f.consentContact) errors.consentContact = t('errConsent');
   }
 
   state.errors = errors;
@@ -126,7 +129,7 @@ async function submit() {
   state.busy = true;
   render();
   try {
-    state.result = await api.post('/public/leads', { ...state.form, country: 'DE', consentContact: true });
+    state.result = await api.post('/public/leads', { ...state.form, country: 'DE', consentContact: true, lang });
     state.step = 4;
     state.errors = {};
   } catch (error) {
@@ -134,7 +137,7 @@ async function submit() {
       state.errors = error.fields;
       state.step = 3;
     } else {
-      state.errors = { _: error.message || 'Unbekannter Fehler.' };
+      state.errors = { _: error.message || t('errUnknown') };
     }
   } finally {
     state.busy = false;
@@ -166,8 +169,8 @@ function render() {
 function renderHead() {
   return h(
     'header.wizard-head',
-    h('a.wizard-brand', { href: '/', title: 'Zurück zur Startseite' }, logo(36)),
-    h('a.wizard-staff-link', { href: '/app' }, 'Mitarbeiter-Login'),
+    h('a.wizard-brand', { href: lang === 'en' ? '/en' : '/', title: t('backHome') }, logo(36)),
+    h('a.wizard-staff-link', { href: '/app' }, t('staffLogin')),
   );
 }
 
@@ -175,14 +178,14 @@ function renderHero() {
   const company = window.__COMPANY__?.name || '21 Capital Invest';
   return h(
     'section.hero.rise',
-    h('span.promise', icon('timer', 14), 'Rückmeldung ' + slaPromise()),
-    h('h1', 'Ihr Vermögen verdient', h('br'), h('span.brand-text', 'eine schnelle Antwort.')),
-    h('p.lead', `Beantworten Sie vier kurze Fragen. Ihre Anfrage geht direkt an das zuständige Fachteam von ${company} – nicht in ein anonymes Postfach.`),
+    h('span.promise', icon('timer', 14), t('heroPromise') + slaPromise()),
+    h('h1', t('heroH1a'), h('br'), h('span.brand-text', t('heroH1b'))),
+    h('p.lead', t('heroLead', company)),
     h(
       'div.trust',
-      h('span', icon('shield', 14), 'Keine Weitergabe an Dritte'),
-      h('span', icon('timer', 14), 'Persönlicher Rückruf statt Warteschleife'),
-      h('span', icon('lock', 14), 'Eigener Kundenbereich inklusive'),
+      h('span', icon('shield', 14), t('trust1')),
+      h('span', icon('timer', 14), t('trust2')),
+      h('span', icon('lock', 14), t('trust3')),
     ),
   );
 }
@@ -217,7 +220,7 @@ function renderStep() {
 function stepAsset() {
   return h(
     'div',
-    heading('Wofür interessieren Sie sich?', 'Ihre Auswahl bestimmt, welches Fachteam sich meldet.'),
+    heading(t('stepAssetH'), t('stepAssetP')),
     h(
       'div.asset-grid',
       state.config.assetClasses.map((asset, i) => {
@@ -242,7 +245,7 @@ function stepAsset() {
               'span.grow',
               h('span.row', { style: { gap: '8px' } }, h('h3', asset.name), selected ? icon('check', 15) : null),
               h('span.tagline', asset.tagline),
-              asset.teamName ? h('span.team', `Team ${asset.teamName} · Antwort in ${asset.slaMinutes} Min.`) : null,
+              asset.teamName ? h('span.team', t('teamLine', asset.teamName, asset.slaMinutes)) : null,
             ),
           ),
         );
@@ -275,12 +278,12 @@ function stepVolume() {
   return h(
     'div',
     h('div', { style: { marginBottom: '32px' } },
-      heading('Wie viel möchten Sie investieren?', 'Eine Größenordnung genügt – nichts davon ist verbindlich.'),
+      heading(t('stepVolumeH'), t('stepVolumeP')),
       optionGrid(state.config.volumeBands, state.form.volumeBand, (v) => set('volumeBand', v), 2),
       state.errors.volumeBand ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: '#f0a5a2' } }, state.errors.volumeBand) : null,
     ),
     h('div',
-      h('h3', { style: { marginBottom: '12px', fontSize: '14px', color: 'rgba(232,237,243,0.75)' } }, 'Über welchen Zeitraum?'),
+      h('h3', { style: { marginBottom: '12px', fontSize: '14px', color: 'rgba(232,237,243,0.75)' } }, t('stepVolumeH2')),
       optionGrid(state.config.horizons, state.form.horizon, (v) => set('horizon', v), 2),
       state.errors.horizon ? h('p', { style: { marginTop: '10px', fontSize: '13px', color: '#f0a5a2' } }, state.errors.horizon) : null,
     ),
@@ -291,18 +294,18 @@ function stepProfile() {
   return h(
     'div',
     h('div', { style: { marginBottom: '32px' } },
-      heading('Wie erfahren sind Sie?', 'Damit unser Berater das Gespräch richtig ansetzt.'),
+      heading(t('stepProfileH'), t('stepProfileP')),
       optionGrid(state.config.experience, state.form.experience, (v) => set('experience', v), 2),
     ),
     field(
-      'Was möchten Sie erreichen?',
+      t('goalLabel'),
       h('textarea.input', {
         rows: 3,
-        placeholder: 'z. B. Inflationsschutz für das Familienvermögen, Aufbau einer Altersvorsorge …',
+        placeholder: t('goalPlaceholder'),
         value: state.form.goal,
         oninput: (e) => { state.form.goal = e.target.value; },
       }),
-      { hint: 'optional' },
+      { hint: t('optional') },
     ),
   );
 }
@@ -313,7 +316,19 @@ function textInput(key, { type = 'text', autocomplete } = {}) {
     value: state.form[key],
     autocomplete,
     oninput: (e) => { state.form[key] = e.target.value; },
-    onblur: () => { if (state.errors[key]) { delete state.errors[key]; render(); } },
+    /*
+     * Die Fehlermarkierung verschwindet, sobald das Feld verlassen wird –
+     * aber ohne das Formular neu zu bauen. Ein render() an dieser Stelle
+     * tauscht alle Eingabefelder aus, der Browser verliert dabei den Fokus,
+     * und wer mit Tabulator von einem bemängelten Feld ins nächste geht,
+     * tippt danach ins Leere. Also nur dieses eine Feld anfassen.
+     */
+    onblur: (e) => {
+      if (!state.errors[key]) return;
+      delete state.errors[key];
+      e.target.classList.remove('invalid');
+      e.target.parentElement?.querySelector(':scope > .error')?.remove();
+    },
   });
 }
 
@@ -321,39 +336,39 @@ function stepContact() {
   const f = state.form;
   return h(
     'div',
-    heading('Wie erreichen wir Sie?', 'Ihr Ansprechpartner meldet sich ' + slaPromise() + '.'),
+    heading(t('stepContactH'), t('stepContactP', slaPromise())),
     h(
       'div.form-grid',
-      field('Vorname', textInput('firstName', { autocomplete: 'given-name' }), { required: true, error: state.errors.firstName }),
-      field('Nachname', textInput('lastName', { autocomplete: 'family-name' }), { required: true, error: state.errors.lastName }),
-      field('E-Mail', textInput('email', { type: 'email', autocomplete: 'email' }), { required: true, error: state.errors.email }),
-      field('Telefon', textInput('phone', { type: 'tel', autocomplete: 'tel' }), {
+      field(t('firstName'), textInput('firstName', { autocomplete: 'given-name' }), { required: true, error: state.errors.firstName }),
+      field(t('lastName'), textInput('lastName', { autocomplete: 'family-name' }), { required: true, error: state.errors.lastName }),
+      field(t('email'), textInput('email', { type: 'email', autocomplete: 'email' }), { required: true, error: state.errors.email }),
+      field(t('phone'), textInput('phone', { type: 'tel', autocomplete: 'tel' }), {
         error: state.errors.phone,
-        hint: f.contactPref === 'email' ? 'optional' : undefined,
+        hint: f.contactPref === 'email' ? t('optional') : undefined,
       }),
-      field('Firma', textInput('company', { autocomplete: 'organization' }), { hint: 'optional' }),
+      field(t('company'), textInput('company', { autocomplete: 'organization' }), { hint: t('optional') }),
       h('div', { style: { display: 'grid', gridTemplateColumns: '7rem 1fr', gap: '12px' } },
-        field('PLZ', textInput('postalCode', { autocomplete: 'postal-code' }), { hint: 'optional' }),
-        field('Ort', textInput('city', { autocomplete: 'address-level2' }), { hint: 'optional' }),
+        field(t('postalCode'), textInput('postalCode', { autocomplete: 'postal-code' }), { hint: t('optional') }),
+        field(t('city'), textInput('city', { autocomplete: 'address-level2' }), { hint: t('optional') }),
       ),
     ),
     h('div.form-grid', { style: { marginTop: '20px' } },
       h('div',
-        h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, 'Bevorzugter Kanal'),
+        h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, t('channel')),
         optionGrid(state.config.contactPrefs, f.contactPref, (v) => set('contactPref', v), 3),
       ),
       h('div',
-        h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, 'Beste Zeit'),
+        h('h3', { style: { marginBottom: '10px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-dim)' } }, t('bestTime')),
         optionGrid(state.config.contactWindows, f.contactWindow, (v) => set('contactWindow', v), 2),
       ),
     ),
     h('div', { style: { marginTop: '20px' } },
-      field('Ihre Nachricht',
+      field(t('messageLabel'),
         h('textarea.input', {
-          rows: 3, placeholder: 'Konkrete Fragen, Wunschtermin, alles was hilft …',
+          rows: 3, placeholder: t('messagePlaceholder'),
           value: f.message, oninput: (e) => { f.message = e.target.value; },
         }),
-        { hint: 'optional' }),
+        { hint: t('optional') }),
     ),
     // Honigtopf: für Menschen unsichtbar, Bots füllen ihn aus.
     h('input.honeypot', {
@@ -361,10 +376,9 @@ function stepContact() {
       oninput: (e) => { f.website = e.target.value; },
     }),
     h('div.consent-box', { style: { marginTop: '20px' } },
-      consent('consentContact', state.errors.consentContact,
-        'Ich möchte kontaktiert werden und bin mit der Verarbeitung meiner Daten zu diesem Zweck einverstanden. Die Einwilligung kann ich jederzeit widerrufen.'),
+      consent('consentContact', state.errors.consentContact, t('consentContact')),
       consent('consentMarketing', null,
-        h('span', 'Zusätzlich möchte ich Marktinformationen und Angebote per E-Mail erhalten. ', h('span.faint', '(optional)'))),
+        h('span', t('consentMarketingA'), h('span.faint', t('consentMarketingB')))),
     ),
   );
 }
@@ -383,13 +397,13 @@ function consent(key, error, text) {
 function renderNav() {
   return h(
     'div.wizard-nav',
-    button('Zurück', { variant: 'ghost', iconName: 'arrowLeft', disabled: state.step === 0, onclick: () => go(-1) }),
+    button(t('back'), { variant: 'ghost', iconName: 'arrowLeft', disabled: state.step === 0, onclick: () => go(-1) }),
     state.errors._ ? h('span.err', state.errors._) : h('span'),
     state.step < 3
-      ? button('Weiter', { size: 'lg', iconName: 'arrowRight', onclick: () => go(1) })
+      ? button(t('next'), { size: 'lg', iconName: 'arrowRight', onclick: () => go(1) })
       : h('button.btn.btn-primary.btn-lg', { onclick: submit, disabled: state.busy },
           state.busy ? spinner(16) : icon('sparkles', 16),
-          state.busy ? 'Wird gesendet …' : 'Anfrage absenden'),
+          state.busy ? t('sending') : t('submit')),
   );
 }
 
@@ -399,27 +413,27 @@ function stepDone() {
     try {
       await navigator.clipboard.writeText(value);
       el.replaceChildren(icon('check', 13));
-      toast(label + ' kopiert.');
+      toast(t('copied', label));
       setTimeout(() => el.replaceChildren(icon('copy', 13)), 1800);
     } catch {
-      toast('Kopieren nicht möglich – bitte manuell markieren.', 'error');
+      toast(t('copyFailed'), 'error');
     }
   };
 
   return h(
     'div.done',
     h('div.seal', icon('check', 36)),
-    h('h2', 'Ihre Anfrage ist angekommen.'),
+    h('h2', t('doneH')),
     h('p.sub',
-      r.team ? h('span', 'Das Team ', h('strong', r.team), ' wurde soeben benachrichtigt. ') : 'Unser Fachteam wurde soeben benachrichtigt. ',
-      'Sie hören ',
+      r.team ? h('span', t('doneTeam'), h('strong', r.team), t('doneTeamAfter')) : t('doneTeamless'),
+      t('doneHearA'),
       h('strong', { style: { color: 'var(--accent-300)' } },
         slaPromise({ open: r.open, nextOpening: r.nextOpening })),
-      ' von uns.'),
+      t('doneHearB')),
     h('div.done-grid',
       r.contact
         ? h('div.glass.done-card',
-            h('p.kicker', 'Ihr Ansprechpartner'),
+            h('p.kicker', t('doneContactKicker')),
             h('p.who', r.contact.name),
             h('p.faint', { style: { fontSize: '12px' } }, r.contact.title),
             h('div.stack', { style: { gap: '6px', marginTop: '14px', fontSize: '12px' } },
@@ -428,18 +442,18 @@ function stepDone() {
             ))
         : null,
       h('div.glass.done-card', { style: { borderColor: 'rgba(33, 180, 166,0.25)' } },
-        h('p.kicker', 'Ihr Kundenbereich'),
+        h('p.kicker', t('donePortalKicker')),
         h('p.faint', { style: { fontSize: '12px', lineHeight: '1.6', marginTop: '10px' } },
-          'Dort sehen Sie den Stand Ihrer Anfrage, die nächsten Schritte und Ihr Angebot. Die Zugangsdaten stehen auch in Ihrer Bestätigungs-E-Mail.'),
+          t('donePortalText')),
         h('div.stack', { style: { gap: '8px', marginTop: '14px' } },
-          [['Referenz', r.ref], ['Zugang', r.portal.email], ['Passwort', r.portal.password]].map(([label, value]) => {
-            const btn = h('button', { type: 'button', 'aria-label': label + ' kopieren' }, icon('copy', 13));
+          [[t('labelRef'), r.ref], [t('labelLogin'), r.portal.email], [t('labelPassword'), r.portal.password]].map(([label, value]) => {
+            const btn = h('button', { type: 'button', 'aria-label': t('copyAria', label) }, icon('copy', 13));
             btn.addEventListener('click', () => copy(label, value, btn));
             return h('div.credential', h('span.faint', label), h('span.row', { style: { gap: '8px' } }, h('span.value', value), btn));
           }),
         ),
         h('a', { href: '/portal/' + r.portal.token, style: { display: 'block', marginTop: '16px' } },
-          h('button.btn.btn-primary.btn-sm.btn-block', icon('lock', 13), 'Kundenbereich öffnen')),
+          h('button.btn.btn-primary.btn-sm.btn-block', icon('lock', 13), t('openPortal'))),
       ),
     ),
   );

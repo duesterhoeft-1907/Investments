@@ -2,6 +2,7 @@
 /** Gemeinsamer Kopf aller drei Bereiche. */
 use App\Core\Auth;
 use App\Core\Config;
+use App\Core\I18n;
 
 /** @var string $title */
 /** @var string $bodyClass */
@@ -17,15 +18,35 @@ $asset = static function (string $path): string {
     return $path . '?v=' . $stamp;
 };
 $version = '1.0.0';   // nur noch fuer Aeusserlichkeiten
+
+/**
+ * Die Sprachfassungen dieser Seite.
+ *
+ * Ohne hreflang haelt eine Suchmaschine die deutsche und die englische
+ * Fassung fuer zwei Seiten, die sich gegenseitig Konkurrenz machen; mit
+ * hreflang sind es zwei Fassungen derselben Seite, und jede Fassung wird
+ * dem passenden Publikum gezeigt. Die internen Bereiche haben keine
+ * zweite Fassung – dort bleibt es leer.
+ */
+$seite = $route ?? null;
+$sprachen = $seite !== null ? I18n::alternates($seite) : [];
+$basisUrl = rtrim((string) Config::get('base_url', ''), '/');
 ?>
 <!doctype html>
-<html lang="de">
+<html lang="<?= I18n::lang() ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
 <meta name="description" content="<?= htmlspecialchars($description ?? 'Anfrage stellen, Fachberatung erhalten – Investments in Edelmetalle, Sachwerte und Beteiligungen.', ENT_QUOTES) ?>">
 <title><?= htmlspecialchars($title, ENT_QUOTES) ?></title>
+<?php foreach ($sprachen as $sprache => $adresse): ?>
+<link rel="alternate" hreflang="<?= htmlspecialchars($sprache, ENT_QUOTES) ?>" href="<?= htmlspecialchars($basisUrl . $adresse, ENT_QUOTES) ?>">
+<?php endforeach; ?>
+<?php if ($sprachen !== []): ?>
+<link rel="alternate" hreflang="x-default" href="<?= htmlspecialchars($basisUrl . ($sprachen['de'] ?? '/'), ENT_QUOTES) ?>">
+<link rel="canonical" href="<?= htmlspecialchars($basisUrl . I18n::url($seite), ENT_QUOTES) ?>">
+<?php endif; ?>
 <?php /* Die Schriften liegen unter assets/fonts/ und werden selbst
          ausgeliefert – kein Aufruf zu Google, damit auch kein Abfluss der
          Besucher-IP dorthin. Vorgeladen wird nur, was sofort sichtbar ist. */ ?>
@@ -41,6 +62,8 @@ $version = '1.0.0';   // nur noch fuer Aeusserlichkeiten
   // Seite nicht mitschicken.
   window.__CSRF__ = <?= json_encode(Auth::csrfToken()) ?>;
   window.__COMPANY__ = <?= json_encode(Config::get('company'), JSON_UNESCAPED_UNICODE) ?>;
+  // Damit das JavaScript in derselben Sprache spricht wie die Seite.
+  window.__LANG__ = <?= json_encode(I18n::lang()) ?>;
 </script>
 </head>
 <body class="<?= htmlspecialchars($bodyClass ?? '', ENT_QUOTES) ?>">

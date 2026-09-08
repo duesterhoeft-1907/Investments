@@ -1,7 +1,8 @@
 /**
  * Zugriff auf die Schnittstelle. Schickt den CSRF-Token bei allen
  * verändernden Aufrufen mit und reicht die Fehlermeldungen des Servers
- * unverändert durch – die sind bereits auf Deutsch und für Menschen gedacht.
+ * unverändert durch – der Server formuliert sie bereits in der Sprache der
+ * Anfrage und für Menschen.
  */
 let csrfToken = window.__CSRF__ || '';
 
@@ -40,7 +41,9 @@ async function request(method, path, body, isForm = false) {
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, data?.error || `Fehler ${response.status}`, data?.fields);
+    // Ohne Meldung vom Server bleibt nur der Status. Der ist sprachneutral –
+    // besser als ein deutscher Satz auf der englischen Strecke.
+    throw new ApiError(response.status, data?.error || `HTTP ${response.status}`, data?.fields);
   }
   if (data && data.csrf) setCsrf(data.csrf);
   return data;

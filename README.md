@@ -229,7 +229,10 @@ bin/deploy.sh
 
 | Adresse | Was |
 | --- | --- |
-| `/` | Öffentlicher Lead-Wizard |
+| `/` | Startseite |
+| `/anfrage` | Öffentlicher Lead-Wizard |
+| `/impressum` | Pflichtangaben und Risikohinweis |
+| `/en`, `/en/contact`, `/en/imprint` | dieselben Seiten auf Englisch |
 | `/app` | Internes CRM |
 | `/portal` | Kundenbereich |
 
@@ -270,7 +273,7 @@ und wird dort nicht gebraucht.
 drei Punkten des Erstgesprächs, dann der Weg in die Anfrage. Dazu
 `/impressum` mit den Pflichtangaben und dem Risikohinweis, der auch im Fuß
 jeder Seite steht – dort, wo die Renditeversprechen stehen, nicht zwei Klicks
-entfernt.
+entfernt. Beides gibt es auch auf Englisch unter `/en` und `/en/imprint`.
 
 Serverseitig gerendert, nicht per JavaScript aufgebaut: eine Startseite muss
 auch dann stehen, wenn ein Skript hakt, und Suchmaschinen lesen den Text so
@@ -278,9 +281,32 @@ ohne Umweg. Das Skript blendet nur ein, was ins Bild scrollt (`zoom-in`,
 400 ms – die Bewegung der bisherigen Seite), und respektiert
 `prefers-reduced-motion`.
 
+### Zweisprachig: Deutsch und Englisch
+Die öffentliche Strecke gibt es in beiden Sprachen: `/` und `/en`,
+`/anfrage` und `/en/contact`, `/impressum` und `/en/imprint`. Der Umschalter
+oben rechts führt auf **dieselbe** Seite in der anderen Sprache, nicht zurück
+auf die Startseite. Im Kopf stehen `hreflang` und `canonical`, damit eine
+Suchmaschine die beiden Fassungen als eine Seite in zwei Sprachen erkennt und
+nicht als zwei Seiten, die einander Konkurrenz machen.
+
+Die Texte liegen in `app/Lang/de.php` und `app/Lang/en.php`; fehlt ein
+Schlüssel auf Englisch, steht dort der deutsche Satz statt einer leeren
+Zeile. Die Bezeichnungen der Fachgebiete und Gruppen sind Stammdaten und
+stehen in eigenen Spalten (`asset_classes.name_en`, `tagline_en`,
+`description_en`, `teams.name_en`) – leer heißt: den deutschen Namen nehmen.
+
+Was aus der Anfrage folgt, folgt der Sprache mit: die Kontaktzeitfenster
+(„Mornings (9 am – 12 noon)" statt „Vormittags (9 – 12 Uhr)"), die
+Fehlermeldungen, die Reaktionszusage und die Bestätigungs-E-Mail. Am Lead
+bleibt die Sprache gespeichert (`leads.lang`) und steht im CRM als Merkmal
+neben dem Namen – damit niemand auf Deutsch zurückruft, wo Englisch gefragt
+war. Die Mail an das Fachteam bleibt deutsch: die lesen Kolleg:innen.
+
+Intern – CRM, Verwaltung, Chat – bleibt alles deutsch.
+
 ### Lead-Wizard (öffentlich)
 Fünf animierte Schritte, Auswahl per Karte mit sofortigem Weitersprung,
-schrittweise Validierung mit deutschen Fehlermeldungen, Honigtopf gegen Bots,
+schrittweise Validierung in der Sprache der Seite, Honigtopf gegen Bots,
 Drosselung je IP, Doppel-Einwilligung (Kontakt verpflichtend, Marketing
 optional). Am Ende sieht der Interessent seinen Ansprechpartner und seine
 Portal-Zugangsdaten.

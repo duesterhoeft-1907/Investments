@@ -6,6 +6,7 @@ namespace App\Domain;
 use App\Core\Auth;
 use App\Core\Config;
 use App\Core\Db;
+use App\Core\I18n;
 use App\Core\Mailer;
 
 /**
@@ -29,12 +30,18 @@ final class Intake
     public static function submit(array $in): array
     {
         $assetClass = Db::one(
-            'SELECT id, name, slug FROM asset_classes WHERE slug = :slug AND is_active = 1',
+            'SELECT id, name, name_en, slug FROM asset_classes WHERE slug = :slug AND is_active = 1',
             ['slug' => (string) $in['assetClassSlug']]
         );
 
         $assetClassId = $assetClass === null ? null : (int) $assetClass['id'];
+        // Intern bleibt der deutsche Name stehen – Verlauf, Gruppen-Chat und
+        // die Mail an das Fachteam lesen Kolleginnen und Kollegen.
         $assetName    = $assetClass['name'] ?? 'Allgemeine Anfrage';
+        // In der Bestaetigung an den Interessenten steht er in dessen Sprache.
+        $assetNameKunde = I18n::isEn() && (string) ($assetClass['name_en'] ?? '') !== ''
+            ? (string) $assetClass['name_en']
+            : $assetName;
         $teamId       = Leads::teamForAssetClass($assetClassId);
         $slaMinutes   = Leads::slaMinutesForTeam($teamId);
         $ownerId      = Leads::pickOwner($teamId);
@@ -50,13 +57,13 @@ final class Intake
         $leadId = Db::transaction(static function () use ($in, $ref, $assetClassId, $teamId, $ownerId, $slaMinutes, $deadline, $band, $portalToken, $portalPassword): int {
             $id = Db::insert(
                 'INSERT INTO leads (
-                    public_ref, first_name, last_name, email, phone, company, city, postal_code, country,
+                    public_ref, first_name, last_name, email, phone, company, city, postal_code, country, lang,
                     asset_class_id, team_id, owner_id, status, stage_changed_at, source, score,
                     volume_band, volume_value, horizon, experience, goal, contact_pref, contact_window,
                     message, wizard_payload, consent_contact, consent_marketing,
                     sla_due_at, sla_warn_at, portal_token, portal_password_hash, created_at, updated_at
                  ) VALUES (
-                    :ref, :first, :last, :email, :phone, :company, :city, :plz, :country,
+                    :ref, :first, :last, :email, :phone, :company, :city, :plz, :country, :lang,
                     :asset, :team, :owner, \'new\', NOW(), :source, :score,
                     :band, :value, :horizon, :experience, :goal, :pref, :window,
                     :message, :payload, 1, :marketing,
@@ -72,6 +79,9 @@ final class Intake
                     'city'       => $in['city'],
                     'plz'        => $in['postalCode'],
                     'country'    => $in['country'] !== '' ? $in['country'] : 'DE',
+                    // In welcher Sprache die Anfrage gestellt wurde – danach
+                    // richtet sich die Bestaetigung, nicht nach dem Land.
+                    'lang'       => in_array($in['lang'] ?? 'de', ['de', 'en'], true) ? $in['lang'] : 'de',
                     'asset'      => $assetClassId,
                     'team'       => $teamId,
                     'owner'      => $ownerId,
@@ -193,6 +203,7 @@ final class Intake
             'email'         => $in['email'],
             'phone'         => $in['phone'],
             'assetClass'    => $assetName,
+            'assetClassLang'=> $assetNameKunde,
             'volume'        => $band['label'] ?? (string) $in['volumeBand'],
             'horizon'       => $lead['horizonLabel'],
             'contactPref'   => $lead['contactPrefLabel'],
@@ -230,8 +241,25 @@ final class Intake
             meta: ['template' => 'lead_welcome'],
         );
 
+        /*
+         * Was auf der Bestaetigungsseite steht, steht in der Sprache der
+         * Anfrage. Der Datensatz selbst bleibt deutsch beschriftet – im CRM
+         * soll "Sachwerte & Immobilien" stehen, egal woher die Anfrage kam.
+         */
+        $present = Leads::present(Leads::find($leadId) ?? []);
+        if (I18n::isEn()) {
+            $present['assetClass'] = $assetNameKunde;
+            $teamNameEn = (string) (Db::value(
+                'SELECT name_en FROM teams WHERE id = :id',
+                ['id' => $teamId]
+            ) ?? '');
+            if ($teamNameEn !== '') {
+                $present['team'] = $teamNameEn;
+            }
+        }
+
         return [
-            'lead'       => Leads::present(Leads::find($leadId) ?? []),
+            'lead'       => $present,
             'portal'     => ['url' => $portalUrl, 'token' => $portalToken, 'email' => $in['email'], 'password' => $portalPassword],
             'contact'    => $contact,
             'slaMinutes' => $slaMinutes,

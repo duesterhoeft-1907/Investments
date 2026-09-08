@@ -351,6 +351,10 @@ final class Leads
             'city'            => $r['city'],
             'postalCode'      => $r['postal_code'],
             'country'         => $r['country'],
+            // Die Sprache der Anfragestrecke. Sie steht im CRM als Merkmal am
+            // Lead, damit niemand auf Deutsch zurueckruft, wo Englisch
+            // gefragt war.
+            'lang'            => (string) ($r['lang'] ?? 'de'),
             'assetClassId'    => $r['asset_class_id'] === null ? null : (int) $r['asset_class_id'],
             'assetClass'      => $r['asset_class_name'] ?? null,
             'assetClassSlug'  => $r['asset_class_slug'] ?? null,

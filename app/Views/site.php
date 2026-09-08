@@ -6,14 +6,19 @@
  * Lösung, dann die Anfrage. Serverseitig gerendert und nicht per JavaScript
  * aufgebaut, weil eine Startseite auch dann stehen muss, wenn ein Skript
  * hakt – und weil Suchmaschinen den Text so ohne Umweg lesen.
+ *
+ * Die Sätze selbst stehen in app/Lang/{de,en}.php; hier steht nur, in
+ * welcher Reihenfolge sie erscheinen.
  */
 use App\Core\Config;
+use App\Core\I18n;
 use App\Domain\Hours;
 
 $company = Config::get('company');
-$title = 'Vermögensschutz & globale Investments | ' . ($company['name'] ?? '21 Capital Invest');
-$description = 'Bargeldobergrenzen und Inflation fressen dein Geld auf. Erfahre in einem '
-    . 'diskreten Erstgespräch, wie du dein Kapital legal außerhalb der EU-Reichweite parkst.';
+$t = static fn (string $key, string|int ...$args): string => I18n::t($key, ...$args);
+
+$title = $t('site.title') . ' | ' . ($company['name'] ?? '21 Capital Invest');
+$description = $t('site.description');
 $bodyClass = 'page-site';
 $extraCss = 'site.css';
 
@@ -51,7 +56,7 @@ $strukturiert = [
             '@type'       => 'FinancialService',
             '@id'         => $basis . '/#organisation',
             'name'        => $firmenname,
-            'url'         => $basis . '/',
+            'url'         => $basis . I18n::url('home'),
             'logo'        => $basis . '/assets/brand/logo.png',
             'description' => $description,
             'telephone'   => (string) ($company['phone'] ?? ''),
@@ -63,34 +68,30 @@ $strukturiert = [
                 'addressLocality' => 'Berlin',
                 'addressCountry'  => 'DE',
             ],
-            'areaServed' => ['@type' => 'Country', 'name' => 'Deutschland'],
-            'knowsAbout' => [
-                'Vermögensschutz', 'Edelmetalle', 'Sachwerte',
-                'Private Equity', 'Diversifikation außerhalb der EU',
-            ],
+            'areaServed' => ['@type' => 'Country', 'name' => I18n::isEn() ? 'Germany' : 'Deutschland'],
+            'knowsAbout' => I18n::list('site.schema.knows'),
         ],
         [
             '@type'    => 'WebSite',
             '@id'      => $basis . '/#website',
-            'url'      => $basis . '/',
+            'url'      => $basis . I18n::url('home'),
             'name'     => $firmenname,
             'publisher' => ['@id' => $basis . '/#organisation'],
-            'inLanguage' => 'de-DE',
+            'inLanguage' => I18n::locale(),
         ],
         [
             // Das Versprechen, um das sich die ganze Anwendung dreht –
             // maschinenlesbar, nicht nur als Werbezeile.
             '@type'       => 'Service',
-            'name'        => 'Diskretes Erstgespräch zum Vermögensschutz',
+            'name'        => $t('site.schema.service'),
             'provider'    => ['@id' => $basis . '/#organisation'],
-            'description' => 'Kostenloses und vertrauliches Erstgespräch. Die Anfrage geht direkt '
-                . 'an das zuständige Fachteam; die Reaktionszeit wird gemessen.',
-            'areaServed'  => ['@type' => 'Country', 'name' => 'Deutschland'],
+            'description' => $t('site.schema.description'),
+            'areaServed'  => ['@type' => 'Country', 'name' => I18n::isEn() ? 'Germany' : 'Deutschland'],
             'offers'      => [
                 '@type'         => 'Offer',
                 'price'         => '0',
                 'priceCurrency' => 'EUR',
-                'url'           => $basis . '/anfrage',
+                'url'           => $basis . I18n::url('contact'),
             ],
         ],
     ],
@@ -99,13 +100,14 @@ $strukturiert = [
 <script type="application/ld+json"><?= json_encode($strukturiert, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 
 <header class="s-top">
-  <a class="s-logo" href="/" aria-label="<?= htmlspecialchars((string) ($company['name'] ?? ''), ENT_QUOTES) ?>">
+  <a class="s-logo" href="<?= I18n::url('home') ?>" aria-label="<?= htmlspecialchars((string) ($company['name'] ?? ''), ENT_QUOTES) ?>">
     <img src="/assets/brand/logo.png" alt="<?= htmlspecialchars((string) ($company['name'] ?? ''), ENT_QUOTES) ?>" width="132" height="44">
   </a>
   <nav class="s-nav">
-    <a href="#problem">Das Problem</a>
-    <a href="#loesung">Die Lösung</a>
-    <a href="/anfrage" class="s-btn s-btn-sm">Kontaktiere uns</a>
+    <a href="#problem"><?= $t('nav.problem') ?></a>
+    <a href="#loesung"><?= $t('nav.solution') ?></a>
+    <?php require __DIR__ . '/partials/langswitch.php'; ?>
+    <a href="<?= I18n::url('contact') ?>" class="s-btn s-btn-sm"><?= $t('nav.contact') ?></a>
   </nav>
 </header>
 
@@ -119,17 +121,14 @@ $strukturiert = [
     <div class="s-hero-bild" aria-hidden="true"></div>
     <div class="s-hero-glow" aria-hidden="true"></div>
     <div class="s-wrap">
-      <p class="s-kicker reveal">EU-Geld-Diktat steht bevor</p>
-      <h1 class="reveal">Vermögensschutz &amp;<br><span class="s-accent">globale Investments</span></h1>
-      <p class="s-lead reveal">
-        Bargeldobergrenzen und Inflation fressen dein Geld auf. Erfahre in einem diskreten
-        Erstgespräch, wie du dein Kapital legal außerhalb der EU-Reichweite parkst.
-      </p>
+      <p class="s-kicker reveal"><?= $t('site.hero.kicker') ?></p>
+      <h1 class="reveal"><?= $t('site.hero.h1') ?><br><span class="s-accent"><?= $t('site.hero.h1b') ?></span></h1>
+      <p class="s-lead reveal"><?= $t('site.hero.lead') ?></p>
       <div class="s-cta reveal">
-        <a href="/anfrage" class="s-btn">Kontaktiere uns</a>
-        <a href="#problem" class="s-btn s-btn-ghost">Mehr Informationen</a>
+        <a href="<?= I18n::url('contact') ?>" class="s-btn"><?= $t('site.hero.cta') ?></a>
+        <a href="#problem" class="s-btn s-btn-ghost"><?= $t('site.hero.more') ?></a>
       </div>
-      <p class="s-promise reveal">Rückmeldung <?= htmlspecialchars($promise, ENT_QUOTES) ?> – von einem Menschen, nicht aus einem Postfach.</p>
+      <p class="s-promise reveal"><?= htmlspecialchars($t('site.hero.promise', $promise), ENT_QUOTES) ?></p>
     </div>
   </section>
 
@@ -137,34 +136,26 @@ $strukturiert = [
   <section class="s-section" id="problem">
     <div class="s-wrap s-split">
       <div class="reveal">
-        <p class="s-eyebrow">Das Problem</p>
-        <h2>Enteignung &amp; Nullzinsfalle</h2>
-        <p class="s-claim">Sie nehmen dir dein Bargeld – und die Inflation vernichtet den Rest.</p>
-        <p>Die Brüsseler Hinterzimmer haben das Urteil über dein Erspartes längst gefällt:</p>
+        <p class="s-eyebrow"><?= $t('site.problem.eyebrow') ?></p>
+        <h2><?= $t('site.problem.h2') ?></h2>
+        <p class="s-claim"><?= $t('site.problem.claim') ?></p>
+        <p><?= $t('site.problem.intro') ?></p>
         <ul class="s-list">
-          <li>Der digitale Euro kommt. Jede Transaktion wird gläsern, dein Geld auf Knopfdruck
-              programmierbar und im Ernstfall gesperrt.</li>
-          <li>Traditionelle Banken bieten dir mickrige Zinsen, die nicht einmal die reale Inflation
-              ausgleichen. Dein Geld auf dem Sparbuch stirbt einen langsamen Tod.</li>
-          <li>Während der Staat über Vermögensabgaben nachdenkt, wirst du durch die Teuerungsrate
-              schleichend enteignet.</li>
+          <?php foreach (I18n::list('site.problem.items') as $punkt): ?>
+            <li><?= htmlspecialchars((string) $punkt, ENT_QUOTES) ?></li>
+          <?php endforeach; ?>
         </ul>
         <?php if ($bild('thema-euro.webp')): ?>
         <div class="s-thumbs">
-          <?php foreach ([
-              'thema-euro.webp'      => 'Der digitale Euro',
-              'thema-inflation.webp' => 'Inflation',
-              'thema-steuern.webp'   => 'Vermögensabgaben',
-          ] as $datei => $titel): ?>
-            <?php if ($bild($datei)): ?>
-              <figure><img src="<?= $bild($datei) ?>" alt="" loading="lazy"><figcaption><?= $titel ?></figcaption></figure>
+          <?php foreach (I18n::list('site.problem.thumbs') as $datei => $titel): ?>
+            <?php if ($bild((string) $datei)): ?>
+              <figure><img src="<?= $bild((string) $datei) ?>" alt="" loading="lazy"><figcaption><?= htmlspecialchars((string) $titel, ENT_QUOTES) ?></figcaption></figure>
             <?php endif; ?>
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
         <p class="s-result">
-          <strong>Das Ergebnis:</strong> Wer sein Geld im klassischen EU-Banksystem liegen lässt,
-          verliert doppelt – an Kontrolle und an Kaufkraft.
+          <strong><?= $t('site.problem.result_label') ?></strong> <?= $t('site.problem.result') ?>
         </p>
       </div>
       <div class="s-figure reveal">
@@ -176,13 +167,9 @@ $strukturiert = [
   <!-- ── Weckruf ── -->
   <section class="s-band">
     <div class="s-wrap reveal">
-      <h2>Hör auf, Opfer der EU-Politik zu sein.<br><span class="s-accent">Werde zum Gewinner der Krise!</span></h2>
-      <p>
-        Die Uhr tickt. Während die breite Masse blind in die finanzielle Überwachung steuert,
-        sichern sich clevere Anleger jetzt die besten Plätze und die höchsten Renditen.
-        Nutze deine Chance auf ein echtes Insider-Gespräch, solange die Schlupflöcher noch offen sind.
-      </p>
-      <a href="/anfrage" class="s-btn">Erstgespräch anfragen</a>
+      <h2><?= $t('site.band.h2') ?><br><span class="s-accent"><?= $t('site.band.h2b') ?></span></h2>
+      <p><?= $t('site.band.text') ?></p>
+      <a href="<?= I18n::url('contact') ?>" class="s-btn"><?= $t('site.band.cta') ?></a>
     </div>
   </section>
 
@@ -190,30 +177,22 @@ $strukturiert = [
   <section class="s-section" id="loesung">
     <div class="s-wrap">
       <div class="s-head reveal">
-        <p class="s-eyebrow">Die Lösung</p>
-        <h2>Vermögensschutz <span class="s-accent">plus maximalen Profit</span></h2>
-        <p class="s-claim">Die Eliten bringen ihr Geld nicht nur in Sicherheit – sie lassen es im Ausland massiv wachsen!</p>
-        <p class="s-lead-2">
-          Es gibt legale Finanz-Oasen und krisenfeste Sachwerte außerhalb der EU-Regulierungswut,
-          die normalen Sparern völlig unbekannt sind. Diese Strategien bieten dir das Beste aus
-          zwei Welten: absoluten Schutz vor staatlichem Zugriff und überdurchschnittlich hohe,
-          steueroptimierte Renditen.
-        </p>
+        <p class="s-eyebrow"><?= $t('site.solution.eyebrow') ?></p>
+        <h2><?= $t('site.solution.h2') ?> <span class="s-accent"><?= $t('site.solution.h2b') ?></span></h2>
+        <p class="s-claim"><?= $t('site.solution.claim') ?></p>
+        <p class="s-lead-2"><?= $t('site.solution.lead') ?></p>
       </div>
 
-      <p class="s-sub reveal">In deinem kostenlosen und absolut vertraulichen Erstgespräch zeigen wir dir:</p>
+      <p class="s-sub reveal"><?= $t('site.solution.sub') ?></p>
       <div class="s-cards">
-        <?php foreach ([
-            ['01', 'thema-schutz.webp',  'Welche Sachwerte dein Vermögen unsichtbar für die EU machen und gleichzeitig historische Spitzen-Renditen abwerfen.'],
-            ['02', 'thema-wege.webp',    'Wie du legale Schlupflöcher nutzt, um von den Wachstums-Märkten außerhalb Europas zu profitieren – weit weg von der Euro-Krise.'],
-            ['03', 'thema-rendite.webp', 'Wie du dein Kapital innerhalb von 48 Stunden so umschichtest, dass es geschützt ist und sofort für dich arbeitet.'],
-        ] as [$nummer, $datei, $text]): ?>
+        <?php foreach (array_values(I18n::list('site.solution.cards')) as $i => $text): ?>
+          <?php $datei = ['thema-schutz.webp', 'thema-wege.webp', 'thema-rendite.webp'][$i] ?? ''; ?>
           <article class="s-card reveal">
-            <?php if ($bild($datei)): ?>
+            <?php if ($datei !== '' && $bild($datei)): ?>
               <img class="s-card-bild" src="<?= $bild($datei) ?>" alt="" loading="lazy">
             <?php endif; ?>
-            <span class="s-num"><?= $nummer ?></span>
-            <p><?= $text ?></p>
+            <span class="s-num"><?= str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT) ?></span>
+            <p><?= htmlspecialchars((string) $text, ENT_QUOTES) ?></p>
           </article>
         <?php endforeach; ?>
       </div>
@@ -223,13 +202,10 @@ $strukturiert = [
   <!-- ── Abschluss ── -->
   <section class="s-final">
     <div class="s-wrap reveal">
-      <h2>Vier Fragen. Dann meldet sich ein Mensch.</h2>
-      <p>
-        Ihre Anfrage geht direkt an das zuständige Fachteam – nicht in ein anonymes Postfach.
-        Rückmeldung <?= htmlspecialchars($promise, ENT_QUOTES) ?>.
-      </p>
-      <a href="/anfrage" class="s-btn s-btn-lg">Jetzt Anfrage stellen</a>
-      <p class="s-fineprint">Keine Weitergabe an Dritte · Persönlicher Rückruf statt Warteschleife · Eigener Kundenbereich inklusive</p>
+      <h2><?= $t('site.final.h2') ?></h2>
+      <p><?= htmlspecialchars($t('site.final.text', $promise), ENT_QUOTES) ?></p>
+      <a href="<?= I18n::url('contact') ?>" class="s-btn s-btn-lg"><?= $t('site.final.cta') ?></a>
+      <p class="s-fineprint"><?= $t('site.final.fineprint') ?></p>
     </div>
   </section>
 </main>

@@ -42,7 +42,10 @@ function hasIndex(string $table, string $index): bool
  * Die Schritte in der Reihenfolge ihrer Entstehung.
  * check() sagt, ob noch etwas zu tun ist; sql() macht es.
  *
- * @var list<array{name:string, check:callable():bool, sql:list<string>}> $steps
+ * sql darf auch eine Funktion sein, die die Anweisungen erst beim Anwenden
+ * baut – dann fragt der Schritt die Datenbank nicht schon beim Einlesen.
+ *
+ * @var list<array{name:string, check:callable():bool, sql:list<string>|callable():list<string>}> $steps
  */
 $steps = [
     [
@@ -95,6 +98,91 @@ $steps = [
             "ALTER TABLE users ALTER COLUMN accent SET DEFAULT '#21B4A6'",
         ],
     ],
+    [
+        // Englische Fassung der Fachgebiete und Gruppen.
+        //
+        // Die Bezeichnungen stehen in der Datenbank und nicht im Quelltext –
+        // sie sind gepflegte Stammdaten. Ohne eigene Spalten stuende auf der
+        // englischen Anfragestrecke mitten in englischen Saetzen "Sachwerte
+        // & Immobilien". Leer heisst: nimm den deutschen Text.
+        'name'  => 'Englische Bezeichnungen für Fachgebiete und Gruppen',
+        'check' => static fn (): bool => !hasColumn('asset_classes', 'name_en'),
+        'sql'   => [
+            "ALTER TABLE asset_classes
+               ADD COLUMN name_en        VARCHAR(120)  NOT NULL DEFAULT '' AFTER name,
+               ADD COLUMN tagline_en     VARCHAR(200)  NOT NULL DEFAULT '' AFTER tagline,
+               ADD COLUMN description_en VARCHAR(400)  NOT NULL DEFAULT '' AFTER description",
+            "ALTER TABLE teams
+               ADD COLUMN name_en VARCHAR(120) NOT NULL DEFAULT '' AFTER name",
+        ],
+    ],
+    [
+        // Die Uebersetzungen der ausgelieferten Stammdaten.
+        //
+        // Nur dort, wo noch nichts steht: wer eine Bezeichnung im Backend
+        // selbst angepasst hat, behaelt sie.
+        'name'  => 'Übersetzungen der ausgelieferten Fachgebiete eintragen',
+        // Nur die ausgelieferten Fachgebiete zaehlen. Ohne diese Einschraenkung
+        // bliebe der Schritt fuer immer offen, sobald jemand ein eigenes
+        // Fachgebiet ohne Uebersetzung anlegt – und meldete bei jedem Lauf
+        // eine Aenderung, die gar keine ist.
+        'check' => static fn (): bool => hasColumn('asset_classes', 'name_en')
+            && (int) Db::value(
+                "SELECT COUNT(*) FROM asset_classes
+                  WHERE name_en = '' AND slug IN ('gold','silber','platin-palladium','immobilien',
+                        'diamanten','sammlerwerte','private-equity','fonds-anleihen','digital-assets')"
+            ) > 0,
+        'sql'   => static function (): array {
+            $fachgebiete = [
+                'gold'             => ['Gold', 'The classic store of value', 'Bars and coins, physically delivered or held in a bonded warehouse.'],
+                'silber'           => ['Silver', 'An industrial metal with leverage', 'Silver as an admixture with high volatility and industrial demand.'],
+                'platin-palladium' => ['Platinum & palladium', 'Scarce industrial metals', 'Narrow markets, strong price dynamics, a strategic admixture.'],
+                'immobilien'       => ['Real estate', 'Substance with a running yield', 'Residential and commercial property, directly or through holdings.'],
+                'diamanten'        => ['Diamonds & coloured gemstones', 'Value in the smallest of spaces', 'Certified investment stones that trade internationally.'],
+                'sammlerwerte'     => ['Collectibles & art', 'Passion with a return', 'Art, classic cars and collector coins as a portfolio admixture.'],
+                'private-equity'   => ['Private equity', 'Investing entrepreneurially', 'Direct holdings and funds away from the stock exchange.'],
+                'fonds-anleihen'   => ['Funds & bonds', 'Broadly spread and plannable', 'Curated fund and bond portfolios by risk profile.'],
+                'digital-assets'   => ['Digital assets', 'Regulated entry into the new asset class', 'Custodied crypto investments through regulated partners.'],
+            ];
+            $gruppen = [
+                'edelmetalle'  => 'Precious Metals',
+                'sachwerte'    => 'Tangible Assets & Real Estate',
+                'kapitalmarkt' => 'Capital Markets & Holdings',
+            ];
+
+            $sql = [];
+            foreach ($fachgebiete as $slug => [$name, $tagline, $description]) {
+                $sql[] = sprintf(
+                    "UPDATE asset_classes SET name_en = %s, tagline_en = %s, description_en = %s
+                      WHERE slug = %s AND name_en = ''",
+                    Db::pdo()->quote($name),
+                    Db::pdo()->quote($tagline),
+                    Db::pdo()->quote($description),
+                    Db::pdo()->quote($slug)
+                );
+            }
+            foreach ($gruppen as $slug => $name) {
+                $sql[] = sprintf(
+                    "UPDATE teams SET name_en = %s WHERE slug = %s AND name_en = ''",
+                    Db::pdo()->quote($name),
+                    Db::pdo()->quote($slug)
+                );
+            }
+            return $sql;
+        },
+    ],
+    [
+        // Die Sprache, in der die Anfrage gestellt wurde.
+        //
+        // Ohne sie bekaeme jemand, der die englische Strecke ausgefuellt
+        // hat, eine deutsche Bestaetigungsmail – und im CRM wuesste
+        // niemand, in welcher Sprache zurueckzurufen ist.
+        'name'  => 'Sprache am Lead',
+        'check' => static fn (): bool => !hasColumn('leads', 'lang'),
+        'sql'   => [
+            "ALTER TABLE leads ADD COLUMN lang CHAR(2) NOT NULL DEFAULT 'de' AFTER country",
+        ],
+    ],
 ];
 
 $done = 0;
@@ -107,7 +195,8 @@ foreach ($steps as $step) {
         echo "[migrate] offen: {$step['name']}\n";
         continue;
     }
-    foreach ($step['sql'] as $sql) {
+    $anweisungen = is_callable($step['sql']) ? ($step['sql'])() : $step['sql'];
+    foreach ($anweisungen as $sql) {
         Db::pdo()->exec($sql);
     }
     echo "[migrate] angewendet: {$step['name']}\n";

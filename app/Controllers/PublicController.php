@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Config;
 use App\Core\Db;
 use App\Core\Http;
+use App\Core\I18n;
 use App\Core\Validator;
 use App\Domain\Hours;
 use App\Domain\Intake;
@@ -16,9 +17,25 @@ final class PublicController
 {
     public static function wizardConfig(): void
     {
+        self::useLang();
+
+        /*
+         * Die englischen Bezeichnungen stehen in eigenen Spalten. Ist eine
+         * leer, greift der deutsche Text – ein neu angelegtes Fachgebiet
+         * verschwindet so nicht aus der englischen Strecke, es steht dort
+         * nur noch deutsch, bis jemand die Übersetzung nachträgt.
+         */
+        $spalte = static fn (string $feld): string => I18n::isEn()
+            ? "COALESCE(NULLIF(ac.{$feld}_en, ''), ac.{$feld}) AS {$feld}"
+            : "ac.{$feld}";
+
         $assetClasses = Db::all(
-            'SELECT ac.id, ac.slug, ac.name, ac.tagline, ac.description, ac.icon,
-                    t.name AS teamName, t.color AS teamColor, t.sla_minutes AS slaMinutes
+            'SELECT ac.id, ac.slug, ' . $spalte('name') . ', ' . $spalte('tagline') . ', '
+            . $spalte('description') . ', ac.icon,'
+            . (I18n::isEn()
+                ? " COALESCE(NULLIF(t.name_en, ''), t.name) AS teamName,"
+                : ' t.name AS teamName,')
+            . ' t.color AS teamColor, t.sla_minutes AS slaMinutes
                FROM asset_classes ac
                LEFT JOIN teams t ON t.id = ac.team_id
               WHERE ac.is_active = 1
@@ -32,15 +49,16 @@ final class PublicController
         unset($row);
 
         Http::json([
+            'lang'             => I18n::lang(),
             'company'          => Config::get('company'),
             'assetClasses'     => $assetClasses,
-            'volumeBands'      => self::options(array_map(
+            'volumeBands'      => self::options(I18n::labels('leads.volume', array_map(
                 static fn (array $b): string => $b['label'],
                 Leads::VOLUME_BANDS
-            )),
-            'horizons'         => self::options(Leads::HORIZONS),
-            'experience'       => self::options(Leads::EXPERIENCE),
-            'contactPrefs'     => self::options(Leads::CONTACT_PREFS),
+            ))),
+            'horizons'         => self::options(I18n::labels('leads.horizon', Leads::HORIZONS)),
+            'experience'       => self::options(I18n::labels('leads.experience', Leads::EXPERIENCE)),
+            'contactPrefs'     => self::options(I18n::labels('leads.contactPref', Leads::CONTACT_PREFS)),
             // Aus den Geschäftszeiten abgeleitet – siehe Hours::contactWindows().
             'contactWindows'   => self::options(Hours::contactWindows()),
             'defaultSlaMinutes'=> (int) Config::get('sla_minutes'),
@@ -50,6 +68,19 @@ final class PublicController
                 'nextOpening' => Hours::nextOpening()?->format('c'),
             ],
         ]);
+    }
+
+    /**
+     * Die Sprache, in der geantwortet wird.
+     *
+     * Sie steht nicht im Pfad, weil die Schnittstelle unter /api liegt und
+     * nicht unter /en – der Wizard schickt sie deshalb ausdrücklich mit.
+     * Alles, was nicht auf der Liste steht, ist Deutsch.
+     */
+    private static function useLang(): void
+    {
+        $lang = (string) (Http::query('lang') ?? Http::body()['lang'] ?? 'de');
+        I18n::use($lang);
     }
 
     /** @param array<string,string> $map */
@@ -64,6 +95,7 @@ final class PublicController
 
     public static function submit(): void
     {
+        self::useLang();
         $body = Http::body();
 
         // Honigtopf: für Menschen unsichtbar, Bots füllen ihn aus. Wir
@@ -74,39 +106,45 @@ final class PublicController
 
         self::enforceRateLimit();
 
+        $f = static fn (string $name): string => I18n::t('validator.fields.' . $name);
+
         $v = new Validator($body);
-        $v->text('firstName', 'Vornamen', 2, 80)
-          ->text('lastName', 'Nachnamen', 2, 80)
+        $v->text('firstName', $f('firstName'), 2, 80)
+          ->text('lastName', $f('lastName'), 2, 80)
           ->email('email')
-          ->text('phone', 'Telefonnummer', 0, 60, false)
-          ->text('company', 'Firma', 0, 160, false)
-          ->text('city', 'Ort', 0, 120, false)
-          ->text('postalCode', 'Postleitzahl', 0, 20, false)
-          ->text('country', 'Land', 0, 4, false)
-          ->choice('assetClassSlug', self::assetSlugs(), 'ein Fachgebiet')
-          ->choice('volumeBand', array_keys(Leads::VOLUME_BANDS), 'ein Anlagevolumen', false)
-          ->choice('horizon', array_keys(Leads::HORIZONS), 'einen Anlagehorizont', false)
-          ->choice('experience', array_keys(Leads::EXPERIENCE), 'deine Erfahrung', false)
-          ->choice('contactPref', array_keys(Leads::CONTACT_PREFS), 'einen Kontaktweg', false, 'phone')
-          ->choice('contactWindow', array_keys(Leads::CONTACT_WINDOWS), 'eine Uhrzeit', false, 'flexibel')
-          ->text('goal', 'dein Ziel', 0, 500, false)
-          ->text('message', 'deine Nachricht', 0, 4000, false)
-          ->accepted('consentContact', 'Ohne Einwilligung dürfen wir dich nicht kontaktieren.')
+          ->text('phone', $f('phone'), 0, 60, false)
+          ->text('company', $f('company'), 0, 160, false)
+          ->text('city', $f('city'), 0, 120, false)
+          ->text('postalCode', $f('postalCode'), 0, 20, false)
+          ->text('country', $f('country'), 0, 4, false)
+          ->choice('assetClassSlug', self::assetSlugs(), $f('assetClass'))
+          ->choice('volumeBand', array_keys(Leads::VOLUME_BANDS), $f('volumeBand'), false)
+          ->choice('horizon', array_keys(Leads::HORIZONS), $f('horizon'), false)
+          ->choice('experience', array_keys(Leads::EXPERIENCE), $f('experience'), false)
+          ->choice('contactPref', array_keys(Leads::CONTACT_PREFS), $f('contactPref'), false, 'phone')
+          ->choice('contactWindow', array_keys(Leads::CONTACT_WINDOWS), $f('contactWindow'), false, 'flexibel')
+          ->text('goal', $f('goal'), 0, 500, false)
+          ->text('message', $f('message'), 0, 4000, false)
+          ->accepted('consentContact', I18n::t('intake.consent'))
           ->bool('consentMarketing');
 
         $clean = $v->orFail();
         $clean['source'] = 'wizard';
+        // Die Sprache bleibt am Lead haengen: sie entscheidet ueber die
+        // Bestaetigungsmail und darueber, wie zurueckgerufen wird.
+        $clean['lang'] = I18n::lang();
 
         // Ohne Telefonnummer kein Rückruf – das ist der ganze Sinn der Strecke.
         if ($clean['contactPref'] !== 'email' && $clean['phone'] === '') {
-            Http::error('Für den Rückruf brauchen wir eine Telefonnummer.', 400, [
-                'fields' => ['phone' => 'Für den Rückruf brauchen wir eine Telefonnummer.'],
+            Http::error(I18n::t('intake.phone'), 400, [
+                'fields' => ['phone' => I18n::t('intake.phone')],
             ]);
         }
 
         $result = Intake::submit($clean);
 
         Http::json([
+            'lang'       => I18n::lang(),
             'ref'        => $result['lead']['ref'],
             'slaMinutes' => $result['slaMinutes'],
             'slaDueAt'   => $result['lead']['slaDueAt'] ?? null,
@@ -149,7 +187,7 @@ final class PublicController
 
         $hits = (int) (Db::value('SELECT hits FROM rate_limits WHERE bucket = :b', ['b' => $bucket]) ?? 0);
         if ($hits > $limit) {
-            Http::error('Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut oder ruf uns direkt an.', 429);
+            Http::error(I18n::t('intake.ratelimit'), 429);
         }
 
         // Gelegentlich aufräumen, damit die Tabelle nicht wächst.

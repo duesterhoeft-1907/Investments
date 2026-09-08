@@ -58,6 +58,11 @@ export function render(view, { params, session, navigate }) {
         h('div.row', { style: { gap: '12px', flexWrap: 'wrap' } },
           h('h1', lead.name),
           statusBadge(lead.status, lead.statusLabel),
+          // Nur wenn es nicht Deutsch ist: eine Marke, die immer dasteht,
+          // liest nach einer Woche niemand mehr.
+          lead.lang && lead.lang !== 'de'
+            ? h('span.badge', { title: 'Anfrage kam über die englische Strecke' }, lead.lang.toUpperCase())
+            : null,
           h('span.mono.faint', { style: { fontSize: '12px' } }, lead.ref)),
         h('div.lead-contacts',
           h('a', { href: 'mailto:' + lead.email }, icon('mail', 14), lead.email),

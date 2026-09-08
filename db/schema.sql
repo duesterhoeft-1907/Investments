@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS teams (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   slug         VARCHAR(60)  NOT NULL,
   name         VARCHAR(120) NOT NULL,
+  -- Leer heisst: englische Strecke zeigt den deutschen Namen.
+  name_en      VARCHAR(120) NOT NULL DEFAULT '',
   description  VARCHAR(400) NOT NULL DEFAULT '',
   color        VARCHAR(9)   NOT NULL DEFAULT '#21B4A6',
   sla_minutes  SMALLINT UNSIGNED NOT NULL DEFAULT 15,
@@ -59,8 +61,11 @@ CREATE TABLE IF NOT EXISTS asset_classes (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   slug         VARCHAR(60)  NOT NULL,
   name         VARCHAR(120) NOT NULL,
+  name_en      VARCHAR(120) NOT NULL DEFAULT '',
   tagline      VARCHAR(190) NOT NULL DEFAULT '',
+  tagline_en   VARCHAR(200) NOT NULL DEFAULT '',
   description  VARCHAR(500) NOT NULL DEFAULT '',
+  description_en VARCHAR(400) NOT NULL DEFAULT '',
   icon         VARCHAR(40)  NOT NULL DEFAULT 'coins',
   team_id      INT UNSIGNED NULL,
   sort_order   SMALLINT     NOT NULL DEFAULT 0,
@@ -84,6 +89,8 @@ CREATE TABLE IF NOT EXISTS leads (
   city              VARCHAR(120) NOT NULL DEFAULT '',
   postal_code       VARCHAR(20)  NOT NULL DEFAULT '',
   country           VARCHAR(4)   NOT NULL DEFAULT 'DE',
+  -- Die Sprache der Anfragestrecke: sie bestimmt Bestaetigungsmail und Portal.
+  lang              CHAR(2)      NOT NULL DEFAULT 'de',
 
   asset_class_id    INT UNSIGNED NULL,
   team_id           INT UNSIGNED NULL,

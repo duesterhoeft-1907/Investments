@@ -67,41 +67,59 @@ if ((int) Db::value('SELECT COUNT(*) FROM users') > 0) {
 
 // ─────────────────────────── Stammdaten ───────────────────────────
 
+// Slug, Name, englischer Name, Beschreibung, Farbe, Reaktionszeit
 $teams = [
-    ['edelmetalle', 'Edelmetalle', 'Gold, Silber, Platin und Palladium – physisch, verwahrt oder besichert.', '#21B4A6', 10],
-    ['sachwerte', 'Sachwerte & Immobilien', 'Immobilien, Diamanten, Sammler- und Kunstwerte.', '#7F9FB8', 20],
-    ['kapitalmarkt', 'Kapitalmarkt & Beteiligungen', 'Private Equity, Fonds, Anleihen und digitale Assets.', '#9B8BC4', 15],
+    ['edelmetalle', 'Edelmetalle', 'Precious Metals', 'Gold, Silber, Platin und Palladium – physisch, verwahrt oder besichert.', '#21B4A6', 10],
+    ['sachwerte', 'Sachwerte & Immobilien', 'Tangible Assets & Real Estate', 'Immobilien, Diamanten, Sammler- und Kunstwerte.', '#7F9FB8', 20],
+    ['kapitalmarkt', 'Kapitalmarkt & Beteiligungen', 'Capital Markets & Holdings', 'Private Equity, Fonds, Anleihen und digitale Assets.', '#9B8BC4', 15],
 ];
 
 $teamIds = [];
-foreach ($teams as $i => [$slug, $name, $description, $color, $sla]) {
+foreach ($teams as $i => [$slug, $name, $nameEn, $description, $color, $sla]) {
     $teamIds[$slug] = Db::insert(
-        'INSERT INTO teams (slug, name, description, color, sla_minutes, sort_order)
-         VALUES (:slug, :name, :description, :color, :sla, :sort)',
-        ['slug' => $slug, 'name' => $name, 'description' => $description, 'color' => $color, 'sla' => $sla, 'sort' => $i]
+        'INSERT INTO teams (slug, name, name_en, description, color, sla_minutes, sort_order)
+         VALUES (:slug, :name, :name_en, :description, :color, :sla, :sort)',
+        ['slug' => $slug, 'name' => $name, 'name_en' => $nameEn, 'description' => $description,
+         'color' => $color, 'sla' => $sla, 'sort' => $i]
     );
 }
 
+// Slug, Name, Gruppe, Symbol, Zeile, Beschreibung – und dieselben drei Texte
+// auf Englisch fuer /en/contact. Leer bliebe zulaessig; dann stuende dort der
+// deutsche Text.
 $assetClasses = [
-    ['gold', 'Gold', 'edelmetalle', 'coins', 'Der Klassiker der Wertsicherung', 'Barren und Münzen, physisch geliefert oder im Zollfreilager verwahrt.'],
-    ['silber', 'Silber', 'edelmetalle', 'layers', 'Industriemetall mit Hebel', 'Silber als Beimischung mit hoher Volatilität und industrieller Nachfrage.'],
-    ['platin-palladium', 'Platin & Palladium', 'edelmetalle', 'gem', 'Knappe Industriemetalle', 'Enge Märkte, hohe Preisdynamik, strategische Beimischung.'],
-    ['immobilien', 'Immobilien', 'sachwerte', 'building', 'Substanz mit laufendem Ertrag', 'Wohn- und Gewerbeobjekte, direkt oder über Beteiligungen.'],
-    ['diamanten', 'Diamanten & Farbedelsteine', 'sachwerte', 'diamond', 'Wert auf kleinstem Raum', 'Zertifizierte Investmentsteine mit internationaler Handelbarkeit.'],
-    ['sammlerwerte', 'Sammler- & Kunstwerte', 'sachwerte', 'palette', 'Leidenschaft mit Rendite', 'Kunst, Oldtimer und Sammlermünzen als Portfoliobeimischung.'],
-    ['private-equity', 'Private Equity', 'kapitalmarkt', 'trending', 'Unternehmerisch investieren', 'Direktbeteiligungen und Fonds abseits der Börse.'],
-    ['fonds-anleihen', 'Fonds & Anleihen', 'kapitalmarkt', 'chart', 'Breit gestreut und planbar', 'Kuratierte Fonds- und Anleiheportfolios nach Risikoprofil.'],
-    ['digital-assets', 'Digitale Assets', 'kapitalmarkt', 'bitcoin', 'Reguliert in die neue Anlageklasse', 'Verwahrte Krypto-Investments über regulierte Partner.'],
+    ['gold', 'Gold', 'edelmetalle', 'coins', 'Der Klassiker der Wertsicherung', 'Barren und Münzen, physisch geliefert oder im Zollfreilager verwahrt.',
+        'Gold', 'The classic store of value', 'Bars and coins, physically delivered or held in a bonded warehouse.'],
+    ['silber', 'Silber', 'edelmetalle', 'layers', 'Industriemetall mit Hebel', 'Silber als Beimischung mit hoher Volatilität und industrieller Nachfrage.',
+        'Silver', 'An industrial metal with leverage', 'Silver as an admixture with high volatility and industrial demand.'],
+    ['platin-palladium', 'Platin & Palladium', 'edelmetalle', 'gem', 'Knappe Industriemetalle', 'Enge Märkte, hohe Preisdynamik, strategische Beimischung.',
+        'Platinum & palladium', 'Scarce industrial metals', 'Narrow markets, strong price dynamics, a strategic admixture.'],
+    ['immobilien', 'Immobilien', 'sachwerte', 'building', 'Substanz mit laufendem Ertrag', 'Wohn- und Gewerbeobjekte, direkt oder über Beteiligungen.',
+        'Real estate', 'Substance with a running yield', 'Residential and commercial property, directly or through holdings.'],
+    ['diamanten', 'Diamanten & Farbedelsteine', 'sachwerte', 'diamond', 'Wert auf kleinstem Raum', 'Zertifizierte Investmentsteine mit internationaler Handelbarkeit.',
+        'Diamonds & coloured gemstones', 'Value in the smallest of spaces', 'Certified investment stones that trade internationally.'],
+    ['sammlerwerte', 'Sammler- & Kunstwerte', 'sachwerte', 'palette', 'Leidenschaft mit Rendite', 'Kunst, Oldtimer und Sammlermünzen als Portfoliobeimischung.',
+        'Collectibles & art', 'Passion with a return', 'Art, classic cars and collector coins as a portfolio admixture.'],
+    ['private-equity', 'Private Equity', 'kapitalmarkt', 'trending', 'Unternehmerisch investieren', 'Direktbeteiligungen und Fonds abseits der Börse.',
+        'Private equity', 'Investing entrepreneurially', 'Direct holdings and funds away from the stock exchange.'],
+    ['fonds-anleihen', 'Fonds & Anleihen', 'kapitalmarkt', 'chart', 'Breit gestreut und planbar', 'Kuratierte Fonds- und Anleiheportfolios nach Risikoprofil.',
+        'Funds & bonds', 'Broadly spread and plannable', 'Curated fund and bond portfolios by risk profile.'],
+    ['digital-assets', 'Digitale Assets', 'kapitalmarkt', 'bitcoin', 'Reguliert in die neue Anlageklasse', 'Verwahrte Krypto-Investments über regulierte Partner.',
+        'Digital assets', 'Regulated entry into the new asset class', 'Custodied crypto investments through regulated partners.'],
 ];
 
 $assetIds = [];
 $assetTeam = [];
 $assetName = [];
-foreach ($assetClasses as $i => [$slug, $name, $team, $icon, $tagline, $description]) {
+foreach ($assetClasses as $i => [$slug, $name, $team, $icon, $tagline, $description, $nameEn, $taglineEn, $descriptionEn]) {
     $assetIds[$slug] = Db::insert(
-        'INSERT INTO asset_classes (slug, name, tagline, description, icon, team_id, sort_order)
-         VALUES (:slug, :name, :tagline, :description, :icon, :team, :sort)',
-        ['slug' => $slug, 'name' => $name, 'tagline' => $tagline, 'description' => $description,
+        'INSERT INTO asset_classes (slug, name, name_en, tagline, tagline_en, description, description_en,
+                                    icon, team_id, sort_order)
+         VALUES (:slug, :name, :name_en, :tagline, :tagline_en, :description, :description_en,
+                 :icon, :team, :sort)',
+        ['slug' => $slug, 'name' => $name, 'name_en' => $nameEn,
+         'tagline' => $tagline, 'tagline_en' => $taglineEn,
+         'description' => $description, 'description_en' => $descriptionEn,
          'icon' => $icon, 'team' => $teamIds[$team], 'sort' => $i]
     );
     $assetTeam[$slug] = $team;
@@ -230,7 +248,10 @@ foreach ($leads as $index => $l) {
 
     $teamSlug = $assetTeam[$asset];
     $teamId = $teamIds[$teamSlug];
-    $slaMinutes = $teams[array_search($teamSlug, array_column($teams, 0), true)][4];
+    // Die ganze Zeile auseinandernehmen statt einen Index zu zaehlen: eine
+    // zusaetzliche Spalte in $teams hat den Zugriff schon einmal still
+    // verschoben, und die Reaktionszeit stand dann auf einer Farbe.
+    [, , , , , $slaMinutes] = $teams[array_search($teamSlug, array_column($teams, 0), true)];
     $ownerId = $pickAgent($teamSlug);
     $createdAt = $ago($minutesAgo);
     $volume = Leads::VOLUME_BANDS[$band];

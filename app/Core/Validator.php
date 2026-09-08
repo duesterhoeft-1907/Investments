@@ -4,8 +4,13 @@ declare(strict_types=1);
 namespace App\Core;
 
 /**
- * Kleiner Prüfer mit deutschen Meldungen. Sammelt alle Fehler, damit das
- * Formular sie auf einmal anzeigen kann, statt einen nach dem anderen.
+ * Kleiner Prüfer. Sammelt alle Fehler, damit das Formular sie auf einmal
+ * anzeigen kann, statt einen nach dem anderen.
+ *
+ * Die Meldungen kommen aus dem Wörterbuch: die öffentliche Anfragestrecke
+ * gibt es auch auf Englisch, und eine deutsche Fehlermeldung unter einem
+ * englischen Feld wäre genau an der Stelle unhöflich, an der jemand gerade
+ * einen Fehler gemacht hat.
  */
 final class Validator
 {
@@ -26,32 +31,33 @@ final class Validator
         $value = trim((string) ($this->raw($field) ?? ''));
         if ($value === '') {
             if ($required) {
-                $this->errors[$field] = "Bitte {$label} angeben.";
+                $this->errors[$field] = I18n::t('validator.required', $label);
             }
             $this->clean[$field] = '';
             return $this;
         }
         if (mb_strlen($value) < $min) {
-            $this->errors[$field] = "{$label} ist zu kurz (mindestens {$min} Zeichen).";
+            $this->errors[$field] = I18n::t('validator.short', $label, $min);
         } elseif (mb_strlen($value) > $max) {
-            $this->errors[$field] = "{$label} ist zu lang (höchstens {$max} Zeichen).";
+            $this->errors[$field] = I18n::t('validator.long', $label, $max);
         }
         $this->clean[$field] = $value;
         return $this;
     }
 
-    public function email(string $field, string $label = 'eine gültige E-Mail-Adresse', bool $required = true): self
+    public function email(string $field, ?string $label = null, bool $required = true): self
     {
+        $label ??= I18n::t('validator.fields.email');
         $value = trim((string) ($this->raw($field) ?? ''));
         if ($value === '') {
             if ($required) {
-                $this->errors[$field] = "Bitte {$label} angeben.";
+                $this->errors[$field] = I18n::t('validator.required', $label);
             }
             $this->clean[$field] = '';
             return $this;
         }
         if (filter_var($value, FILTER_VALIDATE_EMAIL) === false || mb_strlen($value) > 190) {
-            $this->errors[$field] = 'Bitte eine gültige E-Mail-Adresse angeben.';
+            $this->errors[$field] = I18n::t('validator.email');
         }
         $this->clean[$field] = $value;
         return $this;
@@ -63,13 +69,13 @@ final class Validator
         $value = trim((string) ($this->raw($field) ?? ''));
         if ($value === '') {
             if ($required) {
-                $this->errors[$field] = "Bitte {$label} wählen.";
+                $this->errors[$field] = I18n::t('validator.choose', $label);
             }
             $this->clean[$field] = $fallback;
             return $this;
         }
         if (!in_array($value, $allowed, true)) {
-            $this->errors[$field] = "Ungültige Auswahl für {$label}.";
+            $this->errors[$field] = I18n::t('validator.invalid', $label);
             $this->clean[$field] = $fallback;
             return $this;
         }
@@ -82,14 +88,14 @@ final class Validator
         $raw = $this->raw($field);
         if ($raw === null || $raw === '') {
             if ($required) {
-                $this->errors[$field] = 'Bitte einen Wert angeben.';
+                $this->errors[$field] = I18n::t('validator.value');
             }
             $this->clean[$field] = $default;
             return $this;
         }
         $value = (int) $raw;
         if ($value < $min || $value > $max) {
-            $this->errors[$field] = "Wert muss zwischen {$min} und {$max} liegen.";
+            $this->errors[$field] = I18n::t('validator.range', $min, $max);
         }
         $this->clean[$field] = max($min, min($max, $value));
         return $this;
@@ -117,7 +123,7 @@ final class Validator
         $value = trim((string) ($this->raw($field) ?? ''));
         if ($value === '') {
             if ($required) {
-                $this->errors[$field] = "Bitte {$label} angeben.";
+                $this->errors[$field] = I18n::t('validator.required', $label);
             }
             $this->clean[$field] = null;
             return $this;
@@ -126,7 +132,7 @@ final class Validator
             $date = new \DateTimeImmutable($value, new \DateTimeZone('UTC'));
             $this->clean[$field] = $date->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
         } catch (\Throwable) {
-            $this->errors[$field] = "Bitte {$label} als gültiges Datum angeben.";
+            $this->errors[$field] = I18n::t('validator.date', $label);
             $this->clean[$field] = null;
         }
         return $this;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Domain;
 
 use App\Core\Db;
+use App\Core\I18n;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
@@ -317,29 +318,26 @@ final class Hours
      */
     public static function promise(int $minutes): string
     {
-        if (self::isOpen()) {
-            return 'innerhalb von ' . $minutes . ' Minuten';
-        }
-
-        $next = self::nextOpening();
+        $next = self::isOpen() ? null : self::nextOpening();
         if ($next === null) {
-            return 'innerhalb von ' . $minutes . ' Minuten';
+            return I18n::t('hours.within', $minutes);
         }
 
         $local = $next->setTimezone(self::timezone());
         $today = new DateTimeImmutable('now', self::timezone());
-        $time  = $local->format('H:i') . ' Uhr';
+        $time  = I18n::t('hours.time', $local->format(I18n::t('hours.format')));
 
         $diff = (int) $local->setTime(0, 0)->diff($today->setTime(0, 0))->format('%r%a');
         if ($diff === 0) {
-            return 'heute ab ' . $time;
+            return I18n::t('hours.today', $time);
         }
         if ($diff === -1) {
-            return 'morgen früh ab ' . $time;
+            return I18n::t('hours.tomorrow', $time);
         }
 
-        $weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-        return 'am ' . $weekdays[(int) $local->format('w')] . ' ab ' . $time;
+        $weekdays = I18n::list('hours.weekdays');
+        $name = (string) ($weekdays[(int) $local->format('w')] ?? $local->format('l'));
+        return I18n::t('hours.weekday', $name, $time);
     }
 
     /**
@@ -361,14 +359,13 @@ final class Hours
         // Ohne gepflegte Zeiten bleibt es bei der allgemeinen Einteilung.
         if (!$config['enabled'] || $frueh === null || $spaet === null) {
             return [
-                'vormittags'  => 'Vormittags (8 – 12 Uhr)',
-                'nachmittags' => 'Nachmittags (12 – 17 Uhr)',
-                'abends'      => 'Abends (17 – 20 Uhr)',
-                'flexibel'    => 'Jederzeit',
+                'vormittags'  => I18n::t('hours.windows.vormittags', self::stunde(8 * 60), self::stunde(12 * 60)),
+                'nachmittags' => I18n::t('hours.windows.nachmittags', self::stunde(12 * 60), self::stunde(17 * 60)),
+                'abends'      => I18n::t('hours.windows.abends', self::stunde(17 * 60), self::stunde(20 * 60)),
+                'flexibel'    => I18n::t('hours.windows.flexibel'),
             ];
         }
 
-        $stunde = static fn (int $minuten): string => (string) intdiv($minuten, 60);
         $fenster = [];
 
         // Ein eigenes Abendfenster lohnt erst, wenn danach noch etwas kommt:
@@ -377,31 +374,59 @@ final class Hours
         $abends = $spaet >= 19 * 60;
 
         if ($frueh < 12 * 60) {
-            $fenster['vormittags'] = 'Vormittags (' . $stunde($frueh) . ' – 12 Uhr)';
+            $fenster['vormittags'] = I18n::t(
+                'hours.windows.vormittags',
+                self::stunde($frueh),
+                self::stunde(12 * 60)
+            );
         }
         if ($spaet > 12 * 60) {
             // Wer erst nachmittags oeffnet, soll auch das als Beginn sehen.
             $von = max(12 * 60, $frueh);
             $bis = $abends ? 17 * 60 : $spaet;
             if ($bis > $von) {
-                $fenster['nachmittags'] = 'Nachmittags (' . $stunde($von) . ' – ' . $stunde($bis) . ' Uhr)';
+                $fenster['nachmittags'] = I18n::t(
+                    'hours.windows.nachmittags',
+                    self::stunde($von),
+                    self::stunde($bis)
+                );
             }
         }
         if ($abends) {
-            $fenster['abends'] = 'Abends (17 – ' . $stunde($spaet) . ' Uhr)';
+            $fenster['abends'] = I18n::t('hours.windows.abends', self::stunde(17 * 60), self::stunde($spaet));
         }
 
         // Bleibt nichts uebrig – etwa bei einem einzigen kurzen Fenster –,
         // ist die Frage nach der Tageszeit ohnehin gegenstandslos.
-        $fenster['flexibel'] = $fenster === [] ? 'Sobald wir erreichbar sind' : 'Jederzeit';
+        $fenster['flexibel'] = $fenster === []
+            ? I18n::t('hours.windows.whenever')
+            : I18n::t('hours.windows.flexibel');
 
         return $fenster;
     }
 
     /**
-     * Frueheste Oeffnung und spaeteste Schliessung ueber die Woche, in Minuten.
-     * @return array{0:int|null,1:int|null}
+     * Eine volle Stunde, wie sie die jeweilige Sprache schreibt.
+     *
+     * Deutsch zaehlt bis 24 und haengt das "Uhr" ans Ende der Spanne;
+     * Englisch zaehlt bis 12 und braucht am/pm an jeder Zahl. Deshalb
+     * kommt die Einheit hier aus der Sprache und nicht aus der Rechnung.
      */
+    private static function stunde(int $minuten): string
+    {
+        $stunde = intdiv($minuten, 60);
+        if (!I18n::isEn()) {
+            return (string) $stunde;
+        }
+        if ($stunde === 12) {
+            return '12 noon';
+        }
+        if ($stunde === 0 || $stunde === 24) {
+            return 'midnight';
+        }
+        return $stunde < 12 ? $stunde . ' am' : ($stunde - 12) . ' pm';
+    }
+
     private static function spanne(array $config): array
     {
         $frueh = null;

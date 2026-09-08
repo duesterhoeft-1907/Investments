@@ -81,7 +81,11 @@ final class Mailer
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 
-    private static function layout(string $title, string $bodyHtml): string
+    /**
+     * @param string $lang Sprache des Briefes. Mails an das Fachteam sind
+     *                     immer deutsch, auch wenn die Anfrage englisch war.
+     */
+    private static function layout(string $title, string $bodyHtml, string $lang = 'de'): string
     {
         $company = self::esc((string) Config::get('company.name', ''));
         $phone = self::esc((string) Config::get('company.phone', ''));
@@ -91,7 +95,7 @@ final class Mailer
         $paper = self::PAPER;
 
         return <<<HTML
-        <!doctype html><html lang="de"><body style="margin:0;background:{$ink};padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
+        <!doctype html><html lang="{$lang}"><body style="margin:0;background:{$ink};padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:{$paper};border-radius:16px;overflow:hidden;">
             <tr><td style="background:{$ink};padding:24px 32px;border-bottom:2px solid {$accent};">
@@ -182,42 +186,49 @@ final class Mailer
      */
     public static function leadWelcome(array $facts, string $portalUrl, string $password, ?array $contact): array
     {
+        // Die Sprache steht schon fest: PublicController hat sie aus der
+        // Anfrage uebernommen. Eine deutsche Bestaetigung auf eine englische
+        // Anfrage waere die erste Enttaeuschung nach dem Absenden.
+        $w = static fn (string $key, string|int ...$args): string => I18n::t('mail.welcome.' . $key, ...$args);
+
         $contactHtml = $contact === null ? '' :
             '<p style="background:#fff;border-radius:12px;padding:16px 20px;margin:20px 0;">'
             . '<strong style="display:block;font-size:16px;">' . self::esc($contact['name']) . '</strong>'
             . '<span style="color:#6b6b6b;">' . self::esc($contact['title']) . '</span><br/>'
             . self::esc($contact['phone']) . ' · ' . self::esc($contact['email']) . '</p>';
 
+        $fach = (string) ($facts['assetClassLang'] ?? $facts['assetClass']);
+        $zusage = (string) ($facts['slaPromise'] ?? I18n::t('hours.within', (int) $facts['slaMinutes']));
+
+        $zeile = static fn (string $label, string $wert, string $stil = 'font-weight:600;'): string =>
+            '<tr><td style="padding:6px 12px 6px 0;color:#6b6b6b;">' . self::esc($label) . '</td>'
+            . '<td style="padding:6px 0;' . $stil . '">' . self::esc($wert) . '</td></tr>';
+
         $html = self::layout(
-            'Ihre Anfrage ist angekommen, ' . self::esc((string) $facts['firstName']),
-            '<p>vielen Dank für Ihr Interesse an <strong>' . self::esc((string) $facts['assetClass']) . '</strong>. '
-            . 'Ihre Anfrage liegt bereits bei unserem Fachteam – wir melden uns <strong>'
-            . self::esc((string) ($facts['slaPromise'] ?? 'innerhalb von ' . (int) $facts['slaMinutes'] . ' Minuten'))
-            . '</strong> persönlich bei Ihnen.</p>'
+            $w('heading', self::esc((string) $facts['firstName'])),
+            '<p>' . $w('intro', self::esc($fach), self::esc($zusage)) . '</p>'
             . $contactHtml
-            . '<p>In Ihrem persönlichen Kundenbereich sehen Sie jederzeit den Stand Ihrer Anfrage, '
-            . 'die nächsten Schritte und – sobald erstellt – Ihr individuelles Angebot.</p>'
+            . '<p>' . $w('portal') . '</p>'
             . '<table style="font-size:14px;background:#fff;border-radius:12px;padding:16px;margin:8px 0;">'
-            . '<tr><td style="padding:6px 12px 6px 0;color:#6b6b6b;">Zugang</td><td style="padding:6px 0;font-weight:600;">'
-            . self::esc((string) $facts['email']) . '</td></tr>'
-            . '<tr><td style="padding:6px 12px 6px 0;color:#6b6b6b;">Passwort</td>'
-            . '<td style="padding:6px 0;font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;">'
-            . self::esc($password) . '</td></tr>'
-            . '<tr><td style="padding:6px 12px 6px 0;color:#6b6b6b;">Referenz</td><td style="padding:6px 0;font-weight:600;">'
-            . self::esc((string) $facts['ref']) . '</td></tr></table>'
-            . self::button($portalUrl, 'Zum persönlichen Bereich')
-            . '<p style="font-size:13px;color:#6b6b6b;">Bitte ändern Sie das Passwort nach dem ersten Login.</p>'
+            . $zeile($w('login'), (string) $facts['email'])
+            . $zeile($w('password'), $password, 'font-family:monospace;font-size:16px;font-weight:700;letter-spacing:1px;')
+            . $zeile($w('ref'), (string) $facts['ref'])
+            . '</table>'
+            . self::button($portalUrl, $w('button'))
+            . '<p style="font-size:13px;color:#6b6b6b;">' . $w('change') . '</p>',
+            I18n::lang()
         );
 
-        $text = "Vielen Dank für Ihre Anfrage ({$facts['ref']}).\n"
-            . 'Wir melden uns ' . ($facts['slaPromise'] ?? "innerhalb von {$facts['slaMinutes']} Minuten") . ".\n"
-            . ($contact !== null ? "Ihr Ansprechpartner: {$contact['name']}, {$contact['title']}, {$contact['phone']}\n" : '')
-            . "Kundenbereich: {$portalUrl}\n"
-            . "Zugang: {$facts['email']}\n"
-            . "Passwort: {$password}";
+        $text = $w('text', (string) $facts['ref'], $zusage) . "\n"
+            . ($contact !== null
+                ? $w('contact', $contact['name'] . ', ' . $contact['title'] . ', ' . $contact['phone']) . "\n"
+                : '')
+            . $w('button') . ': ' . $portalUrl . "\n"
+            . $w('login') . ': ' . $facts['email'] . "\n"
+            . $w('password') . ': ' . $password;
 
         return [
-            'subject'  => 'Ihre Anfrage ' . $facts['ref'] . ' ist angekommen – wir melden uns umgehend',
+            'subject'  => $w('subject', (string) $facts['ref']),
             'html'     => $html,
             'text'     => $text,
             'template' => 'lead_welcome',

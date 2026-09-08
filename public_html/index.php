@@ -10,12 +10,27 @@
  */
 declare(strict_types=1);
 
+/*
+ * Nur fuer den eingebauten Server von PHP (php -S), mit dem lokal geprueft
+ * wird: er ruft dieses Skript auch fuer Bilder, CSS und JavaScript auf, und
+ * ohne diese Zeilen beantwortete der Front-Controller sie mit einer
+ * 404-Seite. Auf dem Webserver uebernimmt das .htaccess; dort ist der
+ * Zweig ohne Wirkung.
+ */
+if (PHP_SAPI === 'cli-server') {
+    $datei = __DIR__ . urldecode((string) parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH));
+    if (is_file($datei) && !str_ends_with($datei, '.php')) {
+        return false;
+    }
+}
+
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 use App\Core\Auth;
 use App\Core\Config;
 use App\Core\Db;
 use App\Core\Http;
+use App\Core\I18n;
 use App\Core\Router;
 use App\Controllers as C;
 
@@ -25,18 +40,33 @@ $method = Http::method();
 // ───────────────────────── Seiten ─────────────────────────
 
 if (!str_starts_with($path, '/api')) {
+    // Die internen Bereiche bleiben deutsch und kennen kein Sprachpraefix.
     $view = match (true) {
-        $path === '/' || $path === ''        => 'site',
-        $path === '/anfrage'                 => 'wizard',
-        $path === '/impressum'               => 'legal',
-        $path === '/datenschutz'             => 'legal',
-        str_starts_with($path, '/app')       => 'app',
-        str_starts_with($path, '/portal')    => 'portal',
-        default                              => null,
+        str_starts_with($path, '/app')    => 'app',
+        str_starts_with($path, '/portal') => 'portal',
+        default                           => null,
     };
 
     if ($view === null) {
+        // Oeffentliche Seite: /en… ist die englische Fassung derselben Seite.
+        [$lang, $rest] = I18n::split($path);
+        I18n::use($lang);
+
+        // Der Name der Seite, nicht ihre Adresse, waehlt die Ansicht – so
+        // liegt jede Seite in beiden Sprachen an genau einer Stelle.
+        $route = I18n::route($path);
+        $view = match ($route) {
+            'home'    => 'site',
+            'contact' => 'wizard',
+            'imprint', 'privacy' => 'legal',
+            default   => null,
+        };
+        unset($rest);
+    }
+
+    if ($view === null) {
         http_response_code(404);
+        $route = 'home';
         $view = 'site';
     }
 

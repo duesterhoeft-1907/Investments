@@ -97,5 +97,27 @@ check('werktags mittags offen',  promiseAt('2026-09-07 12:00', 10), 'innerhalb v
 check('nachts geschlossen',      promiseAt('2026-09-07 23:40', 10), 'spaeter');
 check('sonntags geschlossen',    promiseAt('2026-09-13 12:00', 10), 'spaeter');
 
+// Die Beschriftungen haengen an der Sprache der Anfragestrecke.
+// Englisch zaehlt bis 12 und braucht am/pm, Deutsch zaehlt bis 24.
+setHours();
+App\Core\I18n::use('de');
+check('Zeitfenster deutsch', implode(' · ', Hours::contactWindows()),
+    'Vormittags (9 – 12 Uhr) · Nachmittags (12 – 18 Uhr) · Jederzeit');
+check('Zusage deutsch', Hours::promise(15), 'innerhalb von 15 Minuten');
+
+App\Core\I18n::use('en');
+check('Zeitfenster englisch', implode(' · ', Hours::contactWindows()),
+    'Mornings (9 am – 12 noon) · Afternoons (12 noon – 6 pm) · Any time');
+check('Zusage englisch', Hours::promise(15), 'within 15 minutes');
+
+// Ein spaeter Feierabend bekommt ein eigenes Abendfenster – in beiden Sprachen.
+setHours(['days' => ['mon'=>['08:00-20:00'],'tue'=>['08:00-20:00'],'wed'=>['08:00-20:00'],
+                     'thu'=>['08:00-20:00'],'fri'=>['08:00-20:00'],'sat'=>[],'sun'=>[]]]);
+check('Abendfenster englisch', implode(' · ', Hours::contactWindows()),
+    'Mornings (8 am – 12 noon) · Afternoons (12 noon – 5 pm) · Evenings (5 pm – 8 pm) · Any time');
+App\Core\I18n::use('de');
+check('Abendfenster deutsch', implode(' · ', Hours::contactWindows()),
+    'Vormittags (8 – 12 Uhr) · Nachmittags (12 – 17 Uhr) · Abends (17 – 20 Uhr) · Jederzeit');
+
 echo $fails === 0 ? "\nAlle Proben bestanden.\n" : "\n$fails Probe(n) fehlgeschlagen.\n";
 exit($fails === 0 ? 0 : 1);
