@@ -25,12 +25,31 @@ Options -Indexes
     Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(self)"
 </IfModule>
 
-# Statisches lange cachen – die Dateinamen tragen einen Versionsparameter.
+# Zwischenspeichern – aber nur, was gefahrlos alt sein darf.
+#
+# Schriften und Bilder duerfen lange liegen: ihre Namen aendern sich, wenn
+# sich ihr Inhalt aendert. CSS und JS nicht: die Einstiegsdateien tragen
+# zwar einen Zeitstempel, die davon geladenen Module aber nicht. Mit einer
+# Woche Ruhe saehe der Browser nach jedem Ausrollen weiter den alten Stand –
+# und der Fehler saehe aus, als waere gar nichts angekommen.
 <IfModule mod_expires.c>
     ExpiresActive On
-    ExpiresByType text/css               "access plus 7 days"
-    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType font/woff2             "access plus 1 year"
     ExpiresByType image/svg+xml          "access plus 30 days"
+    ExpiresByType image/png              "access plus 30 days"
+    ExpiresByType image/webp             "access plus 30 days"
+    ExpiresByType image/jpeg             "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Kurz halten und immer nachfragen. Der Server antwortet dann meist mit
+    # "unveraendert" – das kostet fast nichts und kann nie veralten.
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=0, must-revalidate"
+    </FilesMatch>
+    <FilesMatch "\.(woff2|png|webp|jpe?g|svg)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
 </IfModule>
 
 <IfModule mod_deflate.c>

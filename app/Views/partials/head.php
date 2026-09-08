@@ -5,7 +5,18 @@ use App\Core\Config;
 
 /** @var string $title */
 /** @var string $bodyClass */
-$version = '1.0.0';
+/**
+ * Die Version haengt an der Aenderungszeit der Datei, nicht an einer Zahl,
+ * die jemand pflegen muesste. Eine feste Nummer heisst: nach jedem
+ * Ausrollen sieht der Browser weiter die alte Datei – und der Fehler sieht
+ * aus, als waere gar nichts angekommen.
+ */
+$asset = static function (string $path): string {
+    $file = dirname(__DIR__, 3) . '/public_html' . $path;
+    $stamp = is_file($file) ? filemtime($file) : time();
+    return $path . '?v=' . $stamp;
+};
+$version = '1.0.0';   // nur noch fuer Aeusserlichkeiten
 ?>
 <!doctype html>
 <html lang="de">
@@ -21,9 +32,9 @@ $version = '1.0.0';
 <link rel="preload" href="/assets/fonts/archivo-600-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/inter-tight-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/css/app.css?v=<?= $version ?>">
+<link rel="stylesheet" href="<?= $asset('/assets/css/app.css') ?>">
 <?php if (!empty($extraCss)): ?>
-<link rel="stylesheet" href="/assets/css/<?= htmlspecialchars($extraCss, ENT_QUOTES) ?>?v=<?= $version ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars($asset('/assets/css/' . $extraCss), ENT_QUOTES) ?>">
 <?php endif; ?>
 <script>
   // Der Token steht hier und nicht im Cookie – so kann ihn eine fremde

@@ -143,6 +143,6 @@ require __DIR__ . '/partials/head.php';
 </main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>
-<script type="module" src="/assets/js/site.js?v=1.0.0"></script>
+<script type="module" src="<?= $asset('/assets/js/site.js') ?>"></script>
 </body>
 </html>

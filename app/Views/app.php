@@ -8,6 +8,6 @@ $extraCss = 'app-crm.css';
 require __DIR__ . '/partials/head.php';
 ?>
 <div id="app"></div>
-<script type="module" src="/assets/js/app.js?v=1.0.0"></script>
+<script type="module" src="<?= $asset('/assets/js/app.js') ?>"></script>
 </body>
 </html>

@@ -8,6 +8,6 @@ $extraCss = 'wizard.css';
 require __DIR__ . '/partials/head.php';
 ?>
 <div id="app"></div>
-<script type="module" src="/assets/js/wizard.js?v=1.0.0"></script>
+<script type="module" src="<?= $asset('/assets/js/wizard.js') ?>"></script>
 </body>
 </html>
