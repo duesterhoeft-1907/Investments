@@ -41,7 +41,8 @@ final class PublicController
             'horizons'         => self::options(Leads::HORIZONS),
             'experience'       => self::options(Leads::EXPERIENCE),
             'contactPrefs'     => self::options(Leads::CONTACT_PREFS),
-            'contactWindows'   => self::options(Leads::CONTACT_WINDOWS),
+            // Aus den Geschäftszeiten abgeleitet – siehe Hours::contactWindows().
+            'contactWindows'   => self::options(Hours::contactWindows()),
             'defaultSlaMinutes'=> (int) Config::get('sla_minutes'),
             // Damit der Wizard nachts nicht "in 10 Minuten" verspricht.
             'hours'            => [

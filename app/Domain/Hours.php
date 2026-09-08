@@ -342,6 +342,84 @@ final class Hours
         return 'am ' . $weekdays[(int) $local->format('w')] . ' ab ' . $time;
     }
 
+    /**
+     * Die Kontaktzeitfenster, die zu den Geschaeftszeiten passen.
+     *
+     * Fest verdrahtete Fenster erzeugen sonst Zusagen, die niemand einhaelt:
+     * "Abends (17 – 20 Uhr)" waehlt jemand gern, wenn um 18 Uhr Schluss ist –
+     * und wartet dann vergeblich. Angeboten wird deshalb nur, was innerhalb
+     * der gepflegten Zeiten ueberhaupt moeglich ist, mit den echten Uhrzeiten
+     * in der Beschriftung.
+     *
+     * @return array<string,string> Schluessel => Beschriftung
+     */
+    public static function contactWindows(): array
+    {
+        $config = self::config();
+        [$frueh, $spaet] = self::spanne($config);
+
+        // Ohne gepflegte Zeiten bleibt es bei der allgemeinen Einteilung.
+        if (!$config['enabled'] || $frueh === null || $spaet === null) {
+            return [
+                'vormittags'  => 'Vormittags (8 – 12 Uhr)',
+                'nachmittags' => 'Nachmittags (12 – 17 Uhr)',
+                'abends'      => 'Abends (17 – 20 Uhr)',
+                'flexibel'    => 'Jederzeit',
+            ];
+        }
+
+        $stunde = static fn (int $minuten): string => (string) intdiv($minuten, 60);
+        $fenster = [];
+
+        // Ein eigenes Abendfenster lohnt erst, wenn danach noch etwas kommt:
+        // "Abends (17 – 18 Uhr)" waere eine Stunde und stuende dem Nachmittag
+        // nur im Weg. Unter zwei Stunden zaehlt der Rest zum Nachmittag.
+        $abends = $spaet >= 19 * 60;
+
+        if ($frueh < 12 * 60) {
+            $fenster['vormittags'] = 'Vormittags (' . $stunde($frueh) . ' – 12 Uhr)';
+        }
+        if ($spaet > 12 * 60) {
+            // Wer erst nachmittags oeffnet, soll auch das als Beginn sehen.
+            $von = max(12 * 60, $frueh);
+            $bis = $abends ? 17 * 60 : $spaet;
+            if ($bis > $von) {
+                $fenster['nachmittags'] = 'Nachmittags (' . $stunde($von) . ' – ' . $stunde($bis) . ' Uhr)';
+            }
+        }
+        if ($abends) {
+            $fenster['abends'] = 'Abends (17 – ' . $stunde($spaet) . ' Uhr)';
+        }
+
+        // Bleibt nichts uebrig – etwa bei einem einzigen kurzen Fenster –,
+        // ist die Frage nach der Tageszeit ohnehin gegenstandslos.
+        $fenster['flexibel'] = $fenster === [] ? 'Sobald wir erreichbar sind' : 'Jederzeit';
+
+        return $fenster;
+    }
+
+    /**
+     * Frueheste Oeffnung und spaeteste Schliessung ueber die Woche, in Minuten.
+     * @return array{0:int|null,1:int|null}
+     */
+    private static function spanne(array $config): array
+    {
+        $frueh = null;
+        $spaet = null;
+        foreach ($config['days'] as $fenster) {
+            foreach ($fenster as $eintrag) {
+                [$von, $bis] = explode('-', $eintrag);
+                [$vh, $vm] = array_map('intval', explode(':', $von));
+                [$bh, $bm] = array_map('intval', explode(':', $bis));
+                $start = $vh * 60 + $vm;
+                $ende  = $bh * 60 + $bm;
+                $frueh = $frueh === null ? $start : min($frueh, $start);
+                $spaet = $spaet === null ? $ende : max($spaet, $ende);
+            }
+        }
+        return [$frueh, $spaet];
+    }
+
     /** Kurzfassung fuer Oberflaeche und Bestaetigungstext. */
     public static function summary(): array
     {
