@@ -269,6 +269,7 @@ def main() -> None:
     arbeit.mkdir(exist_ok=True)
 
     teile: list[Path] = []
+    zulang: list[tuple[int, str, float, float, float]] = []
     for abschnitt in plan["abschnitte"]:
         nr = abschnitt["nr"]
         budget = float(abschnitt["dauer_s"])
@@ -295,8 +296,13 @@ def main() -> None:
         platz = budget - VORLAUF_S - 0.15
         tempo = max(1.0, gesprochen / platz) if platz > 0 else 1.0
         if tempo > MAX_STRAFFUNG:
+            # Über die Straffung hinaus wird hinten abgeschnitten – der Satz
+            # bricht mitten im Wort ab. Das darf nicht in der Ausgabe
+            # untergehen, deshalb wird es am Ende noch einmal aufgezählt.
+            fehlt = gesprochen / MAX_STRAFFUNG - platz
             print(f"    ! {gesprochen:.1f}s in {budget:.0f}s – Text ist zu lang "
-                  f"(Faktor {tempo:.2f}). Gekuerzt klingt es besser als gestrafft.")
+                  f"(Faktor {tempo:.2f}). Es fehlen hinten rund {fehlt:.1f}s.")
+            zulang.append((nr, abschnitt["id"], gesprochen, budget, fehlt))
             tempo = MAX_STRAFFUNG
 
         filter_kette = (
@@ -334,6 +340,17 @@ def main() -> None:
         liste.unlink(missing_ok=True)
         spur.unlink(missing_ok=True)
     print(f"Fertig: {ziel}")
+
+    # Zum Schluss noch einmal deutlich: was hier steht, ist im Film
+    # abgeschnitten. In einer Ausgabe von fünfzehn Zeilen geht eine Warnung
+    # in der Mitte sonst unter – und man merkt es erst beim Anschauen.
+    if zulang:
+        print("\nAchtung – diese Abschnitte sind hinten abgeschnitten:")
+        for nr, name, gesprochen, budget, fehlt in zulang:
+            print(f"  {nr:02d} {name}: {gesprochen:.1f}s gesprochen, {budget:.0f}s Platz, "
+                  f"rund {fehlt:.1f}s fehlen")
+        print("  Text in sprecher.json kürzen, die betroffene Datei in "
+              f"ton-{opt.mundart}/ löschen und noch einmal laufen lassen.")
 
 
 if __name__ == "__main__":
