@@ -292,7 +292,29 @@ def main() -> None:
         else:
             print(f"[{nr:02d}] {abschnitt['id']} – vorhanden, wird wiederverwendet")
 
-        gesprochen = laenge(ffmpeg, roh)
+        # Stille am Anfang und am Ende wegschneiden.
+        #
+        # ElevenLabs haengt an jede Aufnahme eine Pause – bei kurzen Texten
+        # macht die mehr aus als der Text selbst: 180 Zeichen ergaben 17,7
+        # Sekunden, die auf 124 gekuerzte Fassung immer noch 16,7. Gerechnet
+        # und gestrafft wird deshalb auf dem, was wirklich gesprochen ist.
+        knapp = arbeit / f"{nr:02d}-knapp.wav"
+        stille = ('silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB,'
+                  'areverse,'
+                  'silenceremove=start_periods=1:start_silence=0.05:start_threshold=-45dB,'
+                  'areverse')
+        subprocess.run(
+            [ffmpeg, "-y", "-loglevel", "error", "-i", str(roh),
+             "-af", stille, "-ar", "48000", str(knapp)],
+            check=True,
+        )
+
+        roh_laenge = laenge(ffmpeg, roh)
+        gesprochen = laenge(ffmpeg, knapp)
+        if roh_laenge - gesprochen > 0.5:
+            print(f"    {roh_laenge - gesprochen:.1f}s Stille abgeschnitten "
+                  f"({roh_laenge:.1f}s → {gesprochen:.1f}s)")
+
         platz = budget - VORLAUF_S - 0.15
         tempo = max(1.0, gesprochen / platz) if platz > 0 else 1.0
         if tempo > MAX_STRAFFUNG:
@@ -311,11 +333,12 @@ def main() -> None:
             + "apad,aresample=48000"
         )
         subprocess.run(
-            [ffmpeg, "-y", "-loglevel", "error", "-i", str(roh),
+            [ffmpeg, "-y", "-loglevel", "error", "-i", str(knapp),
              "-af", filter_kette, "-t", f"{budget:.3f}",
              "-ac", "2", "-ar", "48000", str(stueck)],
             check=True,
         )
+        knapp.unlink(missing_ok=True)
         teile.append(stueck)
 
     liste = arbeit / "reihenfolge.txt"
