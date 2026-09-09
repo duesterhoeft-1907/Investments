@@ -1,90 +1,139 @@
 {
-  "hinweis": "Sprechertexte zum Erklaerfilm. Jeder Abschnitt hat ein festes Sekundenbudget, das exakt dem Ablauf in film.html entspricht. Wer den Film aendert, aendert hier mit. Die Texte sind bewusst knapp: sie muessen nicht die Bildinhalte wiederholen, sondern das sagen, was im Bild nicht steht.",
+  "hinweis": "Sprechertexte zum Erklaerfilm. Zwei Stimmen im Wechsel: Bill (M) und Corinna (W). Jeder Abschnitt hat ein festes Sekundenbudget, das exakt dem Ablauf in film.html entspricht. Wer den Film aendert, aendert hier mit.",
   "gesamt_s": 222,
-  "mundarten": {
-    "schwaebisch": "Schwaebisch. Von einem Muttersprachler gegengelesen? Noch nicht.",
-    "platt": "Norddeutsches Platt (Nordniedersaechsisch). Bitte von einem Muttersprachler gegenlesen lassen, bevor es raus geht."
+  "stimmen": {
+    "M": "Bill – Erzaehler, ruhig",
+    "W": "Corinna – Moderatorin, warm"
   },
   "zahlen": {
-    "_hinweis": "Die vier Zahlen des Countdowns werden einzeln gesprochen und auf die Sekunde gesetzt, an der das Bild sie zeigt. Am Stueck gesprochen waere die Stimme schneller fertig, als der Film zaehlt.",
-    "schwaebisch": ["Vier", "Drei", "Zwoi", "Oins"],
-    "platt": ["Veer", "Dree", "Twee", "Een"]
+    "_hinweis": "Die vier Zahlen werden einzeln gesprochen und auf die Sekunde gesetzt, an der das Bild sie zeigt. Den Countdown spricht immer die Stimme, die den naechsten Bereich uebernimmt – so kuendigt der Wechsel sich an.",
+    "woerter": [
+      "Vier",
+      "Drei",
+      "Zwei",
+      "Eins"
+    ]
   },
   "abschnitte": [
     {
-      "nr": 1, "id": "titel", "start_s": 0, "dauer_s": 6,
-      "schwaebisch": "Vom Formular bis zom Aaruf. Was zwischat Abschicka ond em Kligla bassiert.",
-      "platt": "Vun't Formular bet to'n Anroop. Wat twischen Afschicken un't Klingeln passeert."
+      "nr": 1,
+      "id": "titel",
+      "start_s": 0,
+      "dauer_s": 6,
+      "stimme": "M",
+      "text": "Vom Formular zum Anruf. Was dazwischen passiert."
     },
     {
-      "nr": 2, "id": "ueberblick", "start_s": 6, "dauer_s": 26,
-      "schwaebisch": "Vier Fraga uf em Handy. Nach neinzig Millisekonda steht dr Berater fescht – wer et do isch, wird ibersprunga. Nach drei Sekonda scheppert's: Glogg, Ton, Chat ond Mail. Dann lauft d Uhr: zeah Minuta firn Aaruf, ond die wird gmessa.",
-      "platt": "Veer Fragen op't Telefoon. Na negentig Millisekunnen steiht de Berader fast – wokeen nich dor is, warrt overgahn. Na dree Sekunnen geiht dat los: Klock, Ton, Chat un Mail. Denn lopt de Uhr: teihn Minuten for'n Anroop, un de warrt meten."
+      "nr": 2,
+      "id": "ueberblick",
+      "start_s": 6,
+      "dauer_s": 26,
+      "stimme": "W",
+      "text": "Vier Fragen auf dem Telefon. Nach neunzig Millisekunden steht der Berater fest – wer nicht da ist, wird übersprungen. Nach drei Sekunden meldet sich alles: Glocke, Ton, Chat und Mail. Dann läuft die Uhr: zehn Minuten, und sie wird gemessen."
     },
     {
-      "nr": 3, "id": "countdown", "start_s": 32, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 3,
+      "id": "countdown",
+      "start_s": 32,
+      "dauer_s": 5,
+      "stimme": "M",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 4, "id": "weg", "start_s": 37, "dauer_s": 26,
-      "schwaebisch": "Jedes Feld wird brieft – ohne Telefonnummer goht's et weiter, dr Rickruf isch jo dr Sinn. Kennat mr da scho, kriagt er da gleiche Berater. D Frist rechnat gega d Gschäftszeita, ond nach drei Sekonda wissat's älle offene Fenschter.",
-      "platt": "Elk Feld warrt proovt – ahn Telefoonnummer geiht dat nich wieder, de Ruggroop is jo de Sinn. Kennt wi den al, kriggt he den sulven Berader. De Frist rekent gegen de Warktieden, un na dree Sekunnen weet dat elk apen Finster."
+      "nr": 4,
+      "id": "weg",
+      "start_s": 37,
+      "dauer_s": 26,
+      "stimme": "M",
+      "text": "Jedes Feld wird geprüft – ohne Telefonnummer geht es nicht weiter, der Rückruf ist ja der Sinn der Sache. Kennen wir den schon, bekommt er denselben Berater wie beim letzten Mal. Die Frist rechnet gegen die Geschäftszeiten."
     },
     {
-      "nr": 5, "id": "countdown", "start_s": 63, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 5,
+      "id": "countdown",
+      "start_s": 63,
+      "dauer_s": 5,
+      "stimme": "W",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 6, "id": "benachrichtigung", "start_s": 68, "dauer_s": 26,
-      "schwaebisch": "Heit kriagat älle 's Gleiche: CRM, Mail ond Chat. Nei kommt a Matrix em Profil: welcher Aalass uf welchem Weg, mit eigne Ruahzeita. SMS ond WhatsApp bloß als Eskalation. Ond bündla statt oizeln – sonscht schaltet oiner älles ab.",
-      "platt": "Vundaag kriggt jedeen dat sulvige: CRM, Mail un Chat. Nee kummt en Matrix in't Profil: welk Anlaat op welken Weg, mit egen Ruhtieden. SMS un WhatsApp bloots as Eskalatschoon. Un beter tosamenfaten – anners schalt't een allens af."
+      "nr": 6,
+      "id": "benachrichtigung",
+      "start_s": 68,
+      "dauer_s": 26,
+      "stimme": "W",
+      "text": "Heute bekommen alle dasselbe: CRM, Mail und Chat. Neu kommt eine Matrix im Profil – welcher Anlass auf welchem Weg, mit eigenen Ruhezeiten. Und lieber bündeln als einzeln, sonst schaltet nach der dritten Meldung jemand alles ab."
     },
     {
-      "nr": 7, "id": "countdown", "start_s": 94, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 7,
+      "id": "countdown",
+      "start_s": 94,
+      "dauer_s": 5,
+      "stimme": "M",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 8, "id": "pwa", "start_s": 99, "dauer_s": 24,
-      "schwaebisch": "Drei Dateia neba dr Seit: Manifest, Service Worker, Push. Nachher leit 's CRM uf em Startbildschirm ond meldat sich au, wenn d App zua isch. Vor allem firn Chat. Laufade Koschta koine: Android sofort, 's iPhone ab sechzeh Punkt vier.",
-      "platt": "Dree Dateien blangen de Siet: Manifest, Service Worker, Push. Denn liggt dat CRM op'n Startschirm un meldt sik ok, wenn de App to is. Vor allen for den Chat. Lopen Kosten keen: Android fuurts, dat iPhone vun soosteihn Punkt veer an."
+      "nr": 8,
+      "id": "pwa",
+      "start_s": 99,
+      "dauer_s": 24,
+      "stimme": "M",
+      "text": "Drei Dateien neben der Seite: Manifest, Service Worker, Push-Anmeldung. Danach liegt das CRM auf dem Startbildschirm und meldet sich auch bei geschlossener App. Vor allem für den Chat. Laufende Kosten: keine."
     },
     {
-      "nr": 9, "id": "countdown", "start_s": 123, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 9,
+      "id": "countdown",
+      "start_s": 123,
+      "dauer_s": 5,
+      "stimme": "W",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 10, "id": "vertretung", "start_s": 128, "dauer_s": 22,
-      "schwaebisch": "Bis jetzt: oi Vorgang, oi Zuaständiger – gteilte Verantwortung isch koine. Nei: dr Zuaständige entscheidet ond wird gmessa, d Vertretung derf älles, wird aber et gmessa. Beim Urlaub wandarat d Vorgäng mit ond kommat zruck.",
-      "platt": "Bet nu: een Vorgang, een Tostannigen – deelte Verantwoorden is keen. Nee: de Tostannige besluut un warrt meten, de Vertreden dorf allens, warrt aver nich meten. Bi Urlaub gaht de Vorgang mit un kaamt wedder torugg."
+      "nr": 10,
+      "id": "vertretung",
+      "start_s": 128,
+      "dauer_s": 22,
+      "stimme": "W",
+      "text": "Bisher: ein Vorgang, ein Zuständiger – geteilte Verantwortung ist keine. Neu: der Zuständige entscheidet und wird gemessen, die Vertretung darf alles. Bei Urlaub wandern die Vorgänge mit und kommen zurück."
     },
     {
-      "nr": 11, "id": "countdown", "start_s": 150, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 11,
+      "id": "countdown",
+      "start_s": 150,
+      "dauer_s": 5,
+      "stimme": "M",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 12, "id": "mail", "start_s": 155, "dauer_s": 22,
-      "schwaebisch": "Drei Mailtext standat im Quelltext – fir Bstätigung ond Alarm richtig, fir älles Gschriebne et. Also Vorlaga mit Bausteina, zwoisprachig, mit Vorschau. Ond oins muass mr wissa: Klicks send ehrlich, Öffnunga et.",
-      "platt": "Dree Mailtexten staht in'n Kwelltext – for Bestatigen un Alarm recht, for allens Schrevene nich. Also Vorlagen mit Bausteen, tweesprakig, mit Vorschau. Un een mutt weten: Klicks sund ehrlich, dat Apenmaken nich."
+      "nr": 12,
+      "id": "mail",
+      "start_s": 155,
+      "dauer_s": 22,
+      "stimme": "M",
+      "text": "Drei Mailtexte stehen im Quelltext – für Bestätigung und Alarm richtig, für alles Geschriebene falsch. Also Vorlagen mit Bausteinen, mit Vorschau. Und: Klicks sind ehrlich, Öffnungen nicht."
     },
     {
-      "nr": 13, "id": "countdown", "start_s": 177, "dauer_s": 5,
-      "schwaebisch": "Vier. Drei. Zwoi. Oins.",
-      "platt": "Veer. Dree. Twee. Een."
+      "nr": 13,
+      "id": "countdown",
+      "start_s": 177,
+      "dauer_s": 5,
+      "stimme": "W",
+      "text": "Vier. Drei. Zwei. Eins."
     },
     {
-      "nr": 14, "id": "postfach", "start_s": 182, "dauer_s": 26,
-      "schwaebisch": "Jede Mail kriagt a Antwort-an mit dr Vorgangsnummer. A Cron holt, was nei isch, ond hängt d Antwort vo selber an da richtige Vorgang. Bei onbekanntem Absender gits a Eischätzung ond a Knopf: als Aafrog aalega. D Maschin schlagt vor, dr Mensch entscheidet.",
-      "platt": "Jede Mail kriggt en Antwoort-an mit de Vorgangsnummer. En Cron haalt, wat nee is, un hangt de Antwoort vun alleen an den richtigen Vorgang. Bi'n unbekannten Afsenner gifft dat en Inschatzen un en Knoop: as Anfraag anleggen. De Maschien sleit vor, de Minsch besluut."
+      "nr": 14,
+      "id": "postfach",
+      "start_s": 182,
+      "dauer_s": 26,
+      "stimme": "W",
+      "text": "Jede Mail bekommt ein Antwort-an mit der Vorgangsnummer. Ein Cron holt, was neu ist, und hängt die Antwort von selbst an den richtigen Vorgang. Bei unbekanntem Absender: eine Einschätzung und ein Knopf. Der Mensch entscheidet."
     },
     {
-      "nr": 15, "id": "abspann", "start_s": 208, "dauer_s": 14,
-      "schwaebisch": "Sechs Stufa, jede fir sich nützlich. Koine laufade Koschta, ond vier Entscheidunga vo eich.",
-      "platt": "Soss Stufen, jede for sik nutt. Keen lopen Kosten, un veer Beslut vun jo."
+      "nr": 15,
+      "id": "abspann",
+      "start_s": 208,
+      "dauer_s": 14,
+      "stimme": "M",
+      "text": "Sechs Stufen, jede für sich nützlich. Keine laufenden Kosten, und vier Entscheidungen von euch."
     }
   ]
 }

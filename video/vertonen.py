@@ -8,12 +8,15 @@ Das Skript braucht nur Python 3 (Bordmittel) und ffmpeg.
 
     # Den Schlüssel einmal hinterlegen – danach findet ihn das Skript selbst:
     umask 077; printf '%s' 'sk_…' > ~/.elevenlabs_key
-    python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
-    python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
+    python3 video/vertonen.py
 
-Ergebnis: video/erklaerfilm-<mundart>.mp4. Danach den Vorspann davorsetzen:
+Wer welchen Abschnitt spricht, steht in sprecher.json – Bill und Corinna
+wechseln sich je Bereich ab, und den Countdown spricht immer die Stimme, die
+gleich uebernimmt.
 
-    python3 video/vorspann.py --film video/erklaerfilm-schwaebisch.mp4
+Ergebnis: video/erklaerfilm-vertont.mp4. Danach den Vorspann davorsetzen:
+
+    python3 video/vorspann.py --film video/erklaerfilm-vertont.mp4
 
 Stimmen, Modell und Einstellungen sind dieselben wie im EXECUTEX-Video-Kit –
 damit klingt der Film wie die anderen Filme aus dem Haus.
@@ -43,7 +46,7 @@ HIER = Path(__file__).resolve().parent
 # Unterschied zwischen "das Skript tut es nicht" und "es lief die alte
 # Fassung": ein zweiter Download heisst auf dem Mac vertonung-2.zip, und
 # unzip packt dann weiter die alte aus.
-FASSUNG = "6 – 9. September, kürzerer Abspann"
+FASSUNG = "7 – 9. September, zwei Stimmen im Wechsel"
 VORLAUF_S = 0.35          # kleiner Atemzug, damit der Satz nicht auf dem Schnitt klebt
 MAX_STRAFFUNG = 1.25      # darueber klingt es gehetzt – dann lieber den Text kuerzen
 
@@ -152,7 +155,7 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         sys.exit(f"api.elevenlabs.io ist nicht erreichbar: {fehler.reason}")
 
 
-def zahlenBauen(ffmpeg: str, plan: dict, mundart: str, stimme: str, modell: str,
+def zahlenBauen(ffmpeg: str, plan: dict, kuerzel: str, stimme: str, modell: str,
                 schluessel: str, arbeit: Path, nr: int, budget: float, ziel: Path) -> None:
     """
     Baut einen Countdown, der auf den Ziffern sitzt.
@@ -166,13 +169,15 @@ def zahlenBauen(ffmpeg: str, plan: dict, mundart: str, stimme: str, modell: str,
     sechs Countdowns wiederverwendet: das spart nicht nur Guthaben, es klingt
     auch gleich – ein Countdown, der beim vierten Mal anders betont, fällt auf.
     """
-    zahlen = plan.get("zahlen", {}).get(mundart)
+    zahlen = plan.get("zahlen", {}).get("woerter")
     if not zahlen:
-        sys.exit("In sprecher.json fehlt der Block 'zahlen' für " + mundart)
+        sys.exit("In sprecher.json fehlt der Block 'zahlen.woerter'.")
 
     aufnahmen = []
     for i, wort in enumerate(zahlen):
-        datei = arbeit / f"zahl-{i + 1}.mp3"
+        # Je Stimme ein eigener Satz Zahlen – sonst zaehlt Corinna mit Bills
+        # Stimme an, und der Wechsel geht verloren.
+        datei = arbeit / f"zahl-{kuerzel}-{i + 1}.mp3"
         if not datei.is_file():
             print(f"    Zahl „{wort}“ – spreche …")
             sprechen(wort, stimme, modell, schluessel, datei)
@@ -199,7 +204,7 @@ def zahlenBauen(ffmpeg: str, plan: dict, mundart: str, stimme: str, modell: str,
          "-t", f"{budget:.3f}", "-ac", "2", "-ar", "48000", str(ziel)],
         check=True,
     )
-    print(f"[{nr:02d}] countdown – vier Zahlen auf ihre Sekunde gesetzt")
+    print(f"[{nr:02d}] countdown ({kuerzel}) – vier Zahlen auf ihre Sekunde gesetzt")
 
 
 def schluesselFinden(kit: str | None) -> tuple[str, str]:
@@ -239,9 +244,11 @@ def schluesselFinden(kit: str | None) -> tuple[str, str]:
 
 def main() -> None:
     args = argparse.ArgumentParser(description="Erklaerfilm vertonen")
-    args.add_argument("--mundart", choices=["schwaebisch", "platt"], required=True)
-    args.add_argument("--stimme", required=True,
-                      help="M (Bill), W (Corinna) oder eine ElevenLabs Voice-ID")
+
+    args.add_argument("--stimme-m", default=None,
+                      help="Andere Voice-ID für die männliche Rolle")
+    args.add_argument("--stimme-w", default=None,
+                      help="Andere Voice-ID für die weibliche Rolle")
     args.add_argument("--kit", default=None,
                       help="Ordner des EXECUTEX-Video-Kits – von dort wird der "
                            "Schlüssel gelesen, wenn ELEVENLABS_API_KEY leer ist")
@@ -263,8 +270,14 @@ def main() -> None:
     schluesselPruefen(schluessel, woher)
     print(f"Schlüssel: {woher}")
 
-    stimme, wer = STIMMEN.get(opt.stimme, (opt.stimme, "eigene Voice-ID"))
-    print(f"Stimme: {wer}")
+    # Wer welchen Abschnitt spricht, steht in sprecher.json. Hier werden nur
+    # die beiden Rollen mit Voice-IDs belegt.
+    besetzung = {
+        "M": opt.stimme_m or STIMMEN["M"][0],
+        "W": opt.stimme_w or STIMMEN["W"][0],
+    }
+    print(f"Besetzung: M = {STIMMEN['M'][1]}")
+    print(f"           W = {STIMMEN['W'][1]}")
 
     ffmpeg = werkzeug()
     film = Path(opt.film)
@@ -272,7 +285,7 @@ def main() -> None:
         sys.exit(f"Film nicht gefunden: {film}")
 
     plan = json.loads(Path(opt.texte).read_text(encoding="utf-8"))
-    arbeit = HIER / f"ton-{opt.mundart}"
+    arbeit = HIER / "ton"
     arbeit.mkdir(exist_ok=True)
 
     teile: list[Path] = []
@@ -287,17 +300,20 @@ def main() -> None:
         # einzeln gesprochen und auf die Sekunde gesetzt, an der das Bild
         # sie zeigt. Am Stück gesprochen wäre die Stimme nach knapp drei
         # Sekunden fertig, während im Bild noch die Zwei steht.
+        kuerzel = abschnitt.get("stimme", "M")
+        stimme = besetzung.get(kuerzel, besetzung["M"])
+
         if abschnitt["id"] == "countdown":
-            zahlenBauen(ffmpeg, plan, opt.mundart, stimme, opt.modell,
+            zahlenBauen(ffmpeg, plan, kuerzel, stimme, opt.modell,
                         schluessel, arbeit, nr, budget, stueck)
             teile.append(stueck)
             continue
 
         if not roh.is_file():
-            print(f"[{nr:02d}/{len(plan['abschnitte'])}] {abschnitt['id']} – spreche …")
-            sprechen(abschnitt[opt.mundart], stimme, opt.modell, schluessel, roh)
+            print(f"[{nr:02d}/{len(plan['abschnitte'])}] {abschnitt['id']} ({kuerzel}) – spreche …")
+            sprechen(abschnitt["text"], stimme, opt.modell, schluessel, roh)
         else:
-            print(f"[{nr:02d}] {abschnitt['id']} – vorhanden, wird wiederverwendet")
+            print(f"[{nr:02d}] {abschnitt['id']} ({kuerzel}) – vorhanden, wird wiederverwendet")
 
         # Stille am Anfang und am Ende wegschneiden.
         #
@@ -357,7 +373,7 @@ def main() -> None:
     gesamt = laenge(ffmpeg, spur)
     print(f"Tonspur: {gesamt:.1f}s (Film: {plan['gesamt_s']}s)")
 
-    ziel = HIER / f"erklaerfilm-{opt.mundart}.mp4"
+    ziel = HIER / "erklaerfilm-vertont.mp4"
     subprocess.run(
         [ffmpeg, "-y", "-loglevel", "error", "-i", str(film), "-i", str(spur),
          "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
@@ -380,7 +396,7 @@ def main() -> None:
             print(f"  {nr:02d} {name}: {gesprochen:.1f}s gesprochen, {budget:.0f}s Platz, "
                   f"rund {fehlt:.1f}s fehlen")
         print("  Text in sprecher.json kürzen, die betroffene Datei in "
-              f"ton-{opt.mundart}/ löschen und noch einmal laufen lassen.")
+              "ton/ löschen und noch einmal laufen lassen.")
 
 
 if __name__ == "__main__":

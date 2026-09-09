@@ -59,25 +59,26 @@ Gesucht wird in dieser Reihenfolge: Umgebung (`ELEVENLABS_API_KEY`),
 `~/.elevenlabs_key`, und `--kit <Ordner des Video-Kits>`.
 
 ```bash
-python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
-python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
+python3 video/vertonen.py
+python3 video/vorspann.py --film video/erklaerfilm-vertont.mp4
 ```
 
 Das gehört auf den eigenen Rechner, nicht auf den Webserver: dort gibt es
 kein ffmpeg, und zu tun hat er damit auch nichts.
 
-Voraussetzung ist nur `ffmpeg` (`brew install ffmpeg`); Python bringt der Mac mit.
-Ergebnis sind `erklaerfilm-schwaebisch.mp4` und `erklaerfilm-platt.mp4`.
+## Zwei Stimmen im Wechsel
 
-`M` und `W` sind die beiden Lieblingsstimmen aus dem EXECUTEX-Video-Kit – Bill
-(Erzähler, ruhig) und Corinna (Moderatorin, warm). Eine andere Stimme geht mit
-ihrer Voice-ID direkt. Modell und Klangeinstellungen sind dieselben wie im Kit
-(`eleven_multilingual_v2`, stability 0.40, similarity 0.80, style 0.50,
-speaker boost an), damit der Film zu den anderen Filmen aus dem Haus passt.
+Bill und Corinna teilen sich den Film – wer welchen Abschnitt spricht, steht
+als `stimme` an jedem Abschnitt in `sprecher.json`. Den Countdown spricht
+immer die Stimme, die den nächsten Bereich übernimmt: so kündigt der Wechsel
+sich an, statt ihn zu überfallen.
 
-Der Schlüssel gehört EXECUTEX und liegt **nicht** in diesem Repository. Entweder
-in die Umgebung setzen oder mit `--kit ~/elevenlabs_video_kit` auf den Ordner
-zeigen, aus dem er gelesen wird.
+Ein Versuch mit Schwäbisch und Platt ist verworfen worden. ElevenLabs macht
+aus geschriebenem Niederdeutsch etwas, das nach Niederländisch klingt, und
+aus Schwäbisch etwas, das nirgends gesprochen wird. Zwei ordentliche Stimmen
+auf Hochdeutsch tragen den Film besser als ein Dialekt, der danebengreift.
+
+Andere Stimmen gehen mit `--stimme-m` und `--stimme-w` und einer Voice-ID.
 
 ## Wenn ein Text nicht passt
 
