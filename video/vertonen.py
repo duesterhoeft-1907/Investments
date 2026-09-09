@@ -4,13 +4,18 @@ Vertont den Erklaerfilm mit ElevenLabs.
 
 Warum ausserhalb der Anwendung: api.elevenlabs.io ist aus der Bauumgebung
 nicht erreichbar, und welche Stimmen die Lieblingsstimmen sind, weiss nur ihr.
-Das Skript braucht nur Python 3 (Bordmittel) und ffmpeg/ffprobe.
+Das Skript braucht nur Python 3 (Bordmittel) und ffmpeg.
 
-    export ELEVENLABS_API_KEY=...
-    python3 video/vertonen.py --mundart schwaebisch --stimme <voice_id>
-    python3 video/vertonen.py --mundart platt       --stimme <voice_id>
+    export ELEVENLABS_API_KEY=...            # oder --kit auf das Video-Kit zeigen
+    python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
+    python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
 
-Ergebnis: video/erklaerfilm-<mundart>.mp4
+Ergebnis: video/erklaerfilm-<mundart>.mp4. Danach den Vorspann davorsetzen:
+
+    python3 video/vorspann.py --film video/erklaerfilm-schwaebisch.mp4
+
+Stimmen, Modell und Einstellungen sind dieselben wie im EXECUTEX-Video-Kit –
+damit klingt der Film wie die anderen Filme aus dem Haus.
 
 Ablauf je Abschnitt: Text sprechen lassen, Laenge messen, notfalls minimal
 straffen, an die Startsekunde des Abschnitts setzen, mit Stille auffuellen.
@@ -22,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import os
 import shutil
 import subprocess
@@ -34,21 +40,43 @@ HIER = Path(__file__).resolve().parent
 VORLAUF_S = 0.35          # kleiner Atemzug, damit der Satz nicht auf dem Schnitt klebt
 MAX_STRAFFUNG = 1.18      # darueber klingt es gehetzt – dann lieber den Text kuerzen
 
+# Die zwei Lieblingsstimmen aus dem EXECUTEX-Video-Kit.
+STIMMEN = {
+    'M': ('pqHfZKP75CvOlQylNhV4', 'Bill · Erzähler, reif, ruhig'),
+    'W': ('gVOibprogMfmHVVyo5r6', 'Corinna · Moderatorin, selbstbewusst, warm'),
+}
+# Ebenfalls aus dem Kit übernommen, damit der Klang zu den anderen Filmen passt.
+EINSTELLUNGEN = {
+    'stability': 0.40,
+    'similarity_boost': 0.80,
+    'style': 0.50,
+    'use_speaker_boost': True,
+}
 
-def werkzeug(name: str) -> str:
-    pfad = shutil.which(name)
-    if pfad is None:
-        sys.exit(f"{name} fehlt. Auf dem Mac: brew install ffmpeg")
-    return pfad
+
+def werkzeug() -> str:
+    """ffmpeg aus dem Suchpfad, sonst das von imageio mitgelieferte."""
+    if (pfad := shutil.which("ffmpeg")):
+        return pfad
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError:
+        sys.exit("ffmpeg fehlt. Auf dem Mac: brew install ffmpeg")
 
 
-def laenge(ffprobe: str, datei: Path) -> float:
-    aus = subprocess.run(
-        [ffprobe, "-v", "error", "-show_entries", "format=duration",
-         "-of", "default=noprint_wrappers=1:nokey=1", str(datei)],
-        capture_output=True, text=True, check=True,
-    )
-    return float(aus.stdout.strip())
+def laenge(ff: str, datei: Path) -> float:
+    """Länge in Sekunden – aus der Ausgabe von ffmpeg selbst gelesen.
+
+    Absichtlich ohne ffprobe: das liegt zwar meist daneben, fehlt aber
+    genau dann, wenn ffmpeg aus einem Python-Paket kommt."""
+    aus = subprocess.run([ff, "-hide_banner", "-i", str(datei)],
+                         capture_output=True, text=True).stderr
+    treffer = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", aus)
+    if treffer is None:
+        sys.exit(f"Länge von {datei} nicht lesbar.")
+    h, m, s = treffer.groups()
+    return int(h) * 3600 + int(m) * 60 + float(s)
 
 
 def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -> None:
@@ -57,7 +85,7 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         data=json.dumps({
             "text": text,
             "model_id": modell,
-            "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "style": 0.25},
+            "voice_settings": EINSTELLUNGEN,
         }).encode("utf-8"),
         headers={"xi-api-key": schluessel, "Content-Type": "application/json",
                  "Accept": "audio/mpeg"},
@@ -73,7 +101,11 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
 def main() -> None:
     args = argparse.ArgumentParser(description="Erklaerfilm vertonen")
     args.add_argument("--mundart", choices=["schwaebisch", "platt"], required=True)
-    args.add_argument("--stimme", required=True, help="Voice-ID aus der ElevenLabs-Bibliothek")
+    args.add_argument("--stimme", required=True,
+                      help="M (Bill), W (Corinna) oder eine ElevenLabs Voice-ID")
+    args.add_argument("--kit", default=None,
+                      help="Ordner des EXECUTEX-Video-Kits – von dort wird der "
+                           "Schlüssel gelesen, wenn ELEVENLABS_API_KEY leer ist")
     args.add_argument("--modell", default="eleven_multilingual_v2")
     args.add_argument("--film", default=str(HIER / "erklaerfilm.mp4"))
     args.add_argument("--texte", default=str(HIER / "sprecher.json"))
@@ -81,10 +113,22 @@ def main() -> None:
     opt = args.parse_args()
 
     schluessel = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if not schluessel and opt.kit:
+        # Der Schlüssel gehört EXECUTEX und hat in diesem Repository nichts zu
+        # suchen. Er wird gelesen, nie geschrieben.
+        sys.path.insert(0, str(Path(opt.kit).expanduser().resolve()))
+        try:
+            import config as kit_config
+            schluessel = str(getattr(kit_config, "ELEVENLABS_API_KEY", "")).strip()
+        except ImportError:
+            sys.exit(f"Im Ordner {opt.kit} liegt keine config.py.")
     if not schluessel:
-        sys.exit("ELEVENLABS_API_KEY ist nicht gesetzt.")
+        sys.exit("ELEVENLABS_API_KEY ist nicht gesetzt (oder --kit angeben).")
 
-    ffmpeg, ffprobe = werkzeug("ffmpeg"), werkzeug("ffprobe")
+    stimme, wer = STIMMEN.get(opt.stimme, (opt.stimme, "eigene Voice-ID"))
+    print(f"Stimme: {wer}")
+
+    ffmpeg = werkzeug()
     film = Path(opt.film)
     if not film.is_file():
         sys.exit(f"Film nicht gefunden: {film}")
@@ -102,11 +146,11 @@ def main() -> None:
 
         if not roh.is_file():
             print(f"[{nr:02d}/{len(plan['abschnitte'])}] {abschnitt['id']} – spreche …")
-            sprechen(abschnitt[opt.mundart], opt.stimme, opt.modell, schluessel, roh)
+            sprechen(abschnitt[opt.mundart], stimme, opt.modell, schluessel, roh)
         else:
             print(f"[{nr:02d}] {abschnitt['id']} – vorhanden, wird wiederverwendet")
 
-        gesprochen = laenge(ffprobe, roh)
+        gesprochen = laenge(ffmpeg, roh)
         platz = budget - VORLAUF_S - 0.15
         tempo = max(1.0, gesprochen / platz) if platz > 0 else 1.0
         if tempo > MAX_STRAFFUNG:
@@ -133,7 +177,7 @@ def main() -> None:
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-f", "concat",
                     "-safe", "0", "-i", str(liste), "-c", "copy", str(spur)], check=True)
 
-    gesamt = laenge(ffprobe, spur)
+    gesamt = laenge(ffmpeg, spur)
     print(f"Tonspur: {gesamt:.1f}s (Film: {plan['gesamt_s']}s)")
 
     ziel = HIER / f"erklaerfilm-{opt.mundart}.mp4"

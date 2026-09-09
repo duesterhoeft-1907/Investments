@@ -50,18 +50,24 @@ werden, und jede Änderung am Vorspann verschöbe sie erneut.
 richtigen sind, weiß nur ihr. Deshalb läuft dieser Schritt auf eurem Rechner:
 
 ```bash
-export ELEVENLABS_API_KEY=...
+export ELEVENLABS_API_KEY=...        # oder --kit auf das Video-Kit zeigen
 
-python3 video/vertonen.py --mundart schwaebisch --stimme <voice_id>
-python3 video/vertonen.py --mundart platt       --stimme <voice_id>
+python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
+python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
 ```
 
 Voraussetzung ist nur `ffmpeg` (`brew install ffmpeg`); Python bringt der Mac mit.
 Ergebnis sind `erklaerfilm-schwaebisch.mp4` und `erklaerfilm-platt.mp4`.
 
-Die Voice-ID steht in der ElevenLabs-Bibliothek unter der Stimme (Drei-Punkte-Menü,
-„Copy voice ID"). Ein anderes Modell geht mit `--modell`, etwa
-`--modell eleven_turbo_v2_5`.
+`M` und `W` sind die beiden Lieblingsstimmen aus dem EXECUTEX-Video-Kit – Bill
+(Erzähler, ruhig) und Corinna (Moderatorin, warm). Eine andere Stimme geht mit
+ihrer Voice-ID direkt. Modell und Klangeinstellungen sind dieselben wie im Kit
+(`eleven_multilingual_v2`, stability 0.40, similarity 0.80, style 0.50,
+speaker boost an), damit der Film zu den anderen Filmen aus dem Haus passt.
+
+Der Schlüssel gehört EXECUTEX und liegt **nicht** in diesem Repository. Entweder
+in die Umgebung setzen oder mit `--kit ~/elevenlabs_video_kit` auf den Ordner
+zeigen, aus dem er gelesen wird.
 
 ## Wenn ein Text nicht passt
 
