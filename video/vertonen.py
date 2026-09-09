@@ -38,6 +38,12 @@ import urllib.request
 from pathlib import Path
 
 HIER = Path(__file__).resolve().parent
+
+# Steht als erste Zeile in der Ausgabe. Klingt nach Kleinkram, ist aber der
+# Unterschied zwischen "das Skript tut es nicht" und "es lief die alte
+# Fassung": ein zweiter Download heisst auf dem Mac vertonung-2.zip, und
+# unzip packt dann weiter die alte aus.
+FASSUNG = "5 – 9. September, mit Stille-Schnitt"
 VORLAUF_S = 0.35          # kleiner Atemzug, damit der Satz nicht auf dem Schnitt klebt
 MAX_STRAFFUNG = 1.18      # darueber klingt es gehetzt – dann lieber den Text kuerzen
 
@@ -253,6 +259,7 @@ def main() -> None:
             "oder in die Umgebung setzen (ELEVENLABS_API_KEY), "
             "oder mit --kit auf den Ordner des Video-Kits zeigen."
         )
+    print(f"vertonen.py Fassung {FASSUNG}")
     schluesselPruefen(schluessel, woher)
     print(f"Schlüssel: {woher}")
 
