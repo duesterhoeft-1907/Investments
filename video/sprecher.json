@@ -1,5 +1,5 @@
 {
-  "hinweis": "Sprechertexte zum Erklaerfilm. Jeder Abschnitt hat ein festes Sekundenbudget, das exakt dem Ablauf in film.html entspricht. Wer den Film aendert, aendert hier mit.",
+  "hinweis": "Sprechertexte zum Erklaerfilm. Jeder Abschnitt hat ein festes Sekundenbudget, das exakt dem Ablauf in film.html entspricht. Wer den Film aendert, aendert hier mit. Die Texte sind bewusst knapp: sie muessen nicht die Bildinhalte wiederholen, sondern das sagen, was im Bild nicht steht.",
   "gesamt_s": 222,
   "mundarten": {
     "schwaebisch": "Schwaebisch. Von einem Muttersprachler gegengelesen? Noch nicht.",
@@ -8,13 +8,13 @@
   "abschnitte": [
     {
       "nr": 1, "id": "titel", "start_s": 0, "dauer_s": 6,
-      "schwaebisch": "Vom Formular bis zom Aaruf. Was zwischat Abschicka ond em Kligla vom Telefon bassiert.",
-      "platt": "Vun't Formular bet to'n Anroop. Wat twischen Afschicken un dat Klingeln vun't Telefoon passeert."
+      "schwaebisch": "Vom Formular bis zom Aaruf. Was zwischat Abschicka ond em Kligla bassiert.",
+      "platt": "Vun't Formular bet to'n Anroop. Wat twischen Afschicken un't Klingeln passeert."
     },
     {
       "nr": 2, "id": "ueberblick", "start_s": 6, "dauer_s": 26,
-      "schwaebisch": "Vier Fraga uf em Handy, koi Neilada. Nach neinzig Millisekonda isch klar, wer se kriagt: Fachgebiet, Gruppe, Berater. Wer et do isch, wird ibersprunga. Nach drei Sekonda scheppert's: Glogg, Ton, Chat ond Mail. Ond dann lauft d Uhr. Zeah Minuta hot mr firn Aaruf, ond die Zeit wird au gmessa.",
-      "platt": "Veer Fragen op't Telefoon, keen Nieladen. Na negentig Millisekunnen steiht fast, wokeen se kriggt: Fachrebeet, Grupp, Berader. Wokeen nich dor is, warrt overgahn. Na dree Sekunnen geiht dat los: Klock, Ton, Chat un Mail. Un denn lopt de Uhr. Teihn Minuten hebbt wi for den Anroop, un disse Tiet warrt ok meten."
+      "schwaebisch": "Vier Fraga uf em Handy. Nach neinzig Millisekonda steht dr Berater fescht – wer et do isch, wird ibersprunga. Nach drei Sekonda scheppert's: Glogg, Ton, Chat ond Mail. Dann lauft d Uhr: zeah Minuta firn Aaruf, ond die wird gmessa.",
+      "platt": "Veer Fragen op't Telefoon. Na negentig Millisekunnen steiht de Berader fast – wokeen nich dor is, warrt overgahn. Na dree Sekunnen geiht dat los: Klock, Ton, Chat un Mail. Denn lopt de Uhr: teihn Minuten for'n Anroop, un de warrt meten."
     },
     {
       "nr": 3, "id": "countdown", "start_s": 32, "dauer_s": 5,
@@ -23,8 +23,8 @@
     },
     {
       "nr": 4, "id": "weg", "start_s": 37, "dauer_s": 26,
-      "schwaebisch": "Dr Weg vo ra Aafrog. Jedes Feld wird brieft, ond ohne Telefonnummer goht's et weiter: dr Rickruf isch jo dr Sinn vo dr Sach. Kennat mr da scho? Nå kriagt er da gleiche Berater wia's letschte Mol. Vorgang ond Aufgab in oim Rutsch, ond d Frist rechnat bloß gega d Gschäftszeita. Nach drei Sekonda wissat's älle offene Fenschter em CRM.",
-      "platt": "De Weg vun en Anfraag. Elk Feld warrt proovt, un ahn Telefoonnummer geiht dat nich wieder: de Ruggroop is jo de Sinn vun de Saak. Kennt wi den al? Denn kriggt he den sulven Berader as dat letzte Mal. Vorgang un Opgaav in een Toorn, un de Frist rekent bloots gegen de Warktieden. Na dree Sekunnen weet dat elk apen Finster in't CRM."
+      "schwaebisch": "Jedes Feld wird brieft – ohne Telefonnummer goht's et weiter, dr Rickruf isch jo dr Sinn. Kennat mr da scho, kriagt er da gleiche Berater. D Frist rechnat gega d Gschäftszeita, ond nach drei Sekonda wissat's älle offene Fenschter.",
+      "platt": "Elk Feld warrt proovt – ahn Telefoonnummer geiht dat nich wieder, de Ruggroop is jo de Sinn. Kennt wi den al, kriggt he den sulven Berader. De Frist rekent gegen de Warktieden, un na dree Sekunnen weet dat elk apen Finster."
     },
     {
       "nr": 5, "id": "countdown", "start_s": 63, "dauer_s": 5,
@@ -33,8 +33,8 @@
     },
     {
       "nr": 6, "id": "benachrichtigung", "start_s": 68, "dauer_s": 26,
-      "schwaebisch": "Heit kriagat älle 's Gleiche: CRM, Mail ond dr interne Chat. Nei kommt a Matrix em Profil: welcher Aalass uf welchem Weg, mit eigne Ruahzeita. SMS ond WhatsApp bloß als Eskalation, weil jede Nachricht was koschtet. Ond bitte bindla statt oizeln, sonscht schaltet oiner nach dr dritta Aafrog am Vormittag oifach älles ab.",
-      "platt": "Vundaag kriggt jedeen dat sulvige: CRM, Mail un de intern Chat. Nee dorto kummt en Matrix in't Profil: welk Anlaat op welken Weg, mit egen Ruhtieden. SMS un WhatsApp bloots as Eskalatschoon, denn jede Naricht kost wat. Un beter tosamenfaten as enkelt, anners schall't een na de drudde Anfraag an'n Vormiddag allens afschalten."
+      "schwaebisch": "Heit kriagat älle 's Gleiche: CRM, Mail ond Chat. Nei kommt a Matrix em Profil: welcher Aalass uf welchem Weg, mit eigne Ruahzeita. SMS ond WhatsApp bloß als Eskalation. Ond bündla statt oizeln – sonscht schaltet oiner älles ab.",
+      "platt": "Vundaag kriggt jedeen dat sulvige: CRM, Mail un Chat. Nee kummt en Matrix in't Profil: welk Anlaat op welken Weg, mit egen Ruhtieden. SMS un WhatsApp bloots as Eskalatschoon. Un beter tosamenfaten – anners schalt't een allens af."
     },
     {
       "nr": 7, "id": "countdown", "start_s": 94, "dauer_s": 5,
@@ -43,8 +43,8 @@
     },
     {
       "nr": 8, "id": "pwa", "start_s": 99, "dauer_s": 24,
-      "schwaebisch": "Drei Dateia neba dr Seit: Manifest, Service Worker, Push-Aameldung. Nachher leit 's CRM uf em Startbildschirm ond meldat sich au no, wenn d App zua isch. Vor allem firn Chat, der nutzt heit bloß bei offenem Fenschter. Laufade Koschta koine: Android sofort, 's iPhone ab sechzeh Punkt vier.",
-      "platt": "Dree Dateien blangen de Siet: Manifest, Service Worker, Push-Anmellen. Denn liggt dat CRM op'n Startschirm un meldt sik ok, wenn de App to is. Vor allen for den Chat, de nutt vundaag bloots bi apen Finster. Lopen Kosten gifft dat keen: Android fuurts, dat iPhone vun soosteihn Punkt veer an."
+      "schwaebisch": "Drei Dateia neba dr Seit: Manifest, Service Worker, Push. Nachher leit 's CRM uf em Startbildschirm ond meldat sich au, wenn d App zua isch. Vor allem firn Chat. Laufade Koschta koine: Android sofort, 's iPhone ab sechzeh Punkt vier.",
+      "platt": "Dree Dateien blangen de Siet: Manifest, Service Worker, Push. Denn liggt dat CRM op'n Startschirm un meldt sik ok, wenn de App to is. Vor allen for den Chat. Lopen Kosten keen: Android fuurts, dat iPhone vun soosteihn Punkt veer an."
     },
     {
       "nr": 9, "id": "countdown", "start_s": 123, "dauer_s": 5,
@@ -53,8 +53,8 @@
     },
     {
       "nr": 10, "id": "vertretung", "start_s": 128, "dauer_s": 22,
-      "schwaebisch": "Bis jetzt: oi Vorgang, oi Zuaständiger. Im Normalfall richtig, denn a gteilte Verantwortung isch koine. Nei: dr Zuaständige entscheidet ond wird gmessa, d Vertretung derf älles, wird aber et gmessa. Ond wenn oiner sei Abwesenheit eiträgt, wandarat d Vorgäng mit ond kommat wieder zruck.",
-      "platt": "Bet nu: een Vorgang, een Tostannigen. In'n Normalfall richtig, denn deelte Verantwoorden is keen. Nee: de Tostannige besluut un warrt meten, de Vertreden dorf allens, warrt aver nich meten. Un wenn een sien Afwesenheit indreggt, gaht de Vorgang mit un kaamt wedder torugg."
+      "schwaebisch": "Bis jetzt: oi Vorgang, oi Zuaständiger – gteilte Verantwortung isch koine. Nei: dr Zuaständige entscheidet ond wird gmessa, d Vertretung derf älles, wird aber et gmessa. Beim Urlaub wandarat d Vorgäng mit ond kommat zruck.",
+      "platt": "Bet nu: een Vorgang, een Tostannigen – deelte Verantwoorden is keen. Nee: de Tostannige besluut un warrt meten, de Vertreden dorf allens, warrt aver nich meten. Bi Urlaub gaht de Vorgang mit un kaamt wedder torugg."
     },
     {
       "nr": 11, "id": "countdown", "start_s": 150, "dauer_s": 5,
@@ -63,8 +63,8 @@
     },
     {
       "nr": 12, "id": "mail", "start_s": 155, "dauer_s": 22,
-      "schwaebisch": "Drei Mailtext standat im Quelltext. Fir Bstätigung ond Alarm passt des, fir älles Gschriebne et. Also Vorlaga mit Bausteina, zwoisprachig, mit Vorschau vorm Sende. Ond oins muass mr wissa: Klicks send ehrlich, Öffnunga et. Apple lädt des Zählbildle scho seit zwoitausadoinazwanzig im Voraus.",
-      "platt": "Dree Mailtexten staht in'n Kwelltext. For Bestatigen un Alarm is dat recht, for allens Schrevene nich. Also Vorlagen mit Bausteen, tweesprakig, mit Vorschau vor't Afschicken. Un een mutt een weten: Klicks sund ehrlich, dat Apenmaken nich. Apple laadt dat Telbild al siet tweedusend eenuntwintig vorut."
+      "schwaebisch": "Drei Mailtext standat im Quelltext – fir Bstätigung ond Alarm richtig, fir älles Gschriebne et. Also Vorlaga mit Bausteina, zwoisprachig, mit Vorschau. Ond oins muass mr wissa: Klicks send ehrlich, Öffnunga et.",
+      "platt": "Dree Mailtexten staht in'n Kwelltext – for Bestatigen un Alarm recht, for allens Schrevene nich. Also Vorlagen mit Bausteen, tweesprakig, mit Vorschau. Un een mutt weten: Klicks sund ehrlich, dat Apenmaken nich."
     },
     {
       "nr": 13, "id": "countdown", "start_s": 177, "dauer_s": 5,
@@ -73,13 +73,13 @@
     },
     {
       "nr": 14, "id": "postfach", "start_s": 182, "dauer_s": 26,
-      "schwaebisch": "Jede Mail kriagt a Antwort-an mit dr Vorgangsnummer drin. A Cron holt per IMAP, was nei isch, ond hängt d Antwort ganz vo selber an da richtige Vorgang. Isch dr Absender onbekannt, gits a Eischätzung mit Begrindung ond direkt danaba a Knopf: als Aafrog aalega. Dr Grondsatz bleibt: d Maschin schlagt vor, dr Mensch entscheidet.",
-      "platt": "Jede Mail kriggt en Antwoort-an mit de Vorgangsnummer dorin. En Cron haalt per IMAP, wat nee is, un hangt de Antwoort heel vun alleen an den richtigen Vorgang. Is de Afsenner nich bekannt, gifft dat en Inschatzen mit Begrunnen un dorblangen en Knoop: as Anfraag anleggen. De Grundsatz blifft: de Maschien sleit vor, de Minsch besluut."
+      "schwaebisch": "Jede Mail kriagt a Antwort-an mit dr Vorgangsnummer. A Cron holt, was nei isch, ond hängt d Antwort vo selber an da richtige Vorgang. Bei onbekanntem Absender gits a Eischätzung ond a Knopf: als Aafrog aalega. D Maschin schlagt vor, dr Mensch entscheidet.",
+      "platt": "Jede Mail kriggt en Antwoort-an mit de Vorgangsnummer. En Cron haalt, wat nee is, un hangt de Antwoort vun alleen an den richtigen Vorgang. Bi'n unbekannten Afsenner gifft dat en Inschatzen un en Knoop: as Anfraag anleggen. De Maschien sleit vor, de Minsch besluut."
     },
     {
       "nr": 15, "id": "abspann", "start_s": 208, "dauer_s": 14,
-      "schwaebisch": "Sechs Stufa, jede fir sich scho nützlich. Vierzeh ond a halber Tag insgesamt, laufade Koschta koine außer SMS ond WhatsApp, ond vier Entscheidunga vo eich. Aafanga däd i mit dr Warteschlang firn Mailversand: a halber Tag.",
-      "platt": "Soss Stufen, jede for sik al nutt. Veerteihn un en halven Dag tosamen, lopen Kosten keen buten SMS un WhatsApp, un veer Beslut vun jo. Anfangen wurr ik mit de Wachtreeg for'n Mailversand: en halven Dag."
+      "schwaebisch": "Sechs Stufa, jede fir sich nützlich. Vierzeh ond a halber Tag, laufade Koschta koine außer SMS ond WhatsApp, vier Entscheidunga vo eich. Aafanga mit dr Warteschlang firn Mailversand.",
+      "platt": "Soss Stufen, jede for sik nutt. Veerteihn un en halven Dag, lopen Kosten keen buten SMS un WhatsApp, veer Beslut vun jo. Anfangen mit de Wachtreeg for'n Mailversand."
     }
   ]
 }
