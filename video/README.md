@@ -11,6 +11,7 @@ davor.
 | `schriften.py` | Bettet die Schriften ein und schreibt `film-lokal.html` – die Fassung, die aufgenommen wird. |
 | `aufnehmen.mjs` | Nimmt den Film mit einem Browser in Echtzeit auf. |
 | `schneiden.py` | Schneidet die Aufnahme an der Klappe und kodiert nach mp4. |
+| `vorspann.py` | Setzt den executex-Vorspann (6 s) vor den Film. |
 | `vertonen.py` | Spricht die Texte bei ElevenLabs, passt sie in ihr Budget und legt sie auf den Film. |
 | `erklaerfilm.mp4` | Das aufgenommene Bild ohne Ton. Nicht im Git – entsteht beim Aufnehmen. |
 
@@ -23,6 +24,25 @@ python3 video/schneiden.py     # zuschneiden und kodieren
 ```
 
 Gebraucht werden Playwright mit Chromium und ffmpeg.
+
+## Vorspann
+
+Der executex-Vorspann stammt aus einem anderen Projekt und liegt nicht im Git –
+er ist Markenmaterial, kein Quelltext. Leg ihn als `video/intro.mp4` ab, oder
+gib die Datei an, aus der die ersten Sekunden geschnitten werden:
+
+```bash
+python3 video/vorspann.py                                  # video/intro.mp4
+python3 video/vorspann.py --intro ~/Vertriebspartner_v3.mp4 --sekunden 6
+```
+
+Beide Teile werden auf 1920 × 1080, 25 Bilder und 48 kHz Stereo gebracht; der
+Ton des Vorspanns bleibt, für den Film kommt Stille dazu, solange er keine
+Tonspur hat. Ergebnis: `erklaerfilm-mit-vorspann.mp4`.
+
+Reihenfolge, wenn beides zusammenkommt: **erst vertonen, dann den Vorspann
+davorsetzen** – sonst müsste die Sprecherspur um die sechs Sekunden versetzt
+werden, und jede Änderung am Vorspann verschöbe sie erneut.
 
 ## Ton drauflegen
 
