@@ -6,7 +6,8 @@ Warum ausserhalb der Anwendung: api.elevenlabs.io ist aus der Bauumgebung
 nicht erreichbar, und welche Stimmen die Lieblingsstimmen sind, weiss nur ihr.
 Das Skript braucht nur Python 3 (Bordmittel) und ffmpeg.
 
-    export ELEVENLABS_API_KEY=...            # oder --kit auf das Video-Kit zeigen
+    # Den Schlüssel einmal hinterlegen – danach findet ihn das Skript selbst:
+    umask 077; printf '%s' 'sk_…' > ~/.elevenlabs_key
     python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
     python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
 
@@ -98,6 +99,41 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         sys.exit(f"ElevenLabs antwortet mit {fehler.code}: {fehler.read().decode('utf-8', 'replace')[:400]}")
 
 
+def schluesselFinden(kit: str | None) -> tuple[str, str]:
+    """
+    Sucht den Schlüssel an drei Stellen, in dieser Reihenfolge:
+    Umgebung, Schlüsseldatei im Benutzerordner, config.py des Video-Kits.
+
+    Die Datei ist der bequemste Weg: einmal hinterlegen, danach nie wieder
+    daran denken. Sie gehört niemandem außer dem eigenen Konto – deshalb wird
+    beim Lesen geprüft, ob sie für andere zugänglich ist, und gemeckert, statt
+    es stillschweigend hinzunehmen.
+    """
+    if (aus_umgebung := os.environ.get("ELEVENLABS_API_KEY", "").strip()):
+        return aus_umgebung, "aus der Umgebung"
+
+    datei = Path.home() / ".elevenlabs_key"
+    if datei.is_file():
+        if datei.stat().st_mode & 0o077:
+            print(f"Hinweis: {datei} ist auch für andere lesbar. "
+                  f"Besser: chmod 600 {datei}")
+        if (aus_datei := datei.read_text(encoding="utf-8").strip()):
+            return aus_datei, f"aus {datei}"
+
+    if kit:
+        # Der Schlüssel gehört EXECUTEX und hat in diesem Repository nichts zu
+        # suchen. Er wird gelesen, nie geschrieben.
+        sys.path.insert(0, str(Path(kit).expanduser().resolve()))
+        try:
+            import config as kit_config
+        except ImportError:
+            sys.exit(f"Im Ordner {kit} liegt keine config.py.")
+        if (aus_kit := str(getattr(kit_config, "ELEVENLABS_API_KEY", "")).strip()):
+            return aus_kit, "aus dem Video-Kit"
+
+    return "", ""
+
+
 def main() -> None:
     args = argparse.ArgumentParser(description="Erklaerfilm vertonen")
     args.add_argument("--mundart", choices=["schwaebisch", "platt"], required=True)
@@ -112,18 +148,15 @@ def main() -> None:
     args.add_argument("--behalten", action="store_true", help="Einzelspuren nicht loeschen")
     opt = args.parse_args()
 
-    schluessel = os.environ.get("ELEVENLABS_API_KEY", "").strip()
-    if not schluessel and opt.kit:
-        # Der Schlüssel gehört EXECUTEX und hat in diesem Repository nichts zu
-        # suchen. Er wird gelesen, nie geschrieben.
-        sys.path.insert(0, str(Path(opt.kit).expanduser().resolve()))
-        try:
-            import config as kit_config
-            schluessel = str(getattr(kit_config, "ELEVENLABS_API_KEY", "")).strip()
-        except ImportError:
-            sys.exit(f"Im Ordner {opt.kit} liegt keine config.py.")
+    schluessel, woher = schluesselFinden(opt.kit)
     if not schluessel:
-        sys.exit("ELEVENLABS_API_KEY ist nicht gesetzt (oder --kit angeben).")
+        sys.exit(
+            "Kein ElevenLabs-Schlüssel gefunden. Einmal hinterlegen:\n"
+            "    umask 077; printf '%s' 'sk_…' > ~/.elevenlabs_key\n"
+            "oder in die Umgebung setzen (ELEVENLABS_API_KEY), "
+            "oder mit --kit auf den Ordner des Video-Kits zeigen."
+        )
+    print(f"Schlüssel: {woher}")
 
     stimme, wer = STIMMEN.get(opt.stimme, (opt.stimme, "eigene Voice-ID"))
     print(f"Stimme: {wer}")

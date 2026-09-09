@@ -49,12 +49,22 @@ werden, und jede Änderung am Vorspann verschöbe sie erneut.
 `api.elevenlabs.io` ist aus der Bauumgebung nicht erreichbar, und welche Stimmen die
 richtigen sind, weiß nur ihr. Deshalb läuft dieser Schritt auf eurem Rechner:
 
-```bash
-export ELEVENLABS_API_KEY=...        # oder --kit auf das Video-Kit zeigen
+Der Schlüssel wird einmal hinterlegt, danach findet ihn das Skript selbst:
 
+```bash
+umask 077; printf '%s' 'sk_…' > ~/.elevenlabs_key
+```
+
+Gesucht wird in dieser Reihenfolge: Umgebung (`ELEVENLABS_API_KEY`),
+`~/.elevenlabs_key`, und `--kit <Ordner des Video-Kits>`.
+
+```bash
 python3 video/vertonen.py --mundart schwaebisch --stimme M   # Bill
 python3 video/vertonen.py --mundart platt       --stimme W   # Corinna
 ```
+
+Das gehört auf den eigenen Rechner, nicht auf den Webserver: dort gibt es
+kein ffmpeg, und zu tun hat er damit auch nichts.
 
 Voraussetzung ist nur `ffmpeg` (`brew install ffmpeg`); Python bringt der Mac mit.
 Ergebnis sind `erklaerfilm-schwaebisch.mp4` und `erklaerfilm-platt.mp4`.
