@@ -120,11 +120,28 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         with urllib.request.urlopen(anfrage, timeout=180) as antwort:
             ziel.write_bytes(antwort.read())
     except urllib.error.HTTPError as fehler:
+        rumpf = fehler.read().decode('utf-8', 'replace')
+
+        # ElevenLabs schickt 401 sowohl für "Schlüssel falsch" als auch für
+        # "Guthaben leer". Der Unterschied steht im Rumpf, und er ist
+        # erheblich: das eine behebt man mit einem anderen Schlüssel, das
+        # andere nur mit Geld oder Warten.
+        try:
+            code = json.loads(rumpf).get('detail', {}).get('code', '')
+        except (ValueError, AttributeError):
+            code = ''
+
         hinweis = ''
-        if fehler.code == 401:
-            hinweis = '\n    Das heißt: der Schlüssel wird nicht anerkannt. Der richtige steht in der config.py des Video-Kits.'
-        sys.exit(f"ElevenLabs antwortet mit {fehler.code}: "
-                 f"{fehler.read().decode('utf-8', 'replace')[:400]}{hinweis}")
+        if code == 'quota_exceeded':
+            hinweis = ('\n    Das Guthaben ist aufgebraucht – am Schlüssel liegt es nicht.'
+                       '\n    Was dieser Schlüssel wirklich sieht:'
+                       '\n      curl -s -H "xi-api-key: $ELEVENLABS_API_KEY" '
+                       'https://api.elevenlabs.io/v1/user/subscription')
+        elif fehler.code == 401:
+            hinweis = ('\n    Der Schlüssel wird nicht anerkannt. '
+                       'Der richtige steht in der config.py des Video-Kits.')
+
+        sys.exit(f"ElevenLabs antwortet mit {fehler.code}: {rumpf[:400]}{hinweis}")
     except urllib.error.URLError as fehler:
         sys.exit(f"api.elevenlabs.io ist nicht erreichbar: {fehler.reason}")
 
