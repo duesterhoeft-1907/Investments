@@ -1,0 +1,22 @@
+{
+  "name": "21 Capital Invest · Lead Suite",
+  "short_name": "Lead Suite",
+  "description": "Anfragen, Reaktionszeiten und der interne Chat – auf dem Telefon.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B1816",
+  "theme_color": "#0B1816",
+  "lang": "de",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-maskierbar-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Chat", "url": "/app/chat", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Offene Leads", "url": "/app/leads", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

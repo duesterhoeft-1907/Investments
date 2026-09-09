@@ -291,6 +291,80 @@ table.data tbody tr:hover { background: rgba(var(--auf), 0.04); }
 }
 .lead-alert-msg:hover { background: rgba(var(--accent-rgb), 0.14); }
 
+/* ── Chat: Reaktionen, Werkzeuge, Trennlinie ──────────────────────────
+   Die Werkzeuge liegen rechts an der Nachricht und erscheinen erst beim
+   Zeigen. Auf dem Telefon gibt es keinen Zeiger – dort stehen sie immer,
+   sonst waeren sie unerreichbar. */
+.msg { position: relative; }
+.msg.weg .text { color: var(--text-faint); }
+.msg-werkzeug {
+  position: absolute; top: -6px; right: 0;
+  display: flex; gap: 2px; padding: 2px;
+  background: var(--flaeche-hoch, rgba(var(--auf), 0.06));
+  border: 1px solid rgba(var(--auf), 0.10);
+  border-radius: 2px;
+  opacity: 0; transition: opacity 120ms ease;
+}
+.msg:hover .msg-werkzeug, .msg:focus-within .msg-werkzeug { opacity: 1; }
+@media (hover: none) { .msg-werkzeug { opacity: 0.55; } }
+
+.reaktion-wahl {
+  position: absolute; top: 26px; right: 0; z-index: 5;
+  display: flex; gap: 2px; padding: 4px;
+  background: var(--flaeche, rgba(20, 30, 30, 0.98));
+  border: 1px solid rgba(var(--auf), 0.14);
+  border-radius: 2px; box-shadow: 0 8px 24px rgba(var(--ab), 0.35);
+}
+.reaktion-wahl button {
+  border: 0; background: none; cursor: pointer; font-size: 17px;
+  padding: 3px 5px; border-radius: 2px; line-height: 1;
+}
+.reaktion-wahl button:hover { background: rgba(var(--auf), 0.10); }
+
+.reaktionen { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.reaktion {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 7px; font-size: 13px; line-height: 1.7; cursor: pointer;
+  border: 1px solid rgba(var(--auf), 0.12); border-radius: 2px;
+  background: rgba(var(--auf), 0.04); color: var(--text-dim);
+}
+.reaktion span { font-size: 11px; font-variant-numeric: tabular-nums; }
+.reaktion.meine { border-color: rgba(var(--accent-rgb), 0.55); background: rgba(var(--accent-rgb), 0.12); }
+
+.erwaehnt { color: var(--akzent-text); font-weight: 500; }
+
+.ungelesen-linie {
+  display: flex; align-items: center; gap: 10px;
+  margin: 16px 0 4px; color: var(--akzent-text); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.ungelesen-linie::before, .ungelesen-linie::after {
+  content: ''; flex: 1; height: 1px; background: rgba(var(--accent-rgb), 0.35);
+}
+
+.neue-unten {
+  position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 6px; z-index: 4;
+  padding: 6px 12px; font-size: 12px; cursor: pointer;
+  border: 1px solid rgba(var(--accent-rgb), 0.4); border-radius: 2px;
+  background: var(--flaeche, rgba(20, 30, 30, 0.98)); color: var(--akzent-text);
+  box-shadow: 0 8px 20px rgba(var(--ab), 0.3);
+}
+.chat-pane { position: relative; }
+
+.tippt { min-height: 14px; margin: 0 0 4px; font-size: 11px; color: var(--text-faint); }
+
+.erwaehnung {
+  margin-bottom: 8px; border: 1px solid rgba(var(--auf), 0.12);
+  border-radius: 2px; background: var(--surface-tief, rgba(var(--auf), 0.04));
+  overflow: hidden;
+}
+.erwaehnung button {
+  width: 100%; gap: 8px; padding: 6px 10px; border: 0; cursor: pointer;
+  background: none; color: var(--text); text-align: left;
+}
+.erwaehnung button:hover { background: rgba(var(--auf), 0.07); }
+
 .composer { border-top: 1px solid rgba(var(--auf), 0.06); padding: 12px 20px; }
 .composer .row { align-items: flex-end; gap: 8px; }
 .composer textarea { max-height: 160px; min-height: 44px; }

@@ -77,5 +77,16 @@ $basisUrl = rtrim((string) Config::get('base_url', ''), '/');
   // Damit das JavaScript in derselben Sprache spricht wie die Seite.
   window.__LANG__ = <?= json_encode(I18n::lang()) ?>;
 </script>
+<?php if (($bodyClass ?? '') === 'page-app'): ?>
+<?php /* Nur das CRM ist eine App zum Installieren. Auf der oeffentlichen
+         Seite waere ein Manifest sinnlos: dort gibt es nichts, was man auf
+         den Startbildschirm legen wollte. */ ?>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0B1816">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lead Suite">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<?php endif; ?>
 </head>
 <body class="<?= htmlspecialchars($bodyClass ?? '', ENT_QUOTES) ?>">

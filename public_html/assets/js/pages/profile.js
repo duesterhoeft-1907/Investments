@@ -11,6 +11,7 @@ import { icon } from '../core/icons.js';
 import { api, ApiError } from '../core/api.js';
 import { avatar, button, field, spinner, toast } from '../core/ui.js';
 import { refreshHeader } from '../app.js';
+import { push } from '../core/push.js';
 
 const FARBEN = ['#21B4A6', '#21DDD3', '#0FAF9F', '#0B8479', '#7F9FB8', '#5F86A3', '#9B8BC4', '#8271AF'];
 
@@ -21,13 +22,28 @@ export function render(view, { session }) {
       title: session.user.title ?? '',
       phone: session.user.phone ?? '',
       accent: session.user.accent ?? '#21B4A6',
+      telegramChatId: session.user.telegramChatId ?? '',
     },
     avatarUrl: session.user.avatar ?? null,
     busy: '',
     passwort: { alt: '', neu: '', wiederholt: '' },
+    push: { stand: push.stand(), angemeldet: false, geraete: 0, installiert: push.installiert() },
+    telegram: { eingerichtet: false, botName: '', vorschlaege: [] },
   };
 
   paint();
+
+  // Beides nur zum Anzeigen – schlägt es fehl, bleibt die Karte in ihrem
+  // Grundzustand, statt die ganze Seite scheitern zu lassen.
+  push.angemeldet().then((ja) => { state.push.angemeldet = ja; paint(); }).catch(() => {});
+  api.get('/telegram/status')
+    .then((d) => {
+      state.telegram.eingerichtet = d.eingerichtet;
+      state.telegram.botName = d.botName;
+      if (d.kennung) state.form.telegramChatId = d.kennung;
+      paint();
+    })
+    .catch(() => {});
 
   async function speichern() {
     state.busy = 'profil';
@@ -174,6 +190,152 @@ export function render(view, { session }) {
         })));
   }
 
+  async function pushUmschalten() {
+    state.busy = 'push';
+    paint();
+    try {
+      if (state.push.angemeldet) {
+        state.push.geraete = await push.ausschalten();
+        state.push.angemeldet = false;
+        toast('Dieses Gerät bekommt keine Meldungen mehr.');
+      } else {
+        state.push.geraete = await push.einschalten();
+        state.push.angemeldet = true;
+        toast('Dieses Gerät ist angemeldet.');
+      }
+      state.push.stand = push.stand();
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    state.busy = '';
+    paint();
+  }
+
+  async function pushProbe() {
+    state.busy = 'probe';
+    paint();
+    try {
+      const d = await push.probe();
+      toast(d.geraete > 0
+        ? `Probe an ${d.geraete} Gerät${d.geraete === 1 ? '' : 'e'} geschickt.`
+        : 'Kein Gerät angemeldet.');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    state.busy = '';
+    paint();
+  }
+
+  async function telegramProbe() {
+    state.busy = 'telegram';
+    paint();
+    try {
+      await api.post('/telegram/test');
+      toast('Telegram hat die Probe angenommen.');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    state.busy = '';
+    paint();
+  }
+
+  /** Holt die Kennungen derer, die den Bot gerade gestartet haben. */
+  async function telegramSuchen() {
+    state.busy = 'telegram';
+    paint();
+    try {
+      const d = await api.get('/telegram/chats');
+      state.telegram.vorschlaege = d.chats;
+      if (d.chats.length === 0) {
+        toast('Niemand hat den Bot bisher gestartet. Schreib ihm einmal /start.', 'error');
+      }
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+    state.busy = '';
+    paint();
+  }
+
+  /**
+   * Die Karte für Meldungen aufs Telefon.
+   *
+   * Sie sagt in jedem Zustand etwas Wahres: dass das Gerät es nicht kann,
+   * dass die Erlaubnis fehlt, dass sie abgelehnt wurde und nur in den
+   * Browsereinstellungen zurückzunehmen ist – oder dass alles steht.
+   */
+  function pushKarte() {
+    const stand = state.push.stand;
+    const aufIphone = /iPhone|iPad/.test(navigator.userAgent);
+
+    const hinweis = () => {
+      if (stand === 'unmoeglich' && aufIphone && !state.push.installiert) {
+        return 'Auf dem iPhone gibt es Meldungen erst, wenn die Anwendung über „Teilen → Zum Home-Bildschirm“ hinzugefügt wurde. Danach hier noch einmal einschalten.';
+      }
+      if (stand === 'unmoeglich') return 'Dieser Browser kann keine Meldungen zustellen.';
+      if (stand === 'denied') return 'Meldungen sind für diese Seite abgelehnt. Zurücknehmen lässt sich das nur in den Einstellungen des Browsers.';
+      if (state.push.angemeldet) return 'Dieses Gerät ist angemeldet. Neue Anfragen, Erwähnungen und Direktnachrichten kommen an, auch wenn die Anwendung geschlossen ist.';
+      return 'Ohne Anmeldung erreichen dich Meldungen nur, solange das CRM offen ist.';
+    };
+
+    return h('div.glass.card-pad',
+      h('div.section-title', h('h2', 'Meldungen auf dieses Gerät')),
+      h('p.faint', { style: { fontSize: '13px', marginTop: '8px', lineHeight: '1.6' } }, hinweis()),
+      state.push.installiert
+        ? null
+        : h('p.faint', { style: { fontSize: '12px', marginTop: '8px' } },
+            'Tipp: Über das Menü des Browsers lässt sich die Anwendung auf den Startbildschirm legen – dann startet sie ohne Adresszeile.'),
+      h('div.row', { style: { marginTop: '16px', gap: '10px', flexWrap: 'wrap' } },
+        button(state.push.angemeldet ? 'Dieses Gerät abmelden' : 'Auf diesem Gerät einschalten', {
+          iconName: state.push.angemeldet ? 'x' : 'bell',
+          variant: state.push.angemeldet ? 'outline' : 'primary',
+          disabled: state.busy === 'push' || stand === 'unmoeglich' || stand === 'denied',
+          onclick: pushUmschalten,
+        }),
+        state.push.angemeldet
+          ? button('Probe schicken', {
+              variant: 'ghost', iconName: 'check',
+              disabled: state.busy === 'probe', onclick: pushProbe,
+            })
+          : null));
+  }
+
+  /** Telegram – nur sichtbar, wenn ein Bot hinterlegt ist. */
+  function telegramKarte() {
+    if (!state.telegram.eingerichtet) return null;
+
+    const name = state.telegram.botName ? '@' + state.telegram.botName.replace(/^@/, '') : 'den Bot';
+
+    return h('div.glass.card-pad',
+      h('div.section-title', h('h2', 'Telegram')),
+      h('p.faint', { style: { fontSize: '13px', marginTop: '8px', lineHeight: '1.6' } },
+        `Schreib ${name} einmal /start – danach hier auf „Kennung holen“. Der Bot kann niemanden von sich aus anschreiben, deshalb dieser eine Schritt.`),
+      h('div.form-grid', { style: { marginTop: '14px' } },
+        field('Chat-Kennung', h('input.input', {
+          type: 'text', inputmode: 'numeric', value: state.form.telegramChatId,
+          placeholder: 'z. B. 123456789',
+          oninput: (e) => { state.form.telegramChatId = e.target.value.trim(); },
+        }))),
+      state.telegram.vorschlaege.length
+        ? h('div.stack', { style: { gap: '6px', marginTop: '10px' } },
+            state.telegram.vorschlaege.map((chat) =>
+              h('button.btn.btn-ghost.btn-sm', {
+                type: 'button',
+                onclick: () => { state.form.telegramChatId = chat.id; state.telegram.vorschlaege = []; paint(); },
+              }, `${chat.name} · ${chat.id}`)))
+        : null,
+      h('div.row', { style: { marginTop: '16px', gap: '10px', flexWrap: 'wrap' } },
+        button('Kennung holen', {
+          variant: 'outline', iconName: 'search',
+          disabled: state.busy === 'telegram', onclick: telegramSuchen,
+        }),
+        button('Probe schicken', {
+          variant: 'ghost', iconName: 'check',
+          disabled: state.busy === 'telegram' || !state.form.telegramChatId, onclick: telegramProbe,
+        })),
+      h('p.faint', { style: { fontSize: '12px', marginTop: '10px' } },
+        'Gespeichert wird die Kennung mit „Profil speichern“.'));
+  }
+
   function passwortKarte() {
     const feld = (schluessel, beschriftung, autocomplete) =>
       field(beschriftung, h('input.input', {
@@ -202,6 +364,8 @@ export function render(view, { session }) {
           'Rolle, Zugang und E-Mail-Adresse verwaltet die Geschäftsführung – alles andere gehört dir.')),
       bildKarte(),
       profilKarte(),
+      pushKarte(),
+      telegramKarte(),
       passwortKarte()));
   }
 

@@ -11,6 +11,7 @@ import { playAlert } from './core/sound.js';
 import { formatRelative } from './core/format.js';
 import { aurora, avatar, button, field, logo, spinner, toast } from './core/ui.js';
 import { umschalter } from './core/theme.js';
+import { push } from './core/push.js';
 
 export const session = {
   user: null,
@@ -305,6 +306,12 @@ function wirePulse() {
   });
 
   pulse.start();
+
+  // Der Service Worker wird immer angemeldet, auch ohne Push-Erlaubnis: er
+  // zeigt ohne Netz eine erklaerende Seite statt der Fehlermeldung des
+  // Browsers. Nach der Erlaubnis wird hier nicht gefragt – das passiert im
+  // Profil auf Knopfdruck, weil ein abgelehntes Geraet nie wieder gefragt wird.
+  push.workerAnmelden();
 }
 
 // ───────────────────────────── Router ─────────────────────────────

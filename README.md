@@ -42,6 +42,49 @@ Vorwarnung bei halber Zeit, dann als Überschreitung im Chat und in der Glocke.
 
 ---
 
+## Auf dem Telefon: App und Push
+
+Das CRM lässt sich auf den Startbildschirm legen und meldet sich dann auch,
+wenn es geschlossen ist.
+
+**Installieren:** im Browser das Menü öffnen und „Zum Startbildschirm
+hinzufügen“ wählen. Android macht das von selbst zum Angebot, auf dem iPhone
+geht es über *Teilen → Zum Home-Bildschirm*.
+
+**Meldungen einschalten:** *Mein Profil → Meldungen auf dieses Gerät →
+einschalten*. Der Browser fragt einmal nach Erlaubnis; wer ablehnt, wird nie
+wieder gefragt – dann hilft nur noch die Seiteneinstellung des Browsers.
+
+Ein paar Dinge, die man wissen sollte:
+
+* Es braucht **HTTPS**. Auf `localhost` geht es zum Ausprobieren auch ohne.
+* Auf dem **iPhone erst ab iOS 16.4**, und nur, wenn die Anwendung vorher zum
+  Home-Bildschirm hinzugefügt wurde. Im normalen Safari-Tab gibt es keine Push.
+* Die Meldung wird **ohne Inhalt** verschickt. Der Text steht in der Datenbank;
+  das Telefon holt ihn sich beim Eintreffen selbst. So steht kein Wort aus einer
+  Kundenanfrage bei Google oder Apple.
+* Die Schlüssel dafür (VAPID) entstehen beim ersten Mal von selbst und liegen
+  in der Tabelle `settings`. Es ist nichts einzurichten.
+
+## Telegram
+
+Ein zusätzlicher Weg für Meldungen an Mitarbeitende – kostenlos, ohne
+Unternehmensprofil und ohne genehmigte Vorlagen.
+
+1. In Telegram **@BotFather** anschreiben, `/newbot`, Namen vergeben.
+2. Den Token in `app/config.local.php` eintragen:
+
+   ```php
+   'telegram' => ['bot_token' => '123456:ABC…', 'bot_name' => 'CapitalLeadBot'],
+   ```
+3. Jede und jeder schreibt dem Bot einmal `/start`.
+4. Im CRM unter *Mein Profil → Telegram* auf **Kennung holen**, die eigene
+   auswählen, **Profil speichern**, dann **Probe schicken**.
+
+Ohne Token ist der ganze Weg still: keine Karte im Profil, keine Fehler. Der
+Bot kann niemanden von sich aus anschreiben – deshalb der eine Schritt mit
+`/start`, und deshalb steht ohne hinterlegte Kennung nichts an.
+
 ## Auf SiteGround einrichten
 
 ### 1. Datenbank anlegen

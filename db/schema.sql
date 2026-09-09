@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS users (
   name           VARCHAR(120) NOT NULL,
   title          VARCHAR(120) NOT NULL DEFAULT '',
   phone          VARCHAR(60)  NOT NULL DEFAULT '',
+  -- Chat-Kennung, die der Telegram-Bot beim ersten /start meldet. Leer
+  -- heisst: dieser Weg ist fuer diese Person aus.
+  telegram_chat_id VARCHAR(32) NOT NULL DEFAULT '',
   role           ENUM('admin','manager','agent') NOT NULL DEFAULT 'agent',
   accent         VARCHAR(9)   NOT NULL DEFAULT '#21B4A6',
   -- Dateiname des Profilbildes in storage/uploads/avatars. Leer heisst:
@@ -335,6 +338,10 @@ CREATE TABLE IF NOT EXISTS messages (
   kind       ENUM('text','system','lead_alert') NOT NULL DEFAULT 'text',
   lead_id    INT UNSIGNED NULL,
   meta       JSON         NULL,
+  -- Bearbeitet und zurueckgenommen. Geloescht wird nicht wirklich: die Zeile
+  -- bleibt, der Text verschwindet – sonst reisst eine Antwort ins Leere.
+  edited_at  DATETIME     NULL,
+  deleted_at DATETIME     NULL,
   created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_messages_channel (channel_id, id DESC),
@@ -344,6 +351,36 @@ CREATE TABLE IF NOT EXISTS messages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ───────────────────────────── Benachrichtigung ─────────────────────────────
+
+-- Reaktionen auf Nachrichten. Ein Daumen spart eine Zeile "ok, mach ich".
+CREATE TABLE IF NOT EXISTS message_reactions (
+  message_id INT UNSIGNED NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  emoji      VARCHAR(16) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, user_id, emoji),
+  KEY idx_reaction_message (message_id),
+  CONSTRAINT fk_reaction_msg FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_reaction_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Push-Anmeldungen je Geraet. Ein Mensch hat Telefon, Rechner, Tablet; jedes
+-- meldet sich einzeln an und wird einzeln wieder entfernt, wenn es schweigt.
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id     INT UNSIGNED NOT NULL,
+  endpoint    VARCHAR(500) NOT NULL,
+  p256dh      VARCHAR(200) NOT NULL DEFAULT '',
+  auth_key    VARCHAR(100) NOT NULL DEFAULT '',
+  user_agent  VARCHAR(190) NOT NULL DEFAULT '',
+  fehler      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  last_ok_at  DATETIME NULL,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_push_endpoint (endpoint(191)),
+  KEY idx_push_user (user_id),
+  CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS notifications (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,

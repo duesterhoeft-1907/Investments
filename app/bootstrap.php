@@ -5,6 +5,13 @@
  */
 declare(strict_types=1);
 
+// Mehrfaches Laden ist erlaubt und passiert: bin/setup.php ruft die
+// Skripte in db/ im selben Prozess auf, und jedes davon lädt diese Datei.
+// Ohne diese Bremse würde define() beim zweiten Mal meckern.
+if (defined('APP_ROOT')) {
+    return;
+}
+
 define('APP_ROOT', dirname(__DIR__));
 define('APP_DIR', __DIR__);
 define('STORAGE_DIR', APP_ROOT . '/storage');

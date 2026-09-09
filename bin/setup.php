@@ -50,22 +50,25 @@ function ask(string $label, string $default = '', bool $required = true): string
     }
 }
 
-/** Verdeckte Eingabe – das Passwort erscheint nicht auf dem Bildschirm. */
+/**
+ * Passworteingabe.
+ *
+ * Das Uebliche waere, die Anzeige des Terminals per stty abzuschalten – das
+ * geht aber nur, indem PHP ein anderes Programm startet. Genau solche Aufrufe
+ * lassen Schadcode-Scanner bei Hostern anschlagen, und ein Einrichtungsskript
+ * ist es nicht wert, dafuer in Quarantaene zu landen. Stattdessen wird die
+ * Zeile hinterher ueberschrieben: sichtbar ist das Passwort nur waehrend des
+ * Tippens, danach steht dort nichts mehr.
+ */
 function askSecret(string $label): string
 {
-    $canHide = function_exists('shell_exec')
-        && !in_array('shell_exec', array_map('trim', explode(',', (string) ini_get('disable_functions'))), true);
-    if (!$canHide) {
-        warn('Die Eingabe bleibt auf diesem Server sichtbar.');
-    } else {
-        @shell_exec('stty -echo 2>/dev/null');
-    }
     echo '  ' . $label . ': ';
     $value = trim((string) fgets(STDIN));
-    if ($canHide) {
-        @shell_exec('stty echo 2>/dev/null');
-    }
-    echo PHP_EOL;
+
+    // Eine Zeile hoch, Zeile loeschen, Ersatz hinschreiben.
+    echo "\033[1A\033[2K";
+    echo '  ' . $label . ': ' . str_repeat('*', min(mb_strlen($value), 12)) . PHP_EOL;
+
     return $value;
 }
 
@@ -254,46 +257,31 @@ ok('Verzeichnisse unter storage/ angelegt');
 head('Datenbank füllen');
 
 /**
- * Ruft ein Skript auf und gibt zurueck, ob es sauber durchgelaufen ist –
- * oder null, wenn der Hoster das Starten von Prozessen unterbindet.
+ * Ruft ein Skript aus db/ auf und sagt, ob es sauber durchgelaufen ist.
  *
- * Shared Hosting sperrt passthru() und Verwandte gern per disable_functions.
- * Das ergibt nur eine Warnung und NULL, keinen Abbruch: ohne diese Pruefung
- * saehe es aus, als waere das Skript wortlos durchgelaufen.
+ * Frueher wurde dafuer ein zweiter PHP-Prozess gestartet. Das ist der
+ * Aufruf, den jeder Schadcode-Scanner als erstes anstreicht – zu Recht, denn
+ * so sieht eine Hintertuer aus. Hier laeuft das Skript deshalb im selben
+ * Prozess: require, Ausgabe durchreichen, Fehler abfangen. Das kann kein
+ * Hoster verbieten, und schneller ist es auch.
  */
-$runScript = static function (string $script) use ($root): ?bool {
-    $command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/' . $script);
-    $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
+$runScript = static function (string $script, array $argumente = []) use ($root): ?bool {
+    // Die Skripte lesen ihre Schalter aus $argv – also stellen wir ihnen ein
+    // passendes hin und raeumen es hinterher wieder weg.
+    $vorher = $GLOBALS['argv'] ?? [];
+    $GLOBALS['argv'] = array_merge([$script], $argumente);
 
-    $status = null;
-    foreach (['passthru', 'system'] as $runner) {
-        if (function_exists($runner) && !in_array($runner, $disabled, true)) {
-            $runner($command, $status);
-            break;
-        }
-    }
-    if ($status === null) {
-        return null;   // kein Weg, einen Unterprozess zu starten
-    }
-    if ($status !== 0) {
-        bad("$script ist mit Fehler $status abgebrochen.");
-        say('  Die Meldung dazu steht im Log:');
+    try {
+        require $root . '/' . $script;
+        return true;
+    } catch (Throwable $fehler) {
+        bad("$script ist abgebrochen: " . $fehler->getMessage());
+        say('  Mehr dazu steht im Log:');
         say('    tail -n 20 storage/logs/php-error.log');
         return false;
+    } finally {
+        $GLOBALS['argv'] = $vorher;
     }
-    return true;
-};
-
-/** Sagt, was von Hand nachzuholen ist, wenn wir keine Prozesse starten duerfen. */
-$manualHint = static function () use ($root): void {
-    warn('Dieser Server erlaubt dem Skript nicht, weitere Programme zu starten.');
-    say('  Die beiden letzten Schritte deshalb bitte selbst aufrufen:');
-    say();
-    say('    cd ' . $root);
-    say('    php db/seed.php');
-    say('    php bin/doctor.php');
-    say();
-    say('  Die Konfiguration steht – ab hier ist es nur noch Tippen.');
 };
 
 try {
@@ -312,11 +300,6 @@ if ($tables > 0) {
 } else {
     $seeded = $runScript('db/seed.php');
 }
-if ($seeded === null) {
-    say();
-    $manualHint();
-    exit(0);
-}
 if ($seeded === false) {
     exit(1);
 }
@@ -328,7 +311,7 @@ if ($tables > 0) {
 
 // ── Prüfen ──
 head('Selbsttest');
-$code = $runScript('bin/doctor.php') === null ? 1 : 0;
+$code = $runScript('bin/doctor.php') === false ? 1 : 0;
 
 say();
 say(str_repeat('─', 58));

@@ -21,8 +21,10 @@ $reset = in_array('--reset', $argv, true);
 // ── Schema sicherstellen ──
 $schema = file_get_contents(__DIR__ . '/schema.sql');
 if ($schema === false) {
-    fwrite(STDERR, "schema.sql nicht lesbar.\n");
-    exit(1);
+    // Kein exit(): bin/setup.php bindet diese Datei im selben Prozess ein und
+    // faengt Fehler ab. Direkt aufgerufen endet PHP hierbei ebenfalls mit
+    // einem Fehlercode.
+    throw new RuntimeException('schema.sql ist nicht lesbar.');
 }
 // Kommentarzeilen zuerst entfernen: sonst beginnt die per Semikolon
 // getrennte Anweisung mit "--" und wuerde als reiner Kommentar verworfen –
@@ -62,7 +64,7 @@ if ($reset) {
 
 if ((int) Db::value('SELECT COUNT(*) FROM users') > 0) {
     echo "[seed] Datenbank enthält bereits Daten – übersprungen. (php db/seed.php --reset erzwingt Neuaufbau)\n";
-    exit(0);
+    return;   // kein exit: eingebunden wuerde es den Aufrufer mitreissen
 }
 
 // ─────────────────────────── Stammdaten ───────────────────────────

@@ -10,6 +10,7 @@ use App\Core\Db;
 use App\Core\Http;
 use App\Core\Validator;
 use App\Domain\Events;
+use App\Domain\Telegram;
 
 /**
  * Das eigene Profil.
@@ -42,7 +43,8 @@ final class ProfileController
         $v->text('name', 'deinen Namen', 2, 120)
           ->text('title', 'deine Funktion', 0, 120, false)
           ->text('phone', 'deine Telefonnummer', 0, 60, false)
-          ->text('accent', 'deine Farbe', 0, 9, false);
+          ->text('accent', 'deine Farbe', 0, 9, false)
+          ->text('telegramChatId', 'deine Telegram-Kennung', 0, 32, false);
         $clean = $v->orFail();
 
         // Die Farbe ist eine Farbe oder sie bleibt, wie sie war.
@@ -50,14 +52,24 @@ final class ProfileController
             ? strtoupper($clean['accent'])
             : (string) $me['accent'];
 
+        // Eine Chat-Kennung ist eine Zahl, manchmal mit Minus davor. Alles
+        // andere ist ein Tippfehler und wird gar nicht erst gespeichert.
+        $telegram = trim((string) ($clean['telegramChatId'] ?? ''));
+        if ($telegram !== '' && preg_match('/^-?\d{5,20}$/', $telegram) !== 1) {
+            Http::error('Die Telegram-Kennung besteht nur aus Ziffern (der Bot nennt sie dir).', 422);
+        }
+
         Db::run(
-            'UPDATE users SET name = :name, title = :title, phone = :phone, accent = :accent WHERE id = :id',
+            'UPDATE users SET name = :name, title = :title, phone = :phone, accent = :accent,
+                              telegram_chat_id = :telegram
+              WHERE id = :id',
             [
-                'name'   => $clean['name'],
-                'title'  => $clean['title'],
-                'phone'  => $clean['phone'],
-                'accent' => $accent,
-                'id'     => (int) $me['id'],
+                'name'     => $clean['name'],
+                'title'    => $clean['title'],
+                'phone'    => $clean['phone'],
+                'accent'   => $accent,
+                'telegram' => $telegram,
+                'id'       => (int) $me['id'],
             ]
         );
 
@@ -155,11 +167,58 @@ final class ProfileController
     }
 
     /** @return array<string,mixed> */
+    /** Was die Oberfläche über Telegram wissen muss. */
+    public static function telegramStatus(): void
+    {
+        $me = Auth::requireStaff();
+        Http::json([
+            'eingerichtet' => Telegram::eingerichtet(),
+            'botName'      => Telegram::botName(),
+            'kennung'      => (string) (Db::value(
+                'SELECT telegram_chat_id FROM users WHERE id = :id',
+                ['id' => (int) $me['id']]
+            ) ?? ''),
+        ]);
+    }
+
+    /**
+     * Wer hat den Bot zuletzt angeschrieben?
+     *
+     * Das erspart das Abtippen einer zwölfstelligen Zahl: /start im Telegram,
+     * hier auf „Kennung holen“ – fertig. Sichtbar ist nur, wer sich beim Bot
+     * gemeldet hat, und der Bot gehört dem Unternehmen.
+     */
+    public static function telegramChats(): void
+    {
+        Auth::requireStaff();
+        if (!Telegram::eingerichtet()) {
+            Http::error('Für Telegram ist noch kein Bot hinterlegt.', 409);
+        }
+        Http::json(['chats' => Telegram::neueChats()]);
+    }
+
+    public static function telegramTest(): void
+    {
+        $me = Auth::requireStaff();
+        if (!Telegram::eingerichtet()) {
+            Http::error('Für Telegram ist noch kein Bot hinterlegt.', 409);
+        }
+        $ok = Telegram::anPerson(
+            (int) $me['id'],
+            'Probe aus dem CRM',
+            'Wenn du das liest, kommen Meldungen künftig auch hier an.',
+        );
+        if (!$ok) {
+            Http::error('Der Bot konnte nichts zustellen. Stimmt die Kennung, und wurde der Bot gestartet?', 422);
+        }
+        Http::json(['ok' => true]);
+    }
+
     public static function present(int $userId): array
     {
         $u = Db::one(
             'SELECT id, email, name, title, phone, role, accent, avatar_file, is_active,
-                    away_until, away_note
+                    away_until, away_note, telegram_chat_id
                FROM users WHERE id = :id',
             ['id' => $userId]
         ) ?? [];
@@ -173,6 +232,7 @@ final class ProfileController
             'role'   => $u['role'] ?? 'agent',
             'accent' => $u['accent'] ?? '#21B4A6',
             'avatar' => self::avatarUrl($u['avatar_file'] ?? ''),
+            'telegramChatId' => $u['telegram_chat_id'] ?? '',
         ];
     }
 }

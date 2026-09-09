@@ -28,6 +28,16 @@ function hasColumn(string $table, string $column): bool
     ) > 0;
 }
 
+/** Existiert die Tabelle bereits? */
+function hasTable(string $table): bool
+{
+    return Db::value(
+        'SELECT COUNT(*) FROM information_schema.tables
+          WHERE table_schema = DATABASE() AND table_name = :t',
+        ['t' => $table]
+    ) > 0;
+}
+
 /** Existiert der Index bereits? */
 function hasIndex(string $table, string $index): bool
 {
@@ -313,6 +323,77 @@ $steps = [
         'check' => static fn (): bool => !hasColumn('users', 'avatar_file'),
         'sql'   => [
             "ALTER TABLE users ADD COLUMN avatar_file VARCHAR(80) NOT NULL DEFAULT '' AFTER accent",
+        ],
+    ],
+    [
+        // Push-Anmeldungen je Geraet.
+        //
+        // Ein Mensch hat Telefon, Rechner und vielleicht ein Tablet. Jedes
+        // meldet sich einzeln an und bekommt einzeln zugestellt; faellt eines
+        // dauerhaft aus (Browser geloescht, Anmeldung zurueckgezogen), wird
+        // genau diese Zeile entfernt und nicht der ganze Mensch.
+        'name'  => 'Push-Anmeldungen',
+        'check' => static fn (): bool => !hasTable('push_subscriptions'),
+        'sql'   => [
+            "CREATE TABLE push_subscriptions (
+               id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+               user_id     INT UNSIGNED NOT NULL,
+               endpoint    VARCHAR(500) NOT NULL,
+               p256dh      VARCHAR(200) NOT NULL DEFAULT '',
+               auth_key    VARCHAR(100) NOT NULL DEFAULT '',
+               user_agent  VARCHAR(190) NOT NULL DEFAULT '',
+               fehler      TINYINT UNSIGNED NOT NULL DEFAULT 0,
+               last_ok_at  DATETIME NULL,
+               created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               PRIMARY KEY (id),
+               UNIQUE KEY uq_push_endpoint (endpoint(191)),
+               KEY idx_push_user (user_id),
+               CONSTRAINT fk_push_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        ],
+    ],
+    [
+        // Telegram je Mitarbeiter.
+        //
+        // Gespeichert wird die Chat-Kennung, die der Bot beim ersten /start
+        // meldet. Ohne sie geht nichts hinaus – niemand wird ungefragt
+        // angeschrieben.
+        'name'  => 'Telegram-Kennung am Mitarbeiter',
+        'check' => static fn (): bool => !hasColumn('users', 'telegram_chat_id'),
+        'sql'   => [
+            "ALTER TABLE users ADD COLUMN telegram_chat_id VARCHAR(32) NOT NULL DEFAULT '' AFTER phone",
+        ],
+    ],
+    [
+        // Nachrichten bearbeiten und zuruecknehmen.
+        //
+        // Geloescht wird nicht wirklich: die Zeile bleibt, der Text
+        // verschwindet. Sonst reisst eine Antwort im Verlauf ins Leere.
+        'name'  => 'Bearbeitet und zurueckgenommen an Nachrichten',
+        'check' => static fn (): bool => !hasColumn('messages', 'edited_at'),
+        'sql'   => [
+            'ALTER TABLE messages ADD COLUMN edited_at DATETIME NULL AFTER meta',
+            'ALTER TABLE messages ADD COLUMN deleted_at DATETIME NULL AFTER edited_at',
+        ],
+    ],
+    [
+        // Reaktionen.
+        //
+        // Ein Daumen spart eine Nachricht "ok, mach ich" – und im Kanal
+        // dreissig Zeilen am Tag.
+        'name'  => 'Reaktionen auf Nachrichten',
+        'check' => static fn (): bool => !hasTable('message_reactions'),
+        'sql'   => [
+            "CREATE TABLE message_reactions (
+               message_id INT UNSIGNED NOT NULL,
+               user_id    INT UNSIGNED NOT NULL,
+               emoji      VARCHAR(16) NOT NULL,
+               created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+               PRIMARY KEY (message_id, user_id, emoji),
+               KEY idx_reaction_message (message_id),
+               CONSTRAINT fk_reaction_msg FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+               CONSTRAINT fk_reaction_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ],
     ],
 ];

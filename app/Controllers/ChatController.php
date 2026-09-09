@@ -13,6 +13,9 @@ use App\Domain\Notify;
 
 final class ChatController
 {
+    /** Die erlaubten Reaktionen – kurz gehalten, damit Kanäle gleich aussehen. */
+    private const REAKTIONEN = ['👍', '✅', '👀', '🎉', '❤️', '😄'];
+
     private const MESSAGE_SELECT = "
         SELECT m.*, u.name AS author_name, u.accent AS author_accent, u.avatar_file AS author_avatar, u.title AS author_title,
                CONCAT(l.first_name, ' ', l.last_name) AS lead_name, l.public_ref AS lead_ref
@@ -101,7 +104,30 @@ final class ChatController
         self::assertMember($channelId, (int) $me['id']);
 
         $before = Http::queryInt('before');
+        $seit = Http::queryInt('since');
         $limit = max(1, min(200, Http::queryInt('limit', 60)));
+
+        /*
+         * Drei Fälle, ein Endpunkt:
+         *   ohne alles  – die letzten Nachrichten,
+         *   before      – noch ältere (Hochscrollen),
+         *   since       – nur das Neue.
+         *
+         * Der dritte ist der wichtige: vorher hat die Oberfläche bei jeder
+         * eingehenden Nachricht den ganzen Verlauf neu geholt und neu
+         * gezeichnet. Das sprang beim Lesen, warf angefangene Antworten weg
+         * und wurde mit jedem Tag im Kanal langsamer.
+         */
+        if ($seit > 0) {
+            $rows = Db::all(
+                self::MESSAGE_SELECT . ' WHERE m.channel_id = :c AND m.id > :seit ORDER BY m.id ASC LIMIT 200',
+                ['c' => $channelId, 'seit' => $seit]
+            );
+            Http::json([
+                'messages' => array_map([self::class, 'present'], $rows),
+                'hasMore'  => false,
+            ]);
+        }
 
         $sql = self::MESSAGE_SELECT . ' WHERE m.channel_id = :c'
             . ($before > 0 ? ' AND m.id < :before' : '')
@@ -181,6 +207,156 @@ final class ChatController
         Http::json(['message' => $message], 201);
     }
 
+    /** Eigene Nachricht ändern – innerhalb eines Tages, danach steht sie. */
+    public static function edit(string $id): void
+    {
+        $me = Auth::requireStaff();
+        $messageId = (int) $id;
+
+        $nachricht = Db::one(
+            'SELECT id, channel_id, user_id, kind, created_at, deleted_at FROM messages WHERE id = :id',
+            ['id' => $messageId]
+        );
+        if ($nachricht === null) {
+            Http::error('Diese Nachricht gibt es nicht (mehr).', 404);
+        }
+        self::assertMember((int) $nachricht['channel_id'], (int) $me['id']);
+
+        if ((int) $nachricht['user_id'] !== (int) $me['id'] || $nachricht['kind'] !== 'text') {
+            Http::error('Ändern kann das nur, wer es geschrieben hat.', 403);
+        }
+        if ($nachricht['deleted_at'] !== null) {
+            Http::error('Diese Nachricht wurde zurückgenommen.', 409);
+        }
+        // Nach einem Tag ist eine Änderung keine Korrektur mehr, sondern eine
+        // Umschreibung der Vergangenheit. Andere haben darauf geantwortet.
+        if (strtotime((string) $nachricht['created_at']) < time() - 86400) {
+            Http::error('Nach einem Tag lässt sich eine Nachricht nicht mehr ändern.', 409);
+        }
+
+        $v = new Validator(Http::body());
+        $v->text('body', 'eine Nachricht', 1, 4000);
+        $clean = $v->orFail();
+
+        Db::run(
+            'UPDATE messages SET body = :b, edited_at = NOW() WHERE id = :id',
+            ['b' => $clean['body'], 'id' => $messageId]
+        );
+        Events::toChannel((int) $nachricht['channel_id'], 'chat:message', [
+            'messageId' => $messageId,
+            'channelId' => (int) $nachricht['channel_id'],
+        ]);
+
+        Http::json(['message' => self::present(
+            Db::one(self::MESSAGE_SELECT . ' WHERE m.id = :id', ['id' => $messageId]) ?? []
+        )]);
+    }
+
+    /**
+     * Zurücknehmen.
+     *
+     * Die Zeile bleibt stehen und sagt, dass hier etwas stand – sonst reißt
+     * eine Antwort darauf ins Leere, und niemand versteht den Verlauf.
+     */
+    public static function destroy(string $id): void
+    {
+        $me = Auth::requireStaff();
+        $messageId = (int) $id;
+
+        $nachricht = Db::one(
+            'SELECT id, channel_id, user_id FROM messages WHERE id = :id',
+            ['id' => $messageId]
+        );
+        if ($nachricht === null) {
+            Http::error('Diese Nachricht gibt es nicht (mehr).', 404);
+        }
+        self::assertMember((int) $nachricht['channel_id'], (int) $me['id']);
+
+        $darf = (int) $nachricht['user_id'] === (int) $me['id']
+            || in_array((string) $me['role'], ['admin', 'manager'], true);
+        if (!$darf) {
+            Http::error('Zurücknehmen kann das nur, wer es geschrieben hat.', 403);
+        }
+
+        Db::run(
+            "UPDATE messages SET body = '', deleted_at = NOW() WHERE id = :id",
+            ['id' => $messageId]
+        );
+        Events::toChannel((int) $nachricht['channel_id'], 'chat:message', [
+            'messageId' => $messageId,
+            'channelId' => (int) $nachricht['channel_id'],
+        ]);
+        Http::json(['ok' => true]);
+    }
+
+    /**
+     * Reaktion an- und abschalten.
+     *
+     * Bewusst eine kurze Liste: sechs Zeichen, die im Arbeitsalltag etwas
+     * bedeuten. Freie Eingabe würde nur dazu führen, dass jeder Kanal anders
+     * aussieht – und die Spalte müsste jedes denkbare Zeichen aushalten.
+     */
+    public static function react(string $id): void
+    {
+        $me = Auth::requireStaff();
+        $messageId = (int) $id;
+
+        $emoji = (string) (Http::body()['emoji'] ?? '');
+        if (!in_array($emoji, self::REAKTIONEN, true)) {
+            Http::error('Diese Reaktion gibt es nicht.', 422);
+        }
+
+        $nachricht = Db::one('SELECT id, channel_id FROM messages WHERE id = :id', ['id' => $messageId]);
+        if ($nachricht === null) {
+            Http::error('Diese Nachricht gibt es nicht (mehr).', 404);
+        }
+        self::assertMember((int) $nachricht['channel_id'], (int) $me['id']);
+
+        $vorhanden = Db::value(
+            'SELECT 1 FROM message_reactions WHERE message_id = :m AND user_id = :u AND emoji = :e',
+            ['m' => $messageId, 'u' => (int) $me['id'], 'e' => $emoji]
+        );
+
+        if ($vorhanden !== null) {
+            Db::run(
+                'DELETE FROM message_reactions WHERE message_id = :m AND user_id = :u AND emoji = :e',
+                ['m' => $messageId, 'u' => (int) $me['id'], 'e' => $emoji]
+            );
+        } else {
+            Db::run(
+                'INSERT IGNORE INTO message_reactions (message_id, user_id, emoji) VALUES (:m, :u, :e)',
+                ['m' => $messageId, 'u' => (int) $me['id'], 'e' => $emoji]
+            );
+        }
+
+        Events::toChannel((int) $nachricht['channel_id'], 'chat:message', [
+            'messageId' => $messageId,
+            'channelId' => (int) $nachricht['channel_id'],
+        ]);
+        Http::json(['reactions' => self::reaktionen($messageId)]);
+    }
+
+    /**
+     * "Schreibt gerade …"
+     *
+     * Nichts wird gespeichert: es ist ein Ereignis, das drei Sekunden lang
+     * gilt und dann von selbst verfällt. Eine Tabelle dafür wäre Aufwand für
+     * eine Information, die niemand nachlesen will.
+     */
+    public static function typing(string $id): void
+    {
+        $me = Auth::requireStaff();
+        $channelId = (int) $id;
+        self::assertMember($channelId, (int) $me['id']);
+
+        Events::toChannel($channelId, 'chat:typing', [
+            'channelId' => $channelId,
+            'userId'    => (int) $me['id'],
+            'name'      => (string) $me['name'],
+        ]);
+        Http::json(['ok' => true]);
+    }
+
     public static function markRead(string $id): void
     {
         $me = Auth::requireStaff();
@@ -258,7 +434,44 @@ final class ChatController
                 'avatar' => ProfileController::avatarUrl($m['author_avatar'] ?? ''),
                 'title'  => $m['author_title'] ?? '',
             ],
-            'createdAt' => Leads::iso($m['created_at']),
+            'createdAt'    => Leads::iso($m['created_at']),
+            'editedAt'     => ($m['edited_at'] ?? null) === null ? null : Leads::iso($m['edited_at']),
+            'deleted'      => ($m['deleted_at'] ?? null) !== null,
+            'reactions'    => self::reaktionen((int) $m['id']),
         ];
+    }
+
+    /**
+     * Reaktionen zu einer Nachricht, gruppiert.
+     *
+     * @return array<int,array{emoji:string,anzahl:int,ich:bool,wer:string}>
+     */
+    private static function reaktionen(int $messageId): array
+    {
+        $ich = Auth::id() ?? 0;
+        $zeilen = Db::all(
+            'SELECT r.emoji, u.id AS user_id, u.name
+               FROM message_reactions r JOIN users u ON u.id = r.user_id
+              WHERE r.message_id = :m ORDER BY r.created_at',
+            ['m' => $messageId]
+        );
+
+        $gruppen = [];
+        foreach ($zeilen as $zeile) {
+            $emoji = (string) $zeile['emoji'];
+            $gruppen[$emoji] ??= ['emoji' => $emoji, 'anzahl' => 0, 'ich' => false, 'namen' => []];
+            $gruppen[$emoji]['anzahl']++;
+            $gruppen[$emoji]['namen'][] = (string) $zeile['name'];
+            if ((int) $zeile['user_id'] === $ich) {
+                $gruppen[$emoji]['ich'] = true;
+            }
+        }
+
+        return array_values(array_map(static fn (array $g): array => [
+            'emoji'  => $g['emoji'],
+            'anzahl' => $g['anzahl'],
+            'ich'    => $g['ich'],
+            'wer'    => implode(', ', $g['namen']),
+        ], $gruppen));
     }
 }

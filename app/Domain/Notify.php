@@ -4,10 +4,19 @@ declare(strict_types=1);
 namespace App\Domain;
 
 use App\Core\Db;
+use App\Core\Push;
 
 /**
- * Benachrichtigungen. Jede wird gespeichert (für die Glocke) und zusätzlich
- * als Ereignis gestreut, damit der Toast beim nächsten Abruf sofort erscheint.
+ * Benachrichtigungen.
+ *
+ * Jede wird gespeichert (für die Glocke) und als Ereignis gestreut, damit der
+ * Toast beim nächsten Abruf erscheint. Beides erreicht nur, wer das CRM offen
+ * hat – deshalb gehen dieselben Meldungen zusätzlich als Push aufs Telefon und,
+ * wenn hinterlegt, an Telegram.
+ *
+ * Die zwei zusätzlichen Wege dürfen nichts kaputtmachen: schlägt einer fehl,
+ * steht die Meldung trotzdem in der Glocke. Deshalb sind sie in try gefasst
+ * und laufen nach dem Schreiben, nicht davor.
  */
 final class Notify
 {
@@ -43,6 +52,23 @@ final class Notify
             'leadId'  => $leadId,
             'urgency' => $urgency,
         ], $leadId);
+
+        // Aufs Telefon, wenn dort jemand zugestimmt hat. Ohne Inhalt: der
+        // Service Worker holt sich den Text selbst – so steht kein Wort aus
+        // einer Kundenanfrage bei einem fremden Push-Dienst.
+        try {
+            Push::anPerson($userId);
+        } catch (\Throwable $fehler) {
+            error_log('[push] ' . $fehler->getMessage());
+        }
+
+        try {
+            if (Telegram::eingerichtet()) {
+                Telegram::anPerson($userId, $title, $body, $link);
+            }
+        } catch (\Throwable $fehler) {
+            error_log('[telegram] ' . $fehler->getMessage());
+        }
 
         return $id;
     }

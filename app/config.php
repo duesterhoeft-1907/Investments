@@ -56,6 +56,14 @@ $defaults = [
         'email' => 'service@example.com',
     ],
 
+    // Telegram als zusätzlicher Meldeweg an Mitarbeitende. Leer heißt: aus.
+    // Den Token gibt der BotFather aus, den Namen trägt man selbst ein – er
+    // steht in der Oberfläche, damit klar ist, wen man anschreiben muss.
+    'telegram' => [
+        'bot_token' => '',
+        'bot_name'  => '',
+    ],
+
     'upload' => [
         'max_mb' => 25,
     ],

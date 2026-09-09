@@ -109,6 +109,17 @@ try {
     $router->post('/api/me/avatar', [C\ProfileController::class, 'avatar']);
     $router->delete('/api/me/avatar', [C\ProfileController::class, 'removeAvatar']);
 
+    // ── Push aufs Telefon ──
+    $router->get('/api/push/key', [C\PushController::class, 'key']);
+    $router->post('/api/push/subscribe', [C\PushController::class, 'subscribe']);
+    $router->delete('/api/push/subscribe', [C\PushController::class, 'unsubscribe']);
+    $router->post('/api/push/test', [C\PushController::class, 'test']);
+
+    // ── Telegram ──
+    $router->get('/api/telegram/status', [C\ProfileController::class, 'telegramStatus']);
+    $router->get('/api/telegram/chats', [C\ProfileController::class, 'telegramChats']);
+    $router->post('/api/telegram/test', [C\ProfileController::class, 'telegramTest']);
+
     // ── Ereignisse (ersetzt WebSockets) ──
     $router->get('/api/events', [C\EventsController::class, 'poll']);
 
@@ -154,6 +165,10 @@ try {
     $router->post('/api/chat/channels/{id}/messages', [C\ChatController::class, 'send']);
     $router->post('/api/chat/channels/{id}/read', [C\ChatController::class, 'markRead']);
     $router->post('/api/chat/dm/{userId}', [C\ChatController::class, 'openDirect']);
+    $router->patch('/api/chat/messages/{id}', [C\ChatController::class, 'edit']);
+    $router->delete('/api/chat/messages/{id}', [C\ChatController::class, 'destroy']);
+    $router->post('/api/chat/messages/{id}/reaction', [C\ChatController::class, 'react']);
+    $router->post('/api/chat/channels/{id}/typing', [C\ChatController::class, 'typing']);
 
     // ── Benachrichtigungen ──
     $router->get('/api/notifications', [C\NotificationsController::class, 'index']);

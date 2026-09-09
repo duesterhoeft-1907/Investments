@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keine Verbindung · 21 Capital Invest</title>
+<style>
+  :root { color-scheme: dark light; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: #0B1816; color: #EDF6F3; padding: 24px;
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: light) { body { background: #F4F8F7; color: #111A28; } }
+  .kasten { max-width: 380px; text-align: center; }
+  img { width: 72px; height: 72px; }
+  h1 { font-size: 21px; margin: 18px 0 8px; }
+  p { margin: 0 0 18px; opacity: 0.75; }
+  button {
+    font: inherit; padding: 10px 20px; border-radius: 2px; cursor: pointer;
+    border: 1px solid #21B4A6; background: #21B4A6; color: #06231F;
+  }
+</style>
+</head>
+<body>
+  <div class="kasten">
+    <img src="/assets/icons/icon-192.png" alt="">
+    <h1>Gerade keine Verbindung</h1>
+    <p>Die Anwendung braucht Netz – gespeichert ist hier nichts, damit auch
+      nichts Veraltetes angezeigt wird.</p>
+    <button onclick="location.reload()">Nochmal versuchen</button>
+  </div>
+</body>
+</html>
