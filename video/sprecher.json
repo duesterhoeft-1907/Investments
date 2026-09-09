@@ -1,6 +1,12 @@
 {
   "hinweis": "Sprechertexte zum Erklaerfilm. Zwei Stimmen im Wechsel: Bill (M) und Corinna (W). Jeder Abschnitt hat ein festes Sekundenbudget, das exakt dem Ablauf in film.html entspricht. Wer den Film aendert, aendert hier mit.",
   "gesamt_s": 222,
+  "tempo": {
+    "_hinweis": "Zeichen je Sekunde, gemessen an der fertigen Vertonung vom 9. September (nicht geschaetzt). Damit werden die Texte bemessen: Zeichen = (Budget - 1,2 s Atem) x Tempo. Wer Text kuerzt, laesst Stille im Bild stehen.",
+    "M": 13.2,
+    "W": 15.8,
+    "atem_s": 1.2
+  },
   "stimmen": {
     "M": "Bill – Erzaehler, ruhig",
     "W": "Corinna – Moderatorin, warm"
@@ -21,7 +27,7 @@
       "start_s": 0,
       "dauer_s": 6,
       "stimme": "M",
-      "text": "Vom Formular zum Anruf. Was dazwischen passiert."
+      "text": "Vom Formular zum Anruf. Was dazwischen passiert, in sechs Bereichen."
     },
     {
       "nr": 2,
@@ -29,7 +35,7 @@
       "start_s": 6,
       "dauer_s": 26,
       "stimme": "W",
-      "text": "Vier Fragen auf dem Telefon. Nach neunzig Millisekunden steht der Berater fest – wer nicht da ist, wird übersprungen. Nach drei Sekunden meldet sich alles: Glocke, Ton, Chat und Mail. Dann läuft die Uhr: zehn Minuten, und sie wird gemessen."
+      "text": "Vier Fragen auf dem Telefon, ohne Neuladen – mehr will das Formular nicht. Neunzig Millisekunden später steht der Berater fest: erst das Fachgebiet, dann die Gruppe, dann der Mensch. Wer als abwesend eingetragen ist, wird übersprungen. Nach spätestens drei Sekunden meldet sich alles gleichzeitig – Glocke, Ton, Chat und Mail. Ab da läuft die Uhr: zehn Minuten bis zum Anruf, und die Zeit dahin wird gemessen."
     },
     {
       "nr": 3,
@@ -45,7 +51,7 @@
       "start_s": 37,
       "dauer_s": 26,
       "stimme": "M",
-      "text": "Jedes Feld wird geprüft – ohne Telefonnummer geht es nicht weiter, der Rückruf ist ja der Sinn der Sache. Kennen wir den schon, bekommt er denselben Berater wie beim letzten Mal. Die Frist rechnet gegen die Geschäftszeiten."
+      "text": "Jedes Feld wird geprüft. Ohne Telefonnummer geht es nicht weiter – der Rückruf ist ja der Sinn der Sache. Kennen wir den schon, bekommt er denselben Berater wie beim letzten Mal. Lead und Aufgabe entstehen in einer Transaktion, die Frist rechnet gegen die Geschäftszeiten. Danach fragen alle offenen CRM-Fenster im Sekundentakt nach, ohne dauerhaften Prozess."
     },
     {
       "nr": 5,
@@ -61,7 +67,7 @@
       "start_s": 68,
       "dauer_s": 26,
       "stimme": "W",
-      "text": "Heute bekommen alle dasselbe: CRM, Mail und Chat. Neu kommt eine Matrix im Profil – welcher Anlass auf welchem Weg, mit eigenen Ruhezeiten. Und lieber bündeln als einzeln, sonst schaltet nach der dritten Meldung jemand alles ab."
+      "text": "Heute bekommen alle dasselbe: das CRM, die Mail und den internen Chat. Das läuft. Neu kommt eine Matrix ins Profil – welcher Anlass auf welchem Weg, mit eigenen Ruhezeiten für Abend und Wochenende. Dazu Telegram als Eskalation, nicht als Regelweg: der Bot ist vorbereitet und kostet je Nachricht nichts. Und wichtig: bündeln statt einzeln. Sonst schaltet nach der dritten Anfrage am Vormittag jemand alles ab."
     },
     {
       "nr": 7,
@@ -77,7 +83,7 @@
       "start_s": 99,
       "dauer_s": 24,
       "stimme": "M",
-      "text": "Drei Dateien neben der Seite: Manifest, Service Worker, Push-Anmeldung. Danach liegt das CRM auf dem Startbildschirm und meldet sich auch bei geschlossener App. Vor allem für den Chat. Laufende Kosten: keine."
+      "text": "Drei Dateien neben der Seite: Manifest, Service Worker, Push-Anmeldung. Danach liegt das CRM auf dem Startbildschirm und meldet sich auch, wenn die App geschlossen ist. Vor allem für den Chat – der nützt heute nur bei offenem Fenster. Laufende Kosten: keine. Android sofort, iPhone ab sechzehn Punkt vier."
     },
     {
       "nr": 9,
@@ -93,7 +99,7 @@
       "start_s": 128,
       "dauer_s": 22,
       "stimme": "W",
-      "text": "Bisher: ein Vorgang, ein Zuständiger – geteilte Verantwortung ist keine. Neu: der Zuständige entscheidet und wird gemessen, die Vertretung darf alles. Bei Urlaub wandern die Vorgänge mit und kommen zurück."
+      "text": "Heute gilt: ein Vorgang, ein Zuständiger. Im Normalfall ist das richtig, denn geteilte Verantwortung ist keine. Neu wird getrennt: der Zuständige entscheidet und wird gemessen, die Vertretung sieht alles und darf alles, wird aber nicht gemessen. Und trägt jemand eine Abwesenheit ein, wandern die Vorgänge von selbst mit – und kommen danach zurück."
     },
     {
       "nr": 11,
@@ -109,7 +115,7 @@
       "start_s": 155,
       "dauer_s": 22,
       "stimme": "M",
-      "text": "Drei Mailtexte stehen im Quelltext – für Bestätigung und Alarm richtig, für alles Geschriebene falsch. Also Vorlagen mit Bausteinen, mit Vorschau. Und: Klicks sind ehrlich, Öffnungen nicht."
+      "text": "Drei Mailtexte stehen heute im Quelltext. Für Bestätigung und Alarm ist das richtig, für alles Geschriebene falsch. Neu: Vorlagen mit Bausteinen, zweisprachig, mit Vorschau vor dem Senden. Und eine Warnung beim Nachverfolgen – Klicks sind ehrlich, Öffnungen nicht."
     },
     {
       "nr": 13,
@@ -125,7 +131,7 @@
       "start_s": 182,
       "dauer_s": 26,
       "stimme": "W",
-      "text": "Jede Mail bekommt ein Antwort-an mit der Vorgangsnummer. Ein Cron holt, was neu ist, und hängt die Antwort von selbst an den richtigen Vorgang. Bei unbekanntem Absender: eine Einschätzung und ein Knopf. Der Mensch entscheidet."
+      "text": "Jede Mail bekommt ein Antwort-an mit der Vorgangsnummer darin. Antwortet der Kunde, holt ein Cron per I-MAP, was neu ist, und hängt die Antwort ohne Zutun an den richtigen Vorgang. Ist der Absender unbekannt, kommt eine Einschätzung mit Begründung und daneben ein Knopf: als Anfrage anlegen. Der Grundsatz bleibt in allen sechs Bereichen derselbe – die Maschine schlägt vor, der Mensch entscheidet."
     },
     {
       "nr": 15,
@@ -133,7 +139,7 @@
       "start_s": 208,
       "dauer_s": 14,
       "stimme": "M",
-      "text": "Sechs Stufen, jede für sich nützlich. Keine laufenden Kosten, und vier Entscheidungen von euch."
+      "text": "Sechs Stufen, jede für sich nützlich. Zusammen vierzehneinhalb Tage, keine laufenden Kosten und vier Entscheidungen von euch. Den Anfang macht die Warteschlange für den Mailversand."
     }
   ]
 }

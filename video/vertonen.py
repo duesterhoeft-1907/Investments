@@ -46,9 +46,10 @@ HIER = Path(__file__).resolve().parent
 # Unterschied zwischen "das Skript tut es nicht" und "es lief die alte
 # Fassung": ein zweiter Download heisst auf dem Mac vertonung-2.zip, und
 # unzip packt dann weiter die alte aus.
-FASSUNG = "7 – 9. September, zwei Stimmen im Wechsel"
+FASSUNG = "8 – 9. September, Texte auf die Sekunden bemessen"
 VORLAUF_S = 0.35          # kleiner Atemzug, damit der Satz nicht auf dem Schnitt klebt
 MAX_STRAFFUNG = 1.25      # darueber klingt es gehetzt – dann lieber den Text kuerzen
+MIN_FUELLUNG = 0.85       # darunter steht zu lange Stille im Bild – Text verlaengern
 
 # Die zwei Lieblingsstimmen aus dem EXECUTEX-Video-Kit.
 STIMMEN = {
@@ -290,6 +291,7 @@ def main() -> None:
 
     teile: list[Path] = []
     zulang: list[tuple[int, str, float, float, float]] = []
+    zukurz: list[tuple[int, str, float, float, float]] = []
     for abschnitt in plan["abschnitte"]:
         nr = abschnitt["nr"]
         budget = float(abschnitt["dauer_s"])
@@ -349,6 +351,15 @@ def main() -> None:
                   f"(Faktor {tempo:.2f}). Es fehlen hinten rund {fehlt:.1f}s.")
             zulang.append((nr, abschnitt["id"], gesprochen, budget, fehlt))
             tempo = MAX_STRAFFUNG
+        elif abschnitt["id"] != "countdown" and gesprochen < budget * MIN_FUELLUNG:
+            # Der teurere Fehler. Zu langer Text faellt beim Anschauen sofort
+            # auf; zu kurzer nicht – da laeuft das Bild einfach weiter und
+            # niemand redet. In der ersten Fassung war jeder Abschnitt rund
+            # zehn Sekunden zu kurz, zusammen mehr als die Haelfte des Films.
+            leer = budget - gesprochen
+            print(f"    ! nur {gesprochen:.1f}s in {budget:.0f}s – danach stehen "
+                  f"{leer:.1f}s Stille im Bild.")
+            zukurz.append((nr, abschnitt["id"], gesprochen, budget, leer))
 
         filter_kette = (
             (f"atempo={tempo:.4f}," if tempo > 1.001 else "")
@@ -397,6 +408,16 @@ def main() -> None:
                   f"rund {fehlt:.1f}s fehlen")
         print("  Text in sprecher.json kürzen, die betroffene Datei in "
               "ton/ löschen und noch einmal laufen lassen.")
+
+    if zukurz:
+        leer = sum(z[4] for z in zukurz)
+        print(f"\nAchtung – hier steht Stille im Bild ({leer:.0f}s zusammen):")
+        for nr, name, gesprochen, budget, luecke in zukurz:
+            print(f"  {nr:02d} {name}: {gesprochen:.1f}s gesprochen, {budget:.0f}s Platz, "
+                  f"{luecke:.1f}s ohne Ton")
+        print("  Text in sprecher.json verlängern – Länge = (Budget − 1,2) × "
+              "Tempo aus dem Abschnitt \"tempo\". Danach die betroffene Datei "
+              "in ton/ löschen und noch einmal laufen lassen.")
 
 
 if __name__ == "__main__":

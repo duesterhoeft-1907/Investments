@@ -7,7 +7,7 @@ davor.
 | Datei | Was |
 | --- | --- |
 | `film.html` | Der Film selbst. Eine Seite, 1920 × 1080, die sich nach Zeitplan selbst abspielt. |
-| `sprecher.json` | Die Sprechertexte je Abschnitt, auf Schwäbisch und auf Platt, mit dem Sekundenbudget des Abschnitts. |
+| `sprecher.json` | Die Sprechertexte je Abschnitt, mit Stimme, Sekundenbudget und dem gemessenen Sprechtempo. |
 | `schriften.py` | Bettet die Schriften ein und schreibt `film-lokal.html` – die Fassung, die aufgenommen wird. |
 | `aufnehmen.mjs` | Nimmt den Film mit einem Browser in Echtzeit auf. |
 | `schneiden.py` | Schneidet die Aufnahme an der Klappe und kodiert nach mp4. |
@@ -80,11 +80,29 @@ auf Hochdeutsch tragen den Film besser als ein Dialekt, der danebengreift.
 
 Andere Stimmen gehen mit `--stimme-m` und `--stimme-w` und einer Voice-ID.
 
-## Wenn ein Text nicht passt
+## Wie lang ein Text sein muss
 
-Jeder Abschnitt hat ein festes Sekundenbudget. Das Skript misst, wie lang die Stimme
-wirklich braucht, und strafft bis Faktor 1,18; darüber meldet es sich und schlägt
-Kürzen vor. Ein gekürzter Satz klingt besser als ein gehetzter.
+Jeder Abschnitt hat ein festes Sekundenbudget, und der Text muss es **füllen**.
+Die Länge ergibt sich aus dem gemessenen Sprechtempo:
+
+    Zeichen = (Budget − 1,2 s Atem) × Tempo
+
+Das Tempo steht in `sprecher.json` unter `tempo` und ist an der fertigen
+Vertonung gemessen, nicht geschätzt: Bill spricht 13,2 Zeichen je Sekunde,
+Corinna 15,8. Für einen Abschnitt von 26 Sekunden sind das also rund
+330 Zeichen bei Bill und 390 bei Corinna – deutlich mehr, als ein Absatz
+auf den ersten Blick vermuten lässt.
+
+Das Skript meldet beide Richtungen:
+
+* **zu lang** – es strafft bis Faktor 1,25, darüber schneidet es hinten ab
+  und zählt die betroffenen Abschnitte am Ende noch einmal auf.
+* **zu kurz** – füllt der Text weniger als 85 % des Budgets, steht Stille im
+  Bild. Auch das wird am Ende aufgezählt, mit den Sekunden ohne Ton.
+
+Die zweite Warnung gibt es, seit die erste Vertonung 118 von 222 Sekunden
+schweigend im Bild stand: zu langer Text fällt beim Anschauen sofort auf,
+zu kurzer nicht.
 
 ## Film ändern
 
@@ -94,9 +112,3 @@ sind die Summe der vorherigen Dauern.
 
 Aufgenommen wird mit einem Browser in Echtzeit; die weiße Blende zu Beginn
 (400 ms) ist nur die Klappe für den Zuschnitt und im fertigen Film nicht zu sehen.
-
-## Mundart
-
-Schwäbisch und Platt sind geschrieben, wie sie gesprochen werden, nicht nach
-Rechtschreibung. Beim Platt sollte vor dem Versand jemand drüberschauen, der es
-wirklich spricht – geschriebenes Niederdeutsch ist regional sehr verschieden.

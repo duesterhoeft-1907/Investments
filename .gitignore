@@ -22,4 +22,7 @@ Thumbs.db
 video/*.mp4
 video/roh/
 video/film-lokal.html
-video/ton-*/
+video/ton*/
+video/node_modules/
+video/package*.json
+video/__pycache__/
