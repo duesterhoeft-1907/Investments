@@ -43,9 +43,9 @@ HIER = Path(__file__).resolve().parent
 # Unterschied zwischen "das Skript tut es nicht" und "es lief die alte
 # Fassung": ein zweiter Download heisst auf dem Mac vertonung-2.zip, und
 # unzip packt dann weiter die alte aus.
-FASSUNG = "5 – 9. September, mit Stille-Schnitt"
+FASSUNG = "6 – 9. September, kürzerer Abspann"
 VORLAUF_S = 0.35          # kleiner Atemzug, damit der Satz nicht auf dem Schnitt klebt
-MAX_STRAFFUNG = 1.18      # darueber klingt es gehetzt – dann lieber den Text kuerzen
+MAX_STRAFFUNG = 1.25      # darueber klingt es gehetzt – dann lieber den Text kuerzen
 
 # Die zwei Lieblingsstimmen aus dem EXECUTEX-Video-Kit.
 STIMMEN = {
