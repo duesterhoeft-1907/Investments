@@ -5,6 +5,11 @@
     "schwaebisch": "Schwaebisch. Von einem Muttersprachler gegengelesen? Noch nicht.",
     "platt": "Norddeutsches Platt (Nordniedersaechsisch). Bitte von einem Muttersprachler gegenlesen lassen, bevor es raus geht."
   },
+  "zahlen": {
+    "_hinweis": "Die vier Zahlen des Countdowns werden einzeln gesprochen und auf die Sekunde gesetzt, an der das Bild sie zeigt. Am Stueck gesprochen waere die Stimme schneller fertig, als der Film zaehlt.",
+    "schwaebisch": ["Vier", "Drei", "Zwoi", "Oins"],
+    "platt": ["Veer", "Dree", "Twee", "Een"]
+  },
   "abschnitte": [
     {
       "nr": 1, "id": "titel", "start_s": 0, "dauer_s": 6,

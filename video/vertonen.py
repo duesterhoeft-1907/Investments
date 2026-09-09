@@ -129,6 +129,56 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         sys.exit(f"api.elevenlabs.io ist nicht erreichbar: {fehler.reason}")
 
 
+def zahlenBauen(ffmpeg: str, plan: dict, mundart: str, stimme: str, modell: str,
+                schluessel: str, arbeit: Path, nr: int, budget: float, ziel: Path) -> None:
+    """
+    Baut einen Countdown, der auf den Ziffern sitzt.
+
+    Im Film wechselt die Zahl im Sekundentakt: die Vier steht von 0 bis 1, die
+    Drei von 1 bis 2, und so weiter. Eine am Stück gesprochene Zeile hält sich
+    nicht daran – sie ist schneller fertig, als das Bild zählt.
+
+    Deshalb wird jede Zahl einzeln gesprochen und mit adelay an ihre Sekunde
+    gesetzt. Die vier Aufnahmen entstehen einmal je Mundart und werden für alle
+    sechs Countdowns wiederverwendet: das spart nicht nur Guthaben, es klingt
+    auch gleich – ein Countdown, der beim vierten Mal anders betont, fällt auf.
+    """
+    zahlen = plan.get("zahlen", {}).get(mundart)
+    if not zahlen:
+        sys.exit("In sprecher.json fehlt der Block 'zahlen' für " + mundart)
+
+    aufnahmen = []
+    for i, wort in enumerate(zahlen):
+        datei = arbeit / f"zahl-{i + 1}.mp3"
+        if not datei.is_file():
+            print(f"    Zahl „{wort}“ – spreche …")
+            sprechen(wort, stimme, modell, schluessel, datei)
+        aufnahmen.append(datei)
+
+    # Ein Hauch nach dem Wechsel, nicht davor: die Zahl ist schon zu sehen,
+    # wenn sie gesagt wird.
+    versatz = [0.15 + i for i in range(len(aufnahmen))]
+
+    eingaben = []
+    for datei in aufnahmen:
+        eingaben += ["-i", str(datei)]
+
+    kette = ";".join(
+        f"[{i}]adelay={int(ms * 1000)}:all=1,aresample=48000[z{i}]"
+        for i, ms in enumerate(versatz)
+    )
+    kette += ";" + "".join(f"[z{i}]" for i in range(len(aufnahmen)))
+    kette += f"amix=inputs={len(aufnahmen)}:normalize=0,apad[aus]"
+
+    subprocess.run(
+        [ffmpeg, "-y", "-loglevel", "error", *eingaben,
+         "-filter_complex", kette, "-map", "[aus]",
+         "-t", f"{budget:.3f}", "-ac", "2", "-ar", "48000", str(ziel)],
+        check=True,
+    )
+    print(f"[{nr:02d}] countdown – vier Zahlen auf ihre Sekunde gesetzt")
+
+
 def schluesselFinden(kit: str | None) -> tuple[str, str]:
     """
     Sucht den Schlüssel an drei Stellen, in dieser Reihenfolge:
@@ -207,6 +257,16 @@ def main() -> None:
         budget = float(abschnitt["dauer_s"])
         roh = arbeit / f"{nr:02d}.mp3"
         stueck = arbeit / f"{nr:02d}.wav"
+
+        # Der Countdown geht einen eigenen Weg: die vier Zahlen werden
+        # einzeln gesprochen und auf die Sekunde gesetzt, an der das Bild
+        # sie zeigt. Am Stück gesprochen wäre die Stimme nach knapp drei
+        # Sekunden fertig, während im Bild noch die Zwei steht.
+        if abschnitt["id"] == "countdown":
+            zahlenBauen(ffmpeg, plan, opt.mundart, stimme, opt.modell,
+                        schluessel, arbeit, nr, budget, stueck)
+            teile.append(stueck)
+            continue
 
         if not roh.is_file():
             print(f"[{nr:02d}/{len(plan['abschnitte'])}] {abschnitt['id']} – spreche …")
