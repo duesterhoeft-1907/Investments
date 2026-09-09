@@ -80,6 +80,30 @@ def laenge(ff: str, datei: Path) -> float:
     return int(h) * 3600 + int(m) * 60 + float(s)
 
 
+def schluesselPruefen(schluessel: str, woher: str) -> None:
+    """
+    Sieht das nach einem Schlüssel aus?
+
+    Der häufigste Fehler ist kein Tippfehler, sondern ein kopierter
+    Platzhalter: "sk_…" mit dem Auslassungszeichen aus einer Anleitung. Ohne
+    diese Prüfung stirbt das Skript erst tief in der HTTP-Bibliothek, mit
+    einer Meldung über den Latin-1-Zeichensatz, in der das Wort Schlüssel
+    nicht vorkommt.
+    """
+    if not schluessel.isascii():
+        fremde = ''.join(sorted({z for z in schluessel if not z.isascii()}))
+        sys.exit(
+            f"Der Schlüssel {woher} enthält Zeichen, die dort nicht hingehören: {fremde}\n"
+            f"    Das ist fast immer ein kopierter Platzhalter wie sk_… – "
+            f"bitte den echten Schlüssel einsetzen.\n"
+            f"    Steht er in der Umgebung, gewinnt er gegen ~/.elevenlabs_key: "
+            f"dann erst 'unset ELEVENLABS_API_KEY'."
+        )
+    if len(schluessel) < 20:
+        sys.exit(f"Der Schlüssel {woher} ist mit {len(schluessel)} Zeichen zu kurz, "
+                 f"um echt zu sein.")
+
+
 def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -> None:
     anfrage = urllib.request.Request(
         f"https://api.elevenlabs.io/v1/text-to-speech/{stimme}",
@@ -96,7 +120,13 @@ def sprechen(text: str, stimme: str, modell: str, schluessel: str, ziel: Path) -
         with urllib.request.urlopen(anfrage, timeout=180) as antwort:
             ziel.write_bytes(antwort.read())
     except urllib.error.HTTPError as fehler:
-        sys.exit(f"ElevenLabs antwortet mit {fehler.code}: {fehler.read().decode('utf-8', 'replace')[:400]}")
+        hinweis = ''
+        if fehler.code == 401:
+            hinweis = '\n    Das heißt: der Schlüssel wird nicht anerkannt. Der richtige steht in der config.py des Video-Kits.'
+        sys.exit(f"ElevenLabs antwortet mit {fehler.code}: "
+                 f"{fehler.read().decode('utf-8', 'replace')[:400]}{hinweis}")
+    except urllib.error.URLError as fehler:
+        sys.exit(f"api.elevenlabs.io ist nicht erreichbar: {fehler.reason}")
 
 
 def schluesselFinden(kit: str | None) -> tuple[str, str]:
@@ -156,6 +186,7 @@ def main() -> None:
             "oder in die Umgebung setzen (ELEVENLABS_API_KEY), "
             "oder mit --kit auf den Ordner des Video-Kits zeigen."
         )
+    schluesselPruefen(schluessel, woher)
     print(f"Schlüssel: {woher}")
 
     stimme, wer = STIMMEN.get(opt.stimme, (opt.stimme, "eigene Voice-ID"))
